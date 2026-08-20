@@ -1,0 +1,51 @@
+schema: spec-driven
+
+context: |
+  Project: migas (recetario-costeo)
+  Stack: React 18 + Vite 4, Zustand state, react-router-dom, TanStack Query, Tailwind 4.
+  Package manager: pnpm (locked via packageManager field, pnpm-lock.yaml present).
+  Architecture: Screaming Architecture — src/features/{ingredients,recipes,overview,settings},
+    src/shared/ (cross-feature UI), src/lib/ (pure helpers: format, recipeMath), src/stores/ (Zustand).
+  Persistence today: Zustand store, no backend.
+  Testing: no test runner configured yet.
+
+strict_tdd: false
+
+testing:
+  test_runner: none
+  layers:
+    unit: false
+    integration: false
+    e2e: false
+  coverage: false
+  quality:
+    linter: none
+    type_checker: none
+    formatter: none
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+    - Call out any change to the pnpm package manager or workspace layout explicitly
+  specs:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+  design:
+    - Include sequence diagrams for complex flows
+    - Document architecture decisions with rationale
+  tasks:
+    - Group by phase, use hierarchical numbering
+    - Keep tasks completable in one session
+  apply:
+    guidelines:
+      - Follow existing code patterns (Screaming Architecture: features/shared/lib)
+      - Use pnpm for all install/run commands, in both src/ (frontend) and server/ (backend)
+      - No test runner configured — do not assume TDD unless one is introduced first
+    tdd: false
+    test_command: ""
+  verify:
+    test_command: ""
+    build_command: "pnpm build"
+    coverage_threshold: 0
+  archive:
+    - Warn before merging destructive deltas
