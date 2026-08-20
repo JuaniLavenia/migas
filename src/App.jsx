@@ -634,6 +634,7 @@ function RecipesView({
                   <input
                     type="number"
                     min="0"
+                    step="any"
                     value={selectedRecipe.margin}
                     onChange={(event) =>
                       updateRecipe("margin", event.target.value)
@@ -648,6 +649,7 @@ function RecipesView({
                   <input
                     type="number"
                     min="0"
+                    step="any"
                     value={selectedRecipe.extras}
                     onChange={(event) =>
                       updateRecipe("extras", event.target.value)
@@ -784,6 +786,7 @@ function IngredientModal({ initial, onClose, onSave }) {
               required
               type="number"
               min="0.01"
+              step="any"
               value={form.packSize}
               onChange={(event) => change("packSize", event.target.value)}
               placeholder="1000"
@@ -796,6 +799,7 @@ function IngredientModal({ initial, onClose, onSave }) {
                 required
                 type="number"
                 min="0"
+                step="any"
                 value={form.packCost}
                 onChange={(event) => change("packCost", event.target.value)}
                 placeholder="1250"
@@ -875,6 +879,7 @@ function RecipeModal({ ingredients, onClose, onSave }) {
               <input
                 type="number"
                 min="0"
+                step="any"
                 value={form.margin}
                 onChange={(event) =>
                   setForm({ ...form, margin: event.target.value })
@@ -889,6 +894,7 @@ function RecipeModal({ ingredients, onClose, onSave }) {
               <input
                 type="number"
                 min="0"
+                step="any"
                 value={form.extras}
                 onChange={(event) =>
                   setForm({ ...form, extras: event.target.value })
@@ -917,6 +923,7 @@ function RecipeModal({ ingredients, onClose, onSave }) {
               <input
                 type="number"
                 min="0"
+                step="any"
                 value={item.quantity}
                 onChange={(event) =>
                   updateItem(index, "quantity", event.target.value)
