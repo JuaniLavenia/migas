@@ -18,6 +18,7 @@ import IngredientsView from "./features/ingredients/IngredientsView";
 import IngredientModal from "./features/ingredients/IngredientModal";
 import RecipesView from "./features/recipes/RecipesView";
 import RecipeModal from "./features/recipes/RecipeModal";
+import SettingsView from "./features/settings/SettingsView";
 
 const numericRecipeFields = new Set(["yield", "margin", "extras"]);
 
@@ -31,6 +32,7 @@ function App() {
   );
   const addRecipe = useRecipeStore((state) => state.addRecipe);
   const updateRecipeField = useRecipeStore((state) => state.updateRecipe);
+  const importData = useRecipeStore((state) => state.importData);
   const [activeView, setActiveView] = useState("overview");
   const [selectedRecipeId, setSelectedRecipeId] = useState("cookies");
   const [search, setSearch] = useState("");
@@ -144,7 +146,12 @@ function App() {
           </button>
         </nav>
         <div className="sidebar-bottom">
-          <button className="nav-item">
+          <button
+            className={
+              activeView === "settings" ? "nav-item active" : "nav-item"
+            }
+            onClick={() => navigate("settings")}
+          >
             <Settings2 size={18} /> Configuración
           </button>
           <div className="user-card">
@@ -174,7 +181,9 @@ function App() {
                 ? "Resumen"
                 : activeView === "ingredients"
                   ? "Insumos"
-                  : "Recetas"}
+                  : activeView === "recipes"
+                    ? "Recetas"
+                    : "Configuración"}
             </strong>
           </div>
           <div className="topbar-actions">
@@ -219,6 +228,14 @@ function App() {
               totals={selectedTotals}
               selectedRecipe={selectedRecipe}
               updateRecipe={updateRecipe}
+            />
+          )}
+          {activeView === "settings" && (
+            <SettingsView
+              ingredients={ingredients}
+              recipes={recipes}
+              onImport={importData}
+              onToast={setToast}
             />
           )}
         </div>

@@ -78,6 +78,16 @@ const demoRecipes = [
   },
 ];
 
+function mergeById(current, incoming) {
+  const merged = [...current];
+  incoming.forEach((item) => {
+    const index = merged.findIndex((existing) => existing.id === item.id);
+    if (index === -1) merged.push(item);
+    else merged[index] = { ...merged[index], ...item };
+  });
+  return merged;
+}
+
 const useRecipeStore = create()(
   persist(
     (set, get) => ({
@@ -111,6 +121,17 @@ const useRecipeStore = create()(
           ),
         })),
       getRecipe: (id) => get().recipes.find((recipe) => recipe.id === id),
+      importData: ({ ingredients = [], recipes = [] }) =>
+        set((state) => ({
+          ingredients: mergeById(
+            state.ingredients,
+            ingredients.map((item) => ({ ...item, id: item.id || uuidv4() })),
+          ),
+          recipes: mergeById(
+            state.recipes,
+            recipes.map((recipe) => ({ ...recipe, id: recipe.id || uuidv4() })),
+          ),
+        })),
     }),
     { name: "miga-recipe-storage" },
   ),
