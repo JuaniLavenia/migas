@@ -19,6 +19,8 @@ import IngredientModal from "./features/ingredients/IngredientModal";
 import RecipesView from "./features/recipes/RecipesView";
 import RecipeModal from "./features/recipes/RecipeModal";
 
+const numericRecipeFields = new Set(["yield", "margin", "extras"]);
+
 function App() {
   const ingredients = useRecipeStore((state) => state.ingredients);
   const recipes = useRecipeStore((state) => state.recipes);
@@ -92,7 +94,9 @@ function App() {
     setToast("Receta creada");
   }
   function updateRecipe(field, value) {
-    updateRecipeField(selectedRecipeId, { [field]: Number(value) });
+    updateRecipeField(selectedRecipeId, {
+      [field]: numericRecipeFields.has(field) ? Number(value) : value,
+    });
   }
 
   return (

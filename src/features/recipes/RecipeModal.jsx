@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Plus, Trash2 } from "lucide-react";
 import ModalShell from "../../shared/ModalShell";
 
 function RecipeModal({ ingredients, onClose, onSave }) {
@@ -19,6 +20,23 @@ function RecipeModal({ ingredients, onClose, onSave }) {
           ? { ...item, [field]: field === "quantity" ? Number(value) : value }
           : item,
       ),
+    }));
+  const addItem = () =>
+    setForm((current) => {
+      const used = new Set(current.items.map((item) => item.ingredientId));
+      const next =
+        ingredients.find((ingredient) => !used.has(ingredient.id)) ||
+        ingredients[0];
+      if (!next) return current;
+      return {
+        ...current,
+        items: [...current.items, { ingredientId: next.id, quantity: 0 }],
+      };
+    });
+  const removeItem = (index) =>
+    setForm((current) => ({
+      ...current,
+      items: current.items.filter((_, itemIndex) => itemIndex !== index),
     }));
   return (
     <ModalShell title="Nueva receta" onClose={onClose}>
@@ -88,7 +106,7 @@ function RecipeModal({ ingredients, onClose, onSave }) {
         <div className="modal-subheading">Insumos de la receta</div>
         <div className="modal-ingredients">
           {form.items.map((item, index) => (
-            <div className="modal-ingredient-row" key={item.ingredientId}>
+            <div className="modal-ingredient-row" key={index}>
               <select
                 value={item.ingredientId}
                 onChange={(event) =>
@@ -118,8 +136,24 @@ function RecipeModal({ ingredients, onClose, onSave }) {
                   )?.unit
                 }
               </span>
+              <button
+                type="button"
+                className="icon-button danger"
+                title="Quitar insumo"
+                onClick={() => removeItem(index)}
+              >
+                <Trash2 size={14} />
+              </button>
             </div>
           ))}
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={addItem}
+            disabled={!ingredients.length}
+          >
+            <Plus size={16} /> Agregar insumo
+          </button>
         </div>
         <div className="modal-actions">
           <button type="button" className="secondary-button" onClick={onClose}>
