@@ -78,23 +78,11 @@ const demoRecipes = [
   },
 ];
 
-function legacyStorage(key, fallback) {
-  try {
-    const value = JSON.parse(localStorage.getItem(key));
-    return Array.isArray(value) && value.length ? value : fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-const initialIngredients = legacyStorage("miga-ingredients", demoIngredients);
-const initialRecipes = legacyStorage("miga-recipes", demoRecipes);
-
 const useRecipeStore = create()(
   persist(
     (set, get) => ({
-      ingredients: initialIngredients,
-      recipes: initialRecipes,
+      ingredients: demoIngredients,
+      recipes: demoRecipes,
       addIngredient: (ingredient) =>
         set((state) => ({
           ingredients: [...state.ingredients, { ...ingredient, id: uuidv4() }],

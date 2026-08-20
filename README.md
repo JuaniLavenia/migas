@@ -27,7 +27,6 @@ La aplicación queda disponible en `http://localhost:5173`.
 - Crear recetas con rendimiento, margen, gastos extra e ingredientes utilizados.
 - Calcular costo total, costo unitario y precio sugerido.
 - Persistir recetas e insumos en el navegador mediante Zustand Persist.
-- Migrar automáticamente los datos guardados por versiones anteriores de la app.
 - Usar la interfaz desde desktop o mobile.
 
 ## Stack
@@ -47,7 +46,13 @@ La aplicación queda disponible en `http://localhost:5173`.
 src/
 ├── stores/
 │   └── useRecipeStore.js   # Insumos y recetas con Zustand Persist
-├── App.jsx                 # Navegación y vistas principales
+├── lib/                    # Helpers puros (formato, cálculo de costos)
+├── shared/                 # Componentes reutilizables entre vistas
+├── features/
+│   ├── overview/
+│   ├── ingredients/
+│   └── recipes/
+├── App.jsx                 # Shell de navegación (sidebar, topbar, routing)
 ├── App.css                 # Estilos de la aplicación
 ├── index.css               # Estilos base y tipografías
 └── main.jsx                # Punto de entrada
