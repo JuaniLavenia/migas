@@ -264,6 +264,7 @@ function App() {
             />
           )}
         </div>
+        <footer className="app-footer">Desarrollado por Codbyte</footer>
       </main>
       {ingredientModal !== null && (
         <IngredientModal
