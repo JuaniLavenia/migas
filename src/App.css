@@ -247,6 +247,25 @@ h3 {
   background: #f1f4f1;
   color: var(--ink);
 }
+.primary-button.danger {
+  background: #be6b61;
+  box-shadow: 0 6px 15px rgba(190, 107, 97, 0.25);
+}
+.primary-button.danger:hover {
+  background: #a6554c;
+}
+.confirm-dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 11;
+  width: min(400px, calc(100% - 40px));
+}
+.confirm-dialog p {
+  color: var(--muted);
+  margin: 0;
+}
 .icon-button {
   border: 0;
   background: transparent;
@@ -693,6 +712,11 @@ h3 {
   display: flex;
   align-items: center;
   gap: 5px;
+}
+.editor-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 .editor-grid {
   display: grid;

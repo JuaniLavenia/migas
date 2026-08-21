@@ -19,6 +19,7 @@ import IngredientModal from "./features/ingredients/IngredientModal";
 import RecipesView from "./features/recipes/RecipesView";
 import RecipeModal from "./features/recipes/RecipeModal";
 import SettingsView from "./features/settings/SettingsView";
+import ConfirmDialog from "./shared/ConfirmDialog";
 
 const numericRecipeFields = new Set(["yield", "margin", "extras"]);
 
@@ -32,6 +33,7 @@ function App() {
   );
   const addRecipe = useRecipeStore((state) => state.addRecipe);
   const updateRecipeField = useRecipeStore((state) => state.updateRecipe);
+  const deleteRecipeFromStore = useRecipeStore((state) => state.deleteRecipe);
   const importData = useRecipeStore((state) => state.importData);
   const [activeView, setActiveView] = useState("overview");
   const [selectedRecipeId, setSelectedRecipeId] = useState("cookies");
@@ -40,6 +42,7 @@ function App() {
   const [ingredientModal, setIngredientModal] = useState(null);
   const [recipeModal, setRecipeModal] = useState(false);
   const [toast, setToast] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
   useEffect(() => {
     if (toast) {
@@ -78,9 +81,9 @@ function App() {
     setIngredientModal(null);
     setToast("Insumo guardado");
   }
-  function deleteIngredient(id) {
-    deleteIngredientFromStore(id);
-    setToast("Insumo eliminado");
+  function requestDeleteIngredient(id) {
+    const ingredient = ingredients.find((item) => item.id === id);
+    setConfirmDelete({ type: "ingredient", id, name: ingredient?.name });
   }
   function saveRecipe(form) {
     const recipe = {
@@ -99,6 +102,27 @@ function App() {
     updateRecipeField(selectedRecipeId, {
       [field]: numericRecipeFields.has(field) ? Number(value) : value,
     });
+  }
+  function requestDeleteRecipe(id) {
+    const recipe = recipes.find((entry) => entry.id === id);
+    setConfirmDelete({ type: "recipe", id, name: recipe?.name });
+  }
+  function confirmDeleteAction() {
+    if (!confirmDelete) return;
+    if (confirmDelete.type === "ingredient") {
+      deleteIngredientFromStore(confirmDelete.id);
+      setToast("Insumo eliminado");
+    } else {
+      deleteRecipeFromStore(confirmDelete.id);
+      if (confirmDelete.id === selectedRecipeId) {
+        const remaining = recipes.filter(
+          (recipe) => recipe.id !== confirmDelete.id,
+        );
+        setSelectedRecipeId(remaining[0]?.id);
+      }
+      setToast("Receta eliminada");
+    }
+    setConfirmDelete(null);
   }
 
   return (
@@ -215,7 +239,7 @@ function App() {
               setSearch={setSearch}
               onAdd={() => setIngredientModal({})}
               onEdit={setIngredientModal}
-              onDelete={deleteIngredient}
+              onDelete={requestDeleteIngredient}
             />
           )}
           {activeView === "recipes" && (
@@ -228,6 +252,7 @@ function App() {
               totals={selectedTotals}
               selectedRecipe={selectedRecipe}
               updateRecipe={updateRecipe}
+              onDelete={requestDeleteRecipe}
             />
           )}
           {activeView === "settings" && (
@@ -254,6 +279,17 @@ function App() {
           onSave={saveRecipe}
         />
       )}
+      <ConfirmDialog
+        open={confirmDelete !== null}
+        title={
+          confirmDelete?.type === "ingredient"
+            ? "Eliminar insumo"
+            : "Eliminar receta"
+        }
+        description={`¿Eliminar "${confirmDelete?.name}"? Esta acción no se puede deshacer.`}
+        onConfirm={confirmDeleteAction}
+        onCancel={() => setConfirmDelete(null)}
+      />
       {toast && (
         <div className="toast">
           <CircleDollarSign size={17} /> {toast}

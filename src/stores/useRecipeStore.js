@@ -120,6 +120,10 @@ const useRecipeStore = create()(
               : recipe,
           ),
         })),
+      deleteRecipe: (id) =>
+        set((state) => ({
+          recipes: state.recipes.filter((recipe) => recipe.id !== id),
+        })),
       getRecipe: (id) => get().recipes.find((recipe) => recipe.id === id),
       importData: ({ ingredients = [], recipes = [] }) =>
         set((state) => ({

@@ -12,6 +12,7 @@ function RecipesView({
   totals,
   selectedRecipe,
   updateRecipe,
+  onDelete,
 }) {
   function updateItem(index, field, value) {
     updateRecipe(
@@ -88,9 +89,19 @@ function RecipesView({
                   }
                 />
               </div>
-              <span className="updated-tag">
-                <span className="status-dot" /> {selectedRecipe.updated}
-              </span>
+              <div className="editor-top-actions">
+                <span className="updated-tag">
+                  <span className="status-dot" /> {selectedRecipe.updated}
+                </span>
+                <button
+                  type="button"
+                  className="icon-button danger"
+                  title="Eliminar receta"
+                  onClick={() => onDelete(selectedRecipe.id)}
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
             </div>
             <div className="editor-grid">
               <div className="field-group">
