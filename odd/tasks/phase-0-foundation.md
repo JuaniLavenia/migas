@@ -21,7 +21,7 @@ Give the project a test runner and a clean dependency tree before fixing bugs (P
 ## Tasks
 - [x] T0.1 Add Vitest + `test` script — route: delegated (writer, with T0.2/T0.3)
 - [x] T0.2 Characterization tests for `recipeMath` — route: delegated
-- [ ] T0.3 Remove unused dependencies — route: delegated
+- [x] T0.3 Remove unused dependencies — route: delegated
 
 Route evidence: install + config + tests + lockfile span several files and need command execution; one bounded writer.
 
@@ -45,7 +45,10 @@ Route evidence: install + config + tests + lockfile span several files and need 
 - T0.1: `vitest@^0.34.6` added as devDependency (its `vite` dependency range `^3 || ^4 || ^5` matches Vite 4; verified with `npm view`). `"test": "vitest run"` script. No config file: Vitest's default `node` environment is enough for pure functions.
 - T0.2: `src/lib/recipeMath.test.js`, 16 characterization tests. Test-first exception: they pin existing behavior, so there is no RED phase; all passed on first run (no behavior surprises).
   - Evidence: `corepack pnpm test` -> 1 file, 16 tests passed.
-  - Commit: `chore: agregar vitest y tests de caracterización de recipeMath` (hash recorded in the T0.3 commit, since amending changes it).
+  - Commit: `8602cf4` `chore: agregar vitest y tests de caracterización de recipeMath`.
+- T0.3: removed `@tanstack/react-query`, `msw`, `class-variance-authority`, `clsx`, `tailwind-merge`, `tailwindcss`, `autoprefixer`, `postcss`. No PostCSS/Tailwind config files existed and no CSS used `@tailwind`/`@apply`. `react-router-dom` kept.
+  - Evidence: `rg` for the removed names in `src/`, `index.html`, `vite.config.js` -> no matches (before and after removal); `corepack pnpm build` -> built OK (only pre-existing Radix `"use client"` directive warnings); `corepack pnpm test` -> 16 passed.
+  - Commit: `chore: eliminar dependencias sin uso` (the commit that contains this line; see `git log`).
 
 ## Next step
-Delegate T0.1–T0.3 to one writer.
+All Phase 0 tasks done. User decides push/PR; then Phase 1.
