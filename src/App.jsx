@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import "./App.css";
 import useRecipeStore from "./stores/useRecipeStore";
-import { recipeTotals } from "./lib/recipeMath";
+import { countRecipesUsingIngredient, recipeTotals } from "./lib/recipeMath";
 import { resolveSelectedRecipe } from "./lib/recipeSelection";
 import Overview from "./features/overview/Overview";
 import IngredientsView from "./features/ingredients/IngredientsView";
@@ -23,6 +23,13 @@ import SettingsView from "./features/settings/SettingsView";
 import ConfirmDialog from "./shared/ConfirmDialog";
 
 const numericRecipeFields = new Set(["yield", "margin", "extras"]);
+
+function deleteDescription(target) {
+  const question = `¿Eliminar "${target?.name}"? Esta acción no se puede deshacer.`;
+  if (!target?.usedIn) return question;
+  const recipesLabel = target.usedIn === 1 ? "1 receta" : `${target.usedIn} recetas`;
+  return `Este insumo se usa en ${recipesLabel}: esas líneas van a quedar sin costo hasta que elijas otro insumo. ${question}`;
+}
 
 function App() {
   const ingredients = useRecipeStore((state) => state.ingredients);
@@ -58,7 +65,7 @@ function App() {
   const selectedRecipe = resolveSelectedRecipe(recipes, selectedRecipeId);
   const selectedTotals = selectedRecipe
     ? recipeTotals(selectedRecipe, ingredients)
-    : { cost: 0, unitCost: 0, price: 0 };
+    : { cost: 0, unitCost: 0, price: 0, missingCount: 0 };
   const filteredIngredients = ingredients.filter((item) =>
     `${item.name} ${item.category}`
       .toLowerCase()
@@ -82,7 +89,12 @@ function App() {
   }
   function requestDeleteIngredient(id) {
     const ingredient = ingredients.find((item) => item.id === id);
-    setConfirmDelete({ type: "ingredient", id, name: ingredient?.name });
+    setConfirmDelete({
+      type: "ingredient",
+      id,
+      name: ingredient?.name,
+      usedIn: countRecipesUsingIngredient(recipes, id),
+    });
   }
   function saveRecipe(form) {
     const recipe = {
@@ -287,7 +299,7 @@ function App() {
             ? "Eliminar insumo"
             : "Eliminar receta"
         }
-        description={`¿Eliminar "${confirmDelete?.name}"? Esta acción no se puede deshacer.`}
+        description={deleteDescription(confirmDelete)}
         onConfirm={confirmDeleteAction}
         onCancel={() => setConfirmDelete(null)}
       />

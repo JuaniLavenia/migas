@@ -4,7 +4,12 @@
 // (0, missing, negative) no longer falls back to 1; the ingredient has no unit
 // price and its lines cost 0 (and are reported as invalid).
 import { describe, expect, it } from "vitest";
-import { ingredientCost, recipeTotals, unitPrice } from "./recipeMath";
+import {
+  countRecipesUsingIngredient,
+  ingredientCost,
+  recipeTotals,
+  unitPrice,
+} from "./recipeMath";
 
 // Shapes mirror the demo data in src/stores/useRecipeStore.js.
 const ingredients = [
@@ -95,6 +100,36 @@ describe("recipeTotals", () => {
     expect(recipeTotals(recipe, ingredients).cost).toBeCloseTo(1250);
   });
 
+  it("counts lines whose ingredient does not exist as missing", () => {
+    const recipe = {
+      yield: 1,
+      items: [
+        { ingredientId: "harina", quantity: 1000 },
+        { ingredientId: "missing", quantity: 999 },
+        { ingredientId: "gone", quantity: 1 },
+      ],
+    };
+    expect(recipeTotals(recipe, ingredients).missingCount).toBe(2);
+  });
+
+  it("counts lines whose ingredient has an invalid pack size as missing", () => {
+    const broken = { id: "broken", packSize: 0, packCost: 100 };
+    const recipe = {
+      yield: 1,
+      items: [
+        { ingredientId: "broken", quantity: 5 },
+        { ingredientId: "harina", quantity: 1000 },
+      ],
+    };
+    const totals = recipeTotals(recipe, [...ingredients, broken]);
+    expect(totals.missingCount).toBe(1);
+    expect(totals.cost).toBeCloseTo(1250);
+  });
+
+  it("reports no missing lines for a complete recipe", () => {
+    expect(recipeTotals(cookies, ingredients).missingCount).toBe(0);
+  });
+
   it.each([
     ["missing", undefined],
     ["not an array", "harina"],
@@ -146,5 +181,33 @@ describe("recipeTotals", () => {
     expect(totals.cost).toBeCloseTo(1350);
     expect(totals.unitCost).toBeCloseTo(675);
     expect(totals.price).toBeCloseTo(742.5);
+  });
+});
+
+describe("countRecipesUsingIngredient", () => {
+  const recipes = [
+    cookies,
+    { id: "budin", items: [{ ingredientId: "harina", quantity: 300 }] },
+    { id: "flan", items: [{ ingredientId: "huevos", quantity: 6 }] },
+    { id: "roto" },
+  ];
+
+  it("counts each recipe that uses the ingredient once", () => {
+    const repeated = {
+      id: "doble",
+      items: [
+        { ingredientId: "harina", quantity: 1 },
+        { ingredientId: "harina", quantity: 2 },
+      ],
+    };
+    expect(countRecipesUsingIngredient([...recipes, repeated], "harina")).toBe(3);
+  });
+
+  it("returns 0 when no recipe uses the ingredient", () => {
+    expect(countRecipesUsingIngredient(recipes, "sal")).toBe(0);
+  });
+
+  it("tolerates recipes without items", () => {
+    expect(countRecipesUsingIngredient(recipes, "huevos")).toBe(2);
   });
 });

@@ -53,7 +53,10 @@ Exploration (2026-10-06) found:
   - Intentional behavior change: the characterization tests that pinned "packSize 0/missing falls back to 1" were replaced by "costs 0 when packSize is 0/missing/negative" (header comment in `recipeMath.test.js` records it).
   - RED: 10 failures — `costs 0 when packSize is 0/missing/negative` (`expected 300 to be +0`, `expected -30 to be +0`) and `unitPrice is not a function` for the new unitPrice cases. GREEN: 75/75.
   - Verification: `corepack pnpm test`: 75 passed; `corepack pnpm build`: built OK.
-- [ ] T1.6 Orphaned ingredient lines — route: delegated
+- [x] T1.6 Orphaned ingredient lines — route: delegated (T1.5 commit: 7c128b1)
+  - `recipeTotals` also returns `missingCount` (lines whose ingredient is missing or has no unit price; they cost 0). `countRecipesUsingIngredient(recipes, id)` counts each recipe once. RecipesView shows a `role="alert"` warning when `missingCount > 0`; recipe line selects (editor and modal) render a disabled "Insumo eliminado" option when the stored id matches no ingredient. Deleting an ingredient used by N recipes says "Este insumo se usa en N recetas…" in the ConfirmDialog.
+  - RED: 6 failures — 3 `missingCount` cases (`expected undefined to be 2/1/+0`) and 3 `countRecipesUsingIngredient is not a function`. GREEN: 81/81.
+  - Verification: `corepack pnpm test`: 81 passed; `corepack pnpm build`: built OK.
 
 Route evidence: 6 tasks across ~8 non-trivial files (App, store, recipeMath, views, modals) → writer trigger; one bounded writer, sequential.
 
@@ -76,7 +79,8 @@ Route evidence: 6 tasks across ~8 non-trivial files (App, store, recipeMath, vie
 - RDD: off (global) — ordinary checks only.
 
 ## Progress
-- Branch created. Writer pending.
+- T1.1–T1.6 done, one work-unit commit each (each hash is recorded on the following task's line; T1.6 is the branch head).
+- UI wiring has no runnable test (no jsdom/RTL in this phase); verified by build and reading.
 
 ## Next step
-Delegate T1.1–T1.6 to one writer.
+Manual smoke test in the browser (clear numeric inputs, delete the last recipe, import a malformed backup, delete an ingredient in use), then open the PR (human decision).

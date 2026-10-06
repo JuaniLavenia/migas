@@ -663,6 +663,22 @@ h3 {
   color: var(--muted);
   font-size: 13px;
 }
+.recipe-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin-top: 24px;
+  padding: 12px 14px;
+  border-radius: 7px;
+  background: #fdf0ed;
+  color: #8f4339;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.recipe-warning svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
 .empty-state p {
   margin: 0 0 14px;
 }

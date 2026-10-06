@@ -1,4 +1,4 @@
-import { ChevronRight, Plus, Trash2 } from "lucide-react";
+import { AlertTriangle, ChevronRight, Plus, Trash2 } from "lucide-react";
 import PageHeader from "../../shared/PageHeader";
 import NumericInput from "../../shared/NumericInput";
 import { currency, unitLabels } from "../../lib/format";
@@ -147,6 +147,18 @@ function RecipesView({
                 </div>
               </div>
             </div>
+            {totals.missingCount > 0 && (
+              <div className="recipe-warning" role="alert">
+                <AlertTriangle size={16} />
+                <span>
+                  {totals.missingCount === 1
+                    ? "1 insumo de esta receta no tiene costo"
+                    : `${totals.missingCount} insumos de esta receta no tienen costo`}
+                  : fue eliminado o tiene un contenido de pack inválido. El
+                  costo total está incompleto.
+                </span>
+              </div>
+            )}
             <div className="editor-cost-card">
               <div>
                 <span>Costo total</span>
@@ -186,6 +198,11 @@ function RecipesView({
                         updateItem(index, "ingredientId", event.target.value)
                       }
                     >
+                      {!ingredient && (
+                        <option value={item.ingredientId} disabled>
+                          Insumo eliminado
+                        </option>
+                      )}
                       {ingredients.map((option) => (
                         <option key={option.id} value={option.id}>
                           {option.name}

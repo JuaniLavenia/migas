@@ -103,6 +103,13 @@ function RecipeModal({ ingredients, onClose, onSave }) {
                   updateItem(index, "ingredientId", event.target.value)
                 }
               >
+                {!ingredients.some(
+                  (ingredient) => ingredient.id === item.ingredientId,
+                ) && (
+                  <option value={item.ingredientId} disabled>
+                    Insumo eliminado
+                  </option>
+                )}
                 {ingredients.map((ingredient) => (
                   <option key={ingredient.id} value={ingredient.id}>
                     {ingredient.name}
