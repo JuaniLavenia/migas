@@ -59,10 +59,6 @@ function App() {
   const selectedTotals = selectedRecipe
     ? recipeTotals(selectedRecipe, ingredients)
     : { cost: 0, unitCost: 0, price: 0 };
-  const totalValue = recipes.reduce(
-    (total, recipe) => total + recipeTotals(recipe, ingredients).cost,
-    0,
-  );
   const filteredIngredients = ingredients.filter((item) =>
     `${item.name} ${item.category}`
       .toLowerCase()
@@ -226,8 +222,8 @@ function App() {
             <Overview
               recipes={recipes}
               ingredients={ingredients}
+              selectedRecipe={selectedRecipe}
               totals={selectedTotals}
-              totalValue={totalValue}
               onNavigate={navigate}
               onSelect={(id) => {
                 setSelectedRecipeId(id);
