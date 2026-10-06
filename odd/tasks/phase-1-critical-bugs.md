@@ -42,7 +42,12 @@ Exploration (2026-10-06) found:
   - Overview receives the effective `selectedRecipe`; name, yield, extras, margin and totals all come from it. Eyebrow changed from "Última receta editada" (it was never the last edited) to "Receta seleccionada". "Ver detalle" only renders with a recipe; with none, the spotlight shows the empty state with "Crear receta". Removed the unused `totalValue` prop and its computation in App.
   - RED/GREEN exception: UI wiring only, no pure logic and no jsdom in scope; verified by build and reading.
   - Verification: `corepack pnpm test`: 49 passed; `corepack pnpm build`: built OK.
-- [ ] T1.4 Clearable numeric inputs — route: delegated
+- [x] T1.4 Clearable numeric inputs — route: delegated (T1.3 commit: 3545835)
+  - `src/lib/numericDraft.js` (`parseDraft`, `formatNumber`, `draftAfterValueChange`, `draftOnBlur`) + `src/shared/NumericInput.jsx` holding a local string draft. Used for editor yield (min 1), margin (min 0), extras (min 0) and line quantity in RecipesView and RecipeModal. `step="any"` kept.
+  - Empty-draft decision: an empty, non-numeric or below-min draft commits nothing; on blur it is restored to the last committed value (no fallback value is invented). A valid draft is normalized on blur ("007" → "7"). The draft resyncs only when the committed value changes to something the draft does not already represent. The recipe editor is keyed by recipe id so switching recipes always remounts the inputs.
+  - IngredientModal unchanged (stores strings, coerces on save; already clearable).
+  - RED: `numericDraft.test.js` failed to load (`Failed to load url ./numericDraft`). GREEN: 67/67. Component wiring has no runnable test (no jsdom); verified by build and reading.
+  - Verification: `corepack pnpm test`: 67 passed; `corepack pnpm build`: built OK.
 - [ ] T1.5 Pack-size handling — route: delegated
 - [ ] T1.6 Orphaned ingredient lines — route: delegated
 

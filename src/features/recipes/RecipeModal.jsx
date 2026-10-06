@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import ModalShell from "../../shared/ModalShell";
+import NumericInput from "../../shared/NumericInput";
 
 function RecipeModal({ ingredients, onClose, onSave }) {
   const [form, setForm] = useState({
@@ -63,26 +64,19 @@ function RecipeModal({ ingredients, onClose, onSave }) {
           </div>
           <div className="field-group">
             <label>Rinde</label>
-            <input
-              type="number"
-              min="1"
+            <NumericInput
+              min={1}
               value={form.yield}
-              onChange={(event) =>
-                setForm({ ...form, yield: event.target.value })
-              }
+              onChange={(value) => setForm({ ...form, yield: value })}
             />
           </div>
           <div className="field-group">
             <label>Margen</label>
             <div className="input-with-suffix">
-              <input
-                type="number"
-                min="0"
-                step="any"
+              <NumericInput
+                min={0}
                 value={form.margin}
-                onChange={(event) =>
-                  setForm({ ...form, margin: event.target.value })
-                }
+                onChange={(value) => setForm({ ...form, margin: value })}
               />
               <span>%</span>
             </div>
@@ -90,14 +84,10 @@ function RecipeModal({ ingredients, onClose, onSave }) {
           <div className="field-group full">
             <label>Gastos extra</label>
             <div className="input-with-suffix">
-              <input
-                type="number"
-                min="0"
-                step="any"
+              <NumericInput
+                min={0}
                 value={form.extras}
-                onChange={(event) =>
-                  setForm({ ...form, extras: event.target.value })
-                }
+                onChange={(value) => setForm({ ...form, extras: value })}
               />
               <span>ARS</span>
             </div>
@@ -119,14 +109,10 @@ function RecipeModal({ ingredients, onClose, onSave }) {
                   </option>
                 ))}
               </select>
-              <input
-                type="number"
-                min="0"
-                step="any"
+              <NumericInput
+                min={0}
                 value={item.quantity}
-                onChange={(event) =>
-                  updateItem(index, "quantity", event.target.value)
-                }
+                onChange={(value) => updateItem(index, "quantity", value)}
                 placeholder="Cantidad"
               />
               <span>
