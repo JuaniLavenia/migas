@@ -13,6 +13,7 @@ import {
 import "./App.css";
 import useRecipeStore from "./stores/useRecipeStore";
 import { recipeTotals } from "./lib/recipeMath";
+import { resolveSelectedRecipe } from "./lib/recipeSelection";
 import Overview from "./features/overview/Overview";
 import IngredientsView from "./features/ingredients/IngredientsView";
 import IngredientModal from "./features/ingredients/IngredientModal";
@@ -36,7 +37,9 @@ function App() {
   const deleteRecipeFromStore = useRecipeStore((state) => state.deleteRecipe);
   const importData = useRecipeStore((state) => state.importData);
   const [activeView, setActiveView] = useState("overview");
-  const [selectedRecipeId, setSelectedRecipeId] = useState("cookies");
+  const [selectedRecipeId, setSelectedRecipeId] = useState(
+    () => useRecipeStore.getState().recipes[0]?.id ?? null,
+  );
   const [search, setSearch] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [ingredientModal, setIngredientModal] = useState(null);
@@ -51,8 +54,8 @@ function App() {
     }
   }, [toast]);
 
-  const selectedRecipe =
-    recipes.find((recipe) => recipe.id === selectedRecipeId) || recipes[0];
+  // Effective selection: always an existing recipe, or null with no recipes.
+  const selectedRecipe = resolveSelectedRecipe(recipes, selectedRecipeId);
   const selectedTotals = selectedRecipe
     ? recipeTotals(selectedRecipe, ingredients)
     : { cost: 0, unitCost: 0, price: 0 };
@@ -99,7 +102,8 @@ function App() {
     setToast("Receta creada");
   }
   function updateRecipe(field, value) {
-    updateRecipeField(selectedRecipeId, {
+    if (!selectedRecipe) return;
+    updateRecipeField(selectedRecipe.id, {
       [field]: numericRecipeFields.has(field) ? Number(value) : value,
     });
   }
@@ -114,11 +118,11 @@ function App() {
       setToast("Insumo eliminado");
     } else {
       deleteRecipeFromStore(confirmDelete.id);
-      if (confirmDelete.id === selectedRecipeId) {
+      if (confirmDelete.id === selectedRecipe?.id) {
         const remaining = recipes.filter(
           (recipe) => recipe.id !== confirmDelete.id,
         );
-        setSelectedRecipeId(remaining[0]?.id);
+        setSelectedRecipeId(remaining[0]?.id ?? null);
       }
       setToast("Receta eliminada");
     }
@@ -246,7 +250,7 @@ function App() {
             <RecipesView
               recipes={recipes}
               ingredients={ingredients}
-              selectedId={selectedRecipeId}
+              selectedId={selectedRecipe?.id}
               onSelect={setSelectedRecipeId}
               onNew={() => setRecipeModal(true)}
               totals={selectedTotals}
