@@ -1,6 +1,13 @@
 import { Edit3, Package, Plus, Search, Trash2 } from "lucide-react";
 import PageHeader from "../../shared/PageHeader";
 import { currency } from "../../lib/format";
+import { unitPrice } from "../../lib/recipeMath";
+
+function formatUnitPrice(item) {
+  const price = unitPrice(item);
+  // Invalid pack size: show the price as unavailable instead of Infinity/NaN.
+  return price === null ? "—" : `${currency.format(price)} / ${item.unit}`;
+}
 
 function IngredientsView({
   ingredients,
@@ -57,7 +64,7 @@ function IngredientsView({
             </span>
             <strong>{currency.format(item.packCost)}</strong>
             <span>
-              {currency.format(item.packCost / item.packSize)} / {item.unit}
+              {formatUnitPrice(item)}
             </span>
             <div className="row-actions">
               <button

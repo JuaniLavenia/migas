@@ -48,7 +48,11 @@ Exploration (2026-10-06) found:
   - IngredientModal unchanged (stores strings, coerces on save; already clearable).
   - RED: `numericDraft.test.js` failed to load (`Failed to load url ./numericDraft`). GREEN: 67/67. Component wiring has no runnable test (no jsdom); verified by build and reading.
   - Verification: `corepack pnpm test`: 67 passed; `corepack pnpm build`: built OK.
-- [ ] T1.5 Pack-size handling — route: delegated
+- [x] T1.5 Pack-size handling — route: delegated (T1.4 commit: 7da715c)
+  - `unitPrice(ingredient)` in `recipeMath.js` returns null when packSize is not a positive finite number. `ingredientCost` uses it (null → 0). IngredientsView shows "—" instead of Infinity/NaN. IngredientModal uses `??` so a stored 0 cost (or pack size) stays visible; packSize keeps `min="0.01"` + `step="any"`, which already rejects 0 in HTML5 validation.
+  - Intentional behavior change: the characterization tests that pinned "packSize 0/missing falls back to 1" were replaced by "costs 0 when packSize is 0/missing/negative" (header comment in `recipeMath.test.js` records it).
+  - RED: 10 failures — `costs 0 when packSize is 0/missing/negative` (`expected 300 to be +0`, `expected -30 to be +0`) and `unitPrice is not a function` for the new unitPrice cases. GREEN: 75/75.
+  - Verification: `corepack pnpm test`: 75 passed; `corepack pnpm build`: built OK.
 - [ ] T1.6 Orphaned ingredient lines — route: delegated
 
 Route evidence: 6 tasks across ~8 non-trivial files (App, store, recipeMath, views, modals) → writer trigger; one bounded writer, sequential.

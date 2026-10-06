@@ -1,7 +1,10 @@
-// Characterization tests: they pin the CURRENT behavior of recipeMath,
-// including its fallbacks, so later refactors cannot change costs silently.
+// Characterization tests: they pin the behavior of recipeMath, including its
+// fallbacks, so later refactors cannot change costs silently.
+// Phase 1 (T1.5) intentionally changed one fallback: an invalid pack size
+// (0, missing, negative) no longer falls back to 1; the ingredient has no unit
+// price and its lines cost 0 (and are reported as invalid).
 import { describe, expect, it } from "vitest";
-import { ingredientCost, recipeTotals } from "./recipeMath";
+import { ingredientCost, recipeTotals, unitPrice } from "./recipeMath";
 
 // Shapes mirror the demo data in src/stores/useRecipeStore.js.
 const ingredients = [
@@ -32,12 +35,12 @@ describe("ingredientCost", () => {
     expect(ingredientCost(ingredients[3], 2)).toBeCloseTo(400);
   });
 
-  it("treats packSize 0 as 1", () => {
-    expect(ingredientCost({ packSize: 0, packCost: 100 }, 3)).toBeCloseTo(300);
-  });
-
-  it("treats a missing packSize as 1", () => {
-    expect(ingredientCost({ packCost: 100 }, 3)).toBeCloseTo(300);
+  it.each([
+    ["0", 0],
+    ["missing", undefined],
+    ["negative", -10],
+  ])("costs 0 when packSize is %s", (_label, packSize) => {
+    expect(ingredientCost({ packSize, packCost: 100 }, 3)).toBe(0);
   });
 
   it("treats a missing packCost as 0", () => {
@@ -46,6 +49,29 @@ describe("ingredientCost", () => {
 
   it("coerces numeric strings", () => {
     expect(ingredientCost({ packSize: "200", packCost: "2100" }, "120")).toBeCloseTo(1260);
+  });
+});
+
+describe("unitPrice", () => {
+  it("divides the pack cost by the pack size", () => {
+    expect(unitPrice({ packSize: 200, packCost: 2100 })).toBeCloseTo(10.5);
+  });
+
+  it("coerces numeric strings", () => {
+    expect(unitPrice({ packSize: "500", packCost: "4600" })).toBeCloseTo(9.2);
+  });
+
+  it("treats a missing packCost as 0", () => {
+    expect(unitPrice({ packSize: 1000 })).toBe(0);
+  });
+
+  it.each([
+    ["0", 0],
+    ["missing", undefined],
+    ["negative", -1],
+    ["non-numeric", "abc"],
+  ])("returns null when packSize is %s", (_label, packSize) => {
+    expect(unitPrice({ packSize, packCost: 100 })).toBeNull();
   });
 });
 

@@ -6,8 +6,9 @@ function IngredientModal({ initial, onClose, onSave }) {
     name: initial.name || "",
     category: initial.category || "Secos",
     unit: initial.unit || "g",
-    packSize: initial.packSize || "",
-    packCost: initial.packCost || "",
+    // ?? keeps a stored 0 visible (|| blanked a free ingredient's cost).
+    packSize: initial.packSize ?? "",
+    packCost: initial.packCost ?? "",
   });
   const change = (field, value) =>
     setForm((current) => ({ ...current, [field]: value }));
