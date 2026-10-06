@@ -17,8 +17,8 @@ import { recipeTotals } from "../../lib/recipeMath";
 function Overview({
   recipes,
   ingredients,
+  selectedRecipe,
   totals,
-  totalValue,
   onNavigate,
   onSelect,
   onNewRecipe,
@@ -67,48 +67,62 @@ function Overview({
         <section className="panel spotlight-panel">
           <div className="panel-heading">
             <div>
-              <span className="eyebrow">Última receta editada</span>
-              <h2>{recipes[0]?.name || "Sin recetas"}</h2>
+              <span className="eyebrow">Receta seleccionada</span>
+              <h2>{selectedRecipe?.name || "Sin recetas"}</h2>
             </div>
-            <button
-              className="text-button"
-              onClick={() => onSelect(recipes[0]?.id)}
-            >
-              Ver detalle <ArrowUpRight size={15} />
-            </button>
+            {selectedRecipe && (
+              <button
+                className="text-button"
+                onClick={() => onSelect(selectedRecipe.id)}
+              >
+                Ver detalle <ArrowUpRight size={15} />
+              </button>
+            )}
           </div>
-          <div className="recipe-cost-hero">
-            <div>
-              <span>Costo total</span>
-              <strong>{currency.format(totals.cost)}</strong>
-              <small>
-                Rinde {recipes[0]?.yield || 0} unidades ·{" "}
-                {currency.format(totals.unitCost)} c/u
-              </small>
+          {!selectedRecipe && (
+            <div className="empty-state">
+              <p>Todavía no hay recetas.</p>
+              <button className="primary-button" onClick={onNewRecipe}>
+                <Plus size={18} /> Crear receta
+              </button>
             </div>
-            <div className="price-pill">
-              <span>Venta sugerida</span>
-              <strong>{currency.format(totals.price)}</strong>
-            </div>
-          </div>
-          <div className="cost-progress">
-            <div>
-              <span>Insumos</span>
-              <strong>
-                {currency.format(
-                  Math.max(totals.cost - Number(recipes[0]?.extras || 0), 0),
-                )}
-              </strong>
-            </div>
-            <div>
-              <span>Extras</span>
-              <strong>{currency.format(recipes[0]?.extras || 0)}</strong>
-            </div>
-            <div>
-              <span>Margen</span>
-              <strong>{recipes[0]?.margin || 0}%</strong>
-            </div>
-          </div>
+          )}
+          {selectedRecipe && (
+            <>
+              <div className="recipe-cost-hero">
+                <div>
+                  <span>Costo total</span>
+                  <strong>{currency.format(totals.cost)}</strong>
+                  <small>
+                    Rinde {selectedRecipe.yield} unidades ·{" "}
+                    {currency.format(totals.unitCost)} c/u
+                  </small>
+                </div>
+                <div className="price-pill">
+                  <span>Venta sugerida</span>
+                  <strong>{currency.format(totals.price)}</strong>
+                </div>
+              </div>
+              <div className="cost-progress">
+                <div>
+                  <span>Insumos</span>
+                  <strong>
+                    {currency.format(
+                      Math.max(totals.cost - Number(selectedRecipe.extras || 0), 0),
+                    )}
+                  </strong>
+                </div>
+                <div>
+                  <span>Extras</span>
+                  <strong>{currency.format(selectedRecipe.extras || 0)}</strong>
+                </div>
+                <div>
+                  <span>Margen</span>
+                  <strong>{selectedRecipe.margin || 0}%</strong>
+                </div>
+              </div>
+            </>
+          )}
         </section>
         <section className="panel quick-panel">
           <div className="panel-heading">

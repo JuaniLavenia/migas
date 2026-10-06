@@ -38,7 +38,10 @@ Exploration (2026-10-06) found:
   - Root `ErrorBoundary` (`src/shared/ErrorBoundary.jsx`) wraps App: "Reintentar" reloads, "Descargar datos guardados" downloads the raw `miga-recipe-storage` value, "Restablecer datos" removes it only after an explicit click plus `window.confirm`.
   - RED: `backup.test.js` failed to load (`Failed to load url ./backup`); the 2 new recipeTotals cases failed with `TypeError: Cannot read properties of undefined (reading 'reduce')` / `recipe.items.reduce is not a function`. GREEN: 49/49.
   - Verification: `corepack pnpm test`: 49 passed; `corepack pnpm build`: built OK.
-- [ ] T1.3 Overview spotlight consistency — route: delegated
+- [x] T1.3 Overview spotlight consistency — route: delegated (T1.2 commit: eaa19dc)
+  - Overview receives the effective `selectedRecipe`; name, yield, extras, margin and totals all come from it. Eyebrow changed from "Última receta editada" (it was never the last edited) to "Receta seleccionada". "Ver detalle" only renders with a recipe; with none, the spotlight shows the empty state with "Crear receta". Removed the unused `totalValue` prop and its computation in App.
+  - RED/GREEN exception: UI wiring only, no pure logic and no jsdom in scope; verified by build and reading.
+  - Verification: `corepack pnpm test`: 49 passed; `corepack pnpm build`: built OK.
 - [ ] T1.4 Clearable numeric inputs — route: delegated
 - [ ] T1.5 Pack-size handling — route: delegated
 - [ ] T1.6 Orphaned ingredient lines — route: delegated
