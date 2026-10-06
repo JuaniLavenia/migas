@@ -1,0 +1,65 @@
+# Phase 1 — Critical bugs
+
+## Objective
+Fix the bugs that lose data, crash the app, or show wrong numbers, before restructuring (Phase 2).
+
+## Problem / Why
+Exploration (2026-10-06) found:
+- Recipe edits are written to `selectedRecipeId` (hardcoded `"cookies"`, `App.jsx:39`) while the editor shows the `recipes[0]` fallback (`App.jsx:54-55,102`), so edits are silently lost when that id no longer exists. Deleting the last recipe sets the selection to `undefined` (`App.jsx:121`).
+- Backup import validates almost nothing (`SettingsView.jsx:37-42`, `useRecipeStore.js:128-138`). A recipe without `items` or `name` crashes rendering, and since it is persisted, the app crashes on every reload. There is no ErrorBoundary.
+- The Overview spotlight shows `recipes[0]`'s name/yield/extras/margin next to the selected recipe's totals (`Overview.jsx:71-109`, `App.jsx:56`).
+- Numeric inputs can't be cleared: `Number("") === 0` in `onChange` writes 0 back into the controlled input (`App.jsx:103`, `RecipesView.jsx:22`, `RecipeModal.jsx:20`). The live editor also accepts negative margin/extras and yield < 1.
+- `packSize` 0 shows Infinity/NaN in the ingredient table (`IngredientsView.jsx:60`) while `ingredientCost` silently treats it as 1. Editing an ingredient with `packCost` 0 blanks the required field (`IngredientModal.jsx:9-10`).
+- Deleting an ingredient used by recipes silently costs it $0, and the recipe line `<select>` shows the first option while the state keeps the deleted id (`RecipesView.jsx:185-196`, `RecipeModal.jsx:110-121`).
+
+## Scope
+- T1.1 Safe recipe selection.
+- T1.2 Import validation + root ErrorBoundary + defensive totals.
+- T1.3 Consistent Overview spotlight.
+- T1.4 Clearable numeric inputs with min enforcement.
+- T1.5 Consistent pack-size handling (invalid pack size shown as unavailable, not Infinity; free ingredients editable).
+- T1.6 Orphaned ingredient lines: warning in the recipe, placeholder option in selects, warning when deleting an ingredient in use.
+
+## Constraints
+- No restructuring of `App.jsx` beyond what each fix needs (Phase 2 splits it).
+- No persist `version`/`migrate` yet (Phase 2).
+- UI copy stays in Spanish like the existing app; code, identifiers and comments in English.
+- Commits: Conventional Commits, neutral Spanish, no AI attribution.
+- Test-first for pure logic (Vitest, node env). UI wiring verified by build + manual reasoning; no jsdom/RTL in this phase.
+
+## Tasks
+- [x] T1.1 Safe recipe selection — route: delegated
+  - `resolveSelectedRecipe(recipes, id)` in `src/lib/recipeSelection.js`; App initializes the selection from the first stored recipe and routes updates/deletes through the effective recipe's id. RecipesView shows an empty state ("Todavía no hay recetas.") with a create button. Overview empty state lands with T1.3 (it did not crash; it only showed mismatched data).
+  - RED: `recipeSelection.test.js` failed to load (`Failed to load url ./recipeSelection`). GREEN: 21/21.
+  - Verification: `corepack pnpm test`: 21 passed; `corepack pnpm build`: built OK.
+- [ ] T1.2 Import validation + ErrorBoundary + defensive totals — route: delegated
+- [ ] T1.3 Overview spotlight consistency — route: delegated
+- [ ] T1.4 Clearable numeric inputs — route: delegated
+- [ ] T1.5 Pack-size handling — route: delegated
+- [ ] T1.6 Orphaned ingredient lines — route: delegated
+
+Route evidence: 6 tasks across ~8 non-trivial files (App, store, recipeMath, views, modals) → writer trigger; one bounded writer, sequential.
+
+## Acceptance criteria
+- Editing always targets the recipe shown; with no recipes, the editor shows an empty state instead of crashing.
+- Importing malformed JSON or malformed records never persists invalid data; the user sees how many records were imported and skipped.
+- A render error shows a recovery screen instead of a white page.
+- The spotlight's name, inputs and totals all belong to the same recipe.
+- Every numeric input can be cleared and retyped; negative margin/extras and yield < 1 are not committed.
+- Pack size 0 never shows Infinity/NaN; an ingredient with cost 0 can be edited.
+- A recipe with lines pointing to deleted ingredients shows a visible warning; deleting an ingredient in use warns how many recipes use it.
+
+## Checks
+- `corepack pnpm test` (existing 16 + new tests)
+- `corepack pnpm build`
+
+## Delivery
+- Branch: `fix/phase-1-critical-bugs` (from `chore/phase-0-foundation` @ 5e13275).
+- Strategy: `single-pr` — user explicitly accepted the risk of exceeding ~400 lines (forecast 450–600).
+- RDD: off (global) — ordinary checks only.
+
+## Progress
+- Branch created. Writer pending.
+
+## Next step
+Delegate T1.1–T1.6 to one writer.

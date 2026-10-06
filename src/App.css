@@ -636,6 +636,9 @@ h3 {
   color: var(--muted);
   font-size: 13px;
 }
+.empty-state p {
+  margin: 0 0 14px;
+}
 .recipe-workspace {
   display: grid;
   grid-template-columns: 255px 1fr;

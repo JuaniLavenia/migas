@@ -76,6 +76,14 @@ function RecipesView({
             </button>
           ))}
         </div>
+        {!selectedRecipe && (
+          <div className="panel empty-state">
+            <p>Todavía no hay recetas.</p>
+            <button className="primary-button" onClick={onNew}>
+              <Plus size={18} /> Crear receta
+            </button>
+          </div>
+        )}
         {selectedRecipe && (
           <div className="recipe-editor">
             <div className="editor-top">
