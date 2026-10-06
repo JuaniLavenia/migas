@@ -13,21 +13,36 @@ export function ingredientCost(ingredient, quantity) {
   return price === null ? 0 : Number(quantity) * price;
 }
 
+function recipeItems(recipe) {
+  return Array.isArray(recipe?.items) ? recipe.items : [];
+}
+
+// missingCount: lines whose ingredient was deleted or has no unit price.
+// They cost 0, so the UI must warn that the total is incomplete.
 export function recipeTotals(recipe, ingredients) {
-  const items = Array.isArray(recipe.items) ? recipe.items : [];
+  let missingCount = 0;
   const cost =
-    items.reduce((total, item) => {
+    recipeItems(recipe).reduce((total, item) => {
       const ingredient = ingredients.find(
         (entry) => entry.id === item.ingredientId,
       );
-      return (
-        total + (ingredient ? ingredientCost(ingredient, item.quantity) : 0)
-      );
+      if (!ingredient || unitPrice(ingredient) === null) {
+        missingCount += 1;
+        return total;
+      }
+      return total + ingredientCost(ingredient, item.quantity);
     }, 0) + Number(recipe.extras || 0);
   const unitCost = cost / Math.max(Number(recipe.yield) || 1, 1);
   return {
     cost,
     unitCost,
     price: unitCost * (1 + Number(recipe.margin || 0) / 100),
+    missingCount,
   };
+}
+
+export function countRecipesUsingIngredient(recipes, ingredientId) {
+  return recipes.filter((recipe) =>
+    recipeItems(recipe).some((item) => item.ingredientId === ingredientId),
+  ).length;
 }
