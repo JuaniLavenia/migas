@@ -1,9 +1,20 @@
 import { useRef } from "react";
 import { ChevronRight, Download, Upload } from "lucide-react";
 import PageHeader from "../../shared/PageHeader";
+import { sanitizeBackup } from "../../lib/backup";
 
 function buildBackup(ingredients, recipes) {
   return JSON.stringify({ ingredients, recipes }, null, 2);
+}
+
+function importSummary({ ingredients, recipes, skipped }) {
+  const omitted = skipped
+    ? ` · ${skipped} ${skipped === 1 ? "registro omitido" : "registros omitidos"} por datos inválidos`
+    : "";
+  if (!ingredients.length && !recipes.length) {
+    return `No encontramos registros válidos${omitted}`;
+  }
+  return `Importamos ${ingredients.length} insumos y ${recipes.length} recetas${omitted}`;
 }
 
 function SettingsView({ ingredients, recipes, onImport, onToast }) {
@@ -32,18 +43,16 @@ function SettingsView({ ingredients, recipes, onImport, onToast }) {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
+      let backup;
       try {
-        const data = JSON.parse(reader.result);
-        if (
-          !Array.isArray(data.ingredients) &&
-          !Array.isArray(data.recipes)
-        ) {
-          throw new Error("invalid backup shape");
-        }
-        onImport(data);
-        onToast("Backup importado");
+        backup = sanitizeBackup(JSON.parse(reader.result));
       } catch {
-        onToast("No pudimos leer ese archivo");
+        onToast("No pudimos leer ese archivo: no es un backup válido");
+        return;
+      }
+      onToast(importSummary(backup));
+      if (backup.ingredients.length || backup.recipes.length) {
+        onImport(backup);
       }
     };
     reader.readAsText(file);

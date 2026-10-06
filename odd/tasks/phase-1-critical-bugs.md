@@ -32,7 +32,12 @@ Exploration (2026-10-06) found:
   - `resolveSelectedRecipe(recipes, id)` in `src/lib/recipeSelection.js`; App initializes the selection from the first stored recipe and routes updates/deletes through the effective recipe's id. RecipesView shows an empty state ("Todavía no hay recetas.") with a create button. Overview empty state lands with T1.3 (it did not crash; it only showed mismatched data).
   - RED: `recipeSelection.test.js` failed to load (`Failed to load url ./recipeSelection`). GREEN: 21/21.
   - Verification: `corepack pnpm test`: 21 passed; `corepack pnpm build`: built OK.
-- [ ] T1.2 Import validation + ErrorBoundary + defensive totals — route: delegated
+- [x] T1.2 Import validation + ErrorBoundary + defensive totals — route: delegated (T1.1 commit: 78e85d3)
+  - `sanitizeBackup(data)` in `src/lib/backup.js` rebuilds records from known fields only. Ingredients need a non-empty name, packSize > 0 and packCost >= 0 (numbers or numeric strings); unit defaults to "g", category to "". Recipes need a non-empty name and an `items` array; a recipe with any invalid line is skipped whole (a partial import would silently change its cost); yield/margin/extras fall back to 1/0/0. Non-object input or no collections throws → "no es un backup válido" toast. SettingsView toasts imported vs skipped counts and does not call the store when nothing is valid.
+  - `recipeTotals` treats missing/non-array `items` as empty.
+  - Root `ErrorBoundary` (`src/shared/ErrorBoundary.jsx`) wraps App: "Reintentar" reloads, "Descargar datos guardados" downloads the raw `miga-recipe-storage` value, "Restablecer datos" removes it only after an explicit click plus `window.confirm`.
+  - RED: `backup.test.js` failed to load (`Failed to load url ./backup`); the 2 new recipeTotals cases failed with `TypeError: Cannot read properties of undefined (reading 'reduce')` / `recipe.items.reduce is not a function`. GREEN: 49/49.
+  - Verification: `corepack pnpm test`: 49 passed; `corepack pnpm build`: built OK.
 - [ ] T1.3 Overview spotlight consistency — route: delegated
 - [ ] T1.4 Clearable numeric inputs — route: delegated
 - [ ] T1.5 Pack-size handling — route: delegated

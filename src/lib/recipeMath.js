@@ -6,8 +6,9 @@ export function ingredientCost(ingredient, quantity) {
 }
 
 export function recipeTotals(recipe, ingredients) {
+  const items = Array.isArray(recipe.items) ? recipe.items : [];
   const cost =
-    recipe.items.reduce((total, item) => {
+    items.reduce((total, item) => {
       const ingredient = ingredients.find(
         (entry) => entry.id === item.ingredientId,
       );
