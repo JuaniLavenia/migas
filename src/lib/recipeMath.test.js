@@ -69,6 +69,14 @@ describe("recipeTotals", () => {
     expect(recipeTotals(recipe, ingredients).cost).toBeCloseTo(1250);
   });
 
+  it.each([
+    ["missing", undefined],
+    ["not an array", "harina"],
+  ])("treats %s items as an empty list", (_label, items) => {
+    const recipe = { yield: 1, extras: 50, items };
+    expect(recipeTotals(recipe, ingredients).cost).toBeCloseTo(50);
+  });
+
   it("adds extras to the cost", () => {
     const recipe = { yield: 1, extras: 50, items: [] };
     expect(recipeTotals(recipe, ingredients).cost).toBeCloseTo(50);

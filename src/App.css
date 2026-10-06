@@ -260,6 +260,33 @@ h3 {
 .primary-button.danger:hover {
   background: #a6554c;
 }
+.secondary-button.danger {
+  color: #be6b61;
+}
+.error-screen {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: #f7f8f5;
+}
+.error-card {
+  width: min(520px, 100%);
+  padding: 28px;
+}
+.error-card p {
+  color: var(--muted);
+}
+.error-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+.error-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 .confirm-dialog {
   position: fixed;
   top: 50%;
