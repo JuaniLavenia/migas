@@ -1,5 +1,6 @@
-import { ChevronRight, Plus, Trash2 } from "lucide-react";
+import { AlertTriangle, ChevronRight, Plus, Trash2 } from "lucide-react";
 import PageHeader from "../../shared/PageHeader";
+import NumericInput from "../../shared/NumericInput";
 import { currency, unitLabels } from "../../lib/format";
 import { ingredientCost } from "../../lib/recipeMath";
 
@@ -76,8 +77,16 @@ function RecipesView({
             </button>
           ))}
         </div>
+        {!selectedRecipe && (
+          <div className="panel empty-state">
+            <p>Todavía no hay recetas.</p>
+            <button className="primary-button" onClick={onNew}>
+              <Plus size={18} /> Crear receta
+            </button>
+          </div>
+        )}
         {selectedRecipe && (
-          <div className="recipe-editor">
+          <div className="recipe-editor" key={selectedRecipe.id}>
             <div className="editor-top">
               <div>
                 <span className="eyebrow">Editando receta</span>
@@ -107,13 +116,10 @@ function RecipesView({
               <div className="field-group">
                 <label>Rendimiento</label>
                 <div className="input-with-suffix">
-                  <input
-                    type="number"
-                    min="1"
+                  <NumericInput
+                    min={1}
                     value={selectedRecipe.yield}
-                    onChange={(event) =>
-                      updateRecipe("yield", event.target.value)
-                    }
+                    onChange={(value) => updateRecipe("yield", value)}
                   />
                   <span>unidades</span>
                 </div>
@@ -121,14 +127,10 @@ function RecipesView({
               <div className="field-group">
                 <label>Margen de ganancia</label>
                 <div className="input-with-suffix">
-                  <input
-                    type="number"
-                    min="0"
-                    step="any"
+                  <NumericInput
+                    min={0}
                     value={selectedRecipe.margin}
-                    onChange={(event) =>
-                      updateRecipe("margin", event.target.value)
-                    }
+                    onChange={(value) => updateRecipe("margin", value)}
                   />
                   <span>%</span>
                 </div>
@@ -136,19 +138,27 @@ function RecipesView({
               <div className="field-group">
                 <label>Gastos extra</label>
                 <div className="input-with-suffix">
-                  <input
-                    type="number"
-                    min="0"
-                    step="any"
+                  <NumericInput
+                    min={0}
                     value={selectedRecipe.extras}
-                    onChange={(event) =>
-                      updateRecipe("extras", event.target.value)
-                    }
+                    onChange={(value) => updateRecipe("extras", value)}
                   />
                   <span>ARS</span>
                 </div>
               </div>
             </div>
+            {totals.missingCount > 0 && (
+              <div className="recipe-warning" role="alert">
+                <AlertTriangle size={16} />
+                <span>
+                  {totals.missingCount === 1
+                    ? "1 insumo de esta receta no tiene costo"
+                    : `${totals.missingCount} insumos de esta receta no tienen costo`}
+                  : fue eliminado o tiene un contenido de pack inválido. El
+                  costo total está incompleto.
+                </span>
+              </div>
+            )}
             <div className="editor-cost-card">
               <div>
                 <span>Costo total</span>
@@ -188,6 +198,11 @@ function RecipesView({
                         updateItem(index, "ingredientId", event.target.value)
                       }
                     >
+                      {!ingredient && (
+                        <option value={item.ingredientId} disabled>
+                          Insumo eliminado
+                        </option>
+                      )}
                       {ingredients.map((option) => (
                         <option key={option.id} value={option.id}>
                           {option.name}
@@ -195,13 +210,11 @@ function RecipesView({
                       ))}
                     </select>
                     <div className="used-quantity">
-                      <input
-                        type="number"
-                        min="0"
-                        step="any"
+                      <NumericInput
+                        min={0}
                         value={item.quantity}
-                        onChange={(event) =>
-                          updateItem(index, "quantity", event.target.value)
+                        onChange={(value) =>
+                          updateItem(index, "quantity", value)
                         }
                       />
                       <span>{unitLabels[ingredient?.unit] || ingredient?.unit}</span>
