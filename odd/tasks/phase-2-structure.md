@@ -37,7 +37,13 @@ Restructure the app so Phase 3 (sorting + pagination) and Phase 4 (recipe images
   - RED: `recipeStorage.test.js` failed (module not found); App test "tells the user when saving to the browser fails" failed (`Unable to find ... No se pudo guardar`). GREEN after implementation. `useRecipeStore.test.js` (v0 rehydrate → v1, partialize) written after wiring as an integration check.
   - Test setup now restores spies after each test.
   - Verification: `corepack pnpm test` 101 passed (7 files); `corepack pnpm build` OK. Previous commit: 41c21d9.
-- [ ] T2.2 `updatedAt` timestamps — route: delegated
+- [x] T2.2 `updatedAt` timestamps — route: delegated
+  - Store: demo recipes, `addRecipe` and `updateRecipe` set `updatedAt: Date.now()`; the `updated` label is gone.
+  - Migration v0→v1 (same `RECIPE_STORAGE_VERSION = 1`, nothing shipped between T2.1 and T2.2): each recipe drops `updated` and gets `updatedAt` = migration time unless it already has a finite one. Legacy labels ("Hoy", "Ayer", "Ahora") were relative to when they were written, so they cannot be converted into real dates.
+  - `sanitizeBackup(data, now)`: keeps a positive finite `updatedAt`; old backups (`updated` label) or invalid values get the import time.
+  - `src/lib/dates.js`: `formatRelativeDate(timestamp, now)` (Intl.RelativeTimeFormat "es", numeric auto: "ahora", "hace 5 horas", "ayer", "anteayer", "hace 3 días", weeks/months/years; future → "ahora"; invalid → "") and `formatMonthYear(date)` ("Agosto 2026"). Overview's eyebrow now uses the current month instead of the hardcoded "Agosto 2026".
+  - RED: `dates.test.js` (module not found), 6 backup tests, the migration label test, 2 store date tests, and the App relative-date test all failed before implementation; GREEN after. The "2 days" case returned "anteayer" (valid es output), so the test expectation was corrected to it and a 3-day case added.
+  - Verification: `corepack pnpm test` 129 passed (8 files); `corepack pnpm build` OK. Previous commit: f8b3911.
 - [ ] T2.3 Split `App.jsx` (layout + containers) — route: delegated
 - [ ] T2.4 Routes — route: delegated
 

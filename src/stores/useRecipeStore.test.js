@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import useRecipeStore from "./useRecipeStore";
 import { RECIPE_STORAGE_KEY } from "../lib/recipeStorage";
 
@@ -42,6 +42,8 @@ describe("useRecipeStore persistence", () => {
     const state = useRecipeStore.getState();
     expect(state.ingredients).toEqual([ingredient]);
     expect(state.recipes.map((recipe) => recipe.name)).toEqual(["Flan"]);
+    expect(state.recipes[0]).not.toHaveProperty("updated");
+    expect(Number.isFinite(state.recipes[0].updatedAt)).toBe(true);
     expect(stored().version).toBe(1);
   });
 
@@ -51,5 +53,33 @@ describe("useRecipeStore persistence", () => {
       "ingredients",
       "recipes",
     ]);
+  });
+});
+
+describe("useRecipeStore recipe dates", () => {
+  const NOW = new Date(2026, 9, 6, 12, 0, 0).getTime();
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
+  });
+  afterEach(() => vi.useRealTimers());
+
+  it("stamps a new recipe with updatedAt", () => {
+    const id = useRecipeStore
+      .getState()
+      .addRecipe({ name: "Tarta", yield: 8, margin: 50, extras: 0, items: [] });
+    expect(useRecipeStore.getState().getRecipe(id).updatedAt).toBe(NOW);
+  });
+
+  it("refreshes updatedAt when a recipe changes", () => {
+    const id = useRecipeStore
+      .getState()
+      .addRecipe({ name: "Tarta", yield: 8, margin: 50, extras: 0, items: [] });
+    vi.setSystemTime(NOW + 5000);
+    useRecipeStore.getState().updateRecipe(id, { margin: 60 });
+    const recipe = useRecipeStore.getState().getRecipe(id);
+    expect(recipe.updatedAt).toBe(NOW + 5000);
+    expect(recipe).not.toHaveProperty("updated");
   });
 });

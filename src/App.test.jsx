@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { screen, within } from "@testing-library/react";
+import { act, screen, within } from "@testing-library/react";
 import { renderApp } from "./test/renderApp";
 import useRecipeStore from "./stores/useRecipeStore";
+import { formatMonthYear } from "./lib/dates";
 
 // Characterization tests of the main UI flows. They describe what the user
 // sees and does (roles, labels, text), so they keep passing while the app is
@@ -102,6 +103,30 @@ describe("App", () => {
     setItem.mockRestore();
     await user.type(screen.getByDisplayValue("65"), "0");
     expect(screen.getByText("Guardado localmente")).toBeInTheDocument();
+  });
+
+  it("shows when each recipe was last updated, relative to now", async () => {
+    const threeDaysAgo = Date.now() - 3 * 24 * 60 * 60 * 1000;
+    const { user } = renderApp();
+    act(() =>
+      useRecipeStore.setState(({ recipes }) => ({
+        recipes: recipes.map((recipe) => ({
+          ...recipe,
+          updatedAt: threeDaysAgo,
+        })),
+      })),
+    );
+    expect(
+      screen.getAllByText(/Actualizada hace 3 días/).length,
+    ).toBeGreaterThan(0);
+    expect(
+      screen.getByText(`Mi cocina / ${formatMonthYear(new Date())}`),
+    ).toBeInTheDocument();
+
+    await user.click(navItem(/^Recetas/));
+    expect(screen.getByText("hace 3 días")).toBeInTheDocument();
+    await user.type(screen.getByDisplayValue("18"), "0");
+    expect(screen.getByText("ahora")).toBeInTheDocument();
   });
 
   it("shows empty states when there are no recipes", async () => {

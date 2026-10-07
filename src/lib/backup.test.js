@@ -16,9 +16,11 @@ const validRecipe = {
   yield: 18,
   margin: 65,
   extras: 180,
-  updated: "Hoy",
+  updatedAt: 1767225600000,
   items: [{ ingredientId: "harina", quantity: 280 }],
 };
+
+const NOW = 1790000000000;
 
 describe("sanitizeBackup", () => {
   it.each([
@@ -112,17 +114,39 @@ describe("sanitizeBackup", () => {
           items: [{ ingredientId: "harina", quantity: "250" }],
         },
       ],
-    });
+    }, NOW);
     expect(result.recipes).toEqual([
       {
         name: "Budín",
         yield: 1,
         margin: 0,
         extras: 0,
-        updated: "Importada",
+        updatedAt: NOW,
         items: [{ ingredientId: "harina", quantity: 250 }],
       },
     ]);
+  });
+
+  it("accepts an old backup whose recipes have an `updated` label", () => {
+    const { updatedAt, ...withoutDate } = validRecipe;
+    const result = sanitizeBackup(
+      { recipes: [{ ...withoutDate, updated: "Hoy" }] },
+      NOW,
+    );
+    // A label like "Hoy" is not a reliable date: the import time is used.
+    expect(result.recipes).toEqual([{ ...withoutDate, updatedAt: NOW }]);
+  });
+
+  it.each([
+    ["a string", "2026-01-01"],
+    ["zero", 0],
+    ["NaN", NaN],
+  ])("replaces an updatedAt that is %s with the import time", (_label, value) => {
+    const result = sanitizeBackup(
+      { recipes: [{ ...validRecipe, updatedAt: value }] },
+      NOW,
+    );
+    expect(result.recipes[0].updatedAt).toBe(NOW);
   });
 
   it("counts skipped records across both collections", () => {

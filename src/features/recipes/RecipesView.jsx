@@ -3,6 +3,7 @@ import PageHeader from "../../shared/PageHeader";
 import NumericInput from "../../shared/NumericInput";
 import { currency, unitLabels } from "../../lib/format";
 import { ingredientCost } from "../../lib/recipeMath";
+import { formatRelativeDate } from "../../lib/dates";
 
 function RecipesView({
   recipes,
@@ -100,7 +101,8 @@ function RecipesView({
               </div>
               <div className="editor-top-actions">
                 <span className="updated-tag">
-                  <span className="status-dot" /> {selectedRecipe.updated}
+                  <span className="status-dot" />{" "}
+                  {formatRelativeDate(selectedRecipe.updatedAt)}
                 </span>
                 <button
                   type="button"

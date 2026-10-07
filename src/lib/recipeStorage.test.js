@@ -24,6 +24,8 @@ const legacyRecipe = {
   items: [{ ingredientId: "harina", quantity: 280 }],
 };
 
+const NOW = 1790000000000;
+
 describe("migrateRecipeState", () => {
   it("targets version 1", () => {
     expect(RECIPE_STORAGE_VERSION).toBe(1);
@@ -33,6 +35,7 @@ describe("migrateRecipeState", () => {
     const result = migrateRecipeState(
       { ingredients: [ingredient], recipes: [legacyRecipe] },
       0,
+      NOW,
     );
     expect(result.ingredients).toEqual([ingredient]);
     expect(result.recipes).toHaveLength(1);
@@ -44,6 +47,29 @@ describe("migrateRecipeState", () => {
       extras: 180,
       items: legacyRecipe.items,
     });
+  });
+
+  it("replaces the v0 `updated` label with the migration time", () => {
+    // Labels like "Hoy" or "Ayer" are relative to when they were written,
+    // so they cannot be turned into a real date.
+    const [recipe] = migrateRecipeState(
+      { recipes: [legacyRecipe] },
+      0,
+      NOW,
+    ).recipes;
+    expect(recipe.updatedAt).toBe(NOW);
+    expect(recipe).not.toHaveProperty("updated");
+  });
+
+  it("keeps a valid updatedAt and leaves non-object recipes alone", () => {
+    const { updated, ...dated } = { ...legacyRecipe, updatedAt: 1000 };
+    const result = migrateRecipeState({ recipes: [dated, null] }, 0, NOW);
+    expect(result.recipes).toEqual([dated, null]);
+  });
+
+  it("does not touch data already at version 1", () => {
+    const current = { ingredients: [ingredient], recipes: [legacyRecipe] };
+    expect(migrateRecipeState(current, 1, NOW)).toEqual(current);
   });
 
   it("keeps only the data collections", () => {

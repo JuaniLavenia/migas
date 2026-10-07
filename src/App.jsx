@@ -104,7 +104,6 @@ function App() {
       yield: Number(form.yield),
       margin: Number(form.margin),
       extras: Number(form.extras),
-      updated: "Ahora",
     };
     const id = addRecipe(recipe);
     setRecipeModal(false);
