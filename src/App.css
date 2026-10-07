@@ -862,6 +862,18 @@ h3 {
 .reorder-controls .icon-button {
   padding: 4px;
 }
+.reorder-controls.stacked {
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-template-rows: auto auto;
+  gap: 0;
+}
+.reorder-controls.stacked .drag-handle {
+  grid-row: span 2;
+}
+.reorder-controls.stacked .icon-button:not(.drag-handle) {
+  padding: 1px 3px;
+}
 .reorder-controls .icon-button:disabled {
   opacity: 0.35;
   cursor: default;

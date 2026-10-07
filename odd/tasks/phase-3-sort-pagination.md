@@ -98,5 +98,7 @@ Route evidence: shared helpers + a shared pagination component + two feature vie
   - Observation (not fixed): in the desktop recipe library column the extra controls squeeze long names onto 3 lines.
   - Not verified in the browser: keyboard drag (covered by tests), crossing pages with Subir/Bajar (covered by tests), mobile width (window resize does not apply).
 
+- Layout fix (user-approved, route: inline — 3 small, already-understood edits): the recipe library stacks "Subir"/"Bajar" next to the handle (`ReorderControls stacked`) and drops the redundant `>` chevron from each card. Verification: `corepack pnpm test` 188 passed; `corepack pnpm build` OK; Chrome (read-only): long names now wrap to 2 lines instead of 3.
+
 ## Next step
-Decide on the narrow recipe library layout, then open the PR (single-pr).
+Open the PR (single-pr).

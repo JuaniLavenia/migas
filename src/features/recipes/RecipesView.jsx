@@ -1,4 +1,4 @@
-import { AlertTriangle, ChevronRight, Plus, Trash2 } from "lucide-react";
+import { AlertTriangle, Plus, Trash2 } from "lucide-react";
 import PageHeader from "../../shared/PageHeader";
 import NumericInput from "../../shared/NumericInput";
 import Pagination from "../../shared/Pagination";
@@ -21,7 +21,6 @@ function LibraryItem({ recipe, selected, onSelect }) {
         <strong>{recipe.name}</strong>
         <small>Rinde {recipe.yield} unidades</small>
       </span>
-      <ChevronRight size={15} />
     </button>
   );
 }
@@ -139,6 +138,7 @@ function RecipesView({
                           id={recipe.id}
                           name={recipe.name}
                           handleProps={handleProps}
+                          stacked
                           canMoveUp={recipe.id !== reorder.firstId}
                           canMoveDown={recipe.id !== reorder.lastId}
                           onMove={(delta) => reorder.onMove(recipe.id, delta)}

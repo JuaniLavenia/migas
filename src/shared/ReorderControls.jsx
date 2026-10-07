@@ -3,7 +3,16 @@ import { useReorderFocus } from "./SortableList";
 
 // Drag handle plus "Subir"/"Bajar" buttons for one item of a SortableList.
 // `onMove(delta)` moves it one position (-1 up, +1 down) in the full list.
-function ReorderControls({ id, name, handleProps, canMoveUp, canMoveDown, onMove }) {
+// `stacked` puts "Subir"/"Bajar" one above the other, for narrow columns.
+function ReorderControls({
+  id,
+  name,
+  handleProps,
+  stacked = false,
+  canMoveUp,
+  canMoveDown,
+  onMove,
+}) {
   const focus = useReorderFocus();
   const upKey = `${id}:up`;
   const downKey = `${id}:down`;
@@ -16,7 +25,7 @@ function ReorderControls({ id, name, handleProps, canMoveUp, canMoveDown, onMove
   }
 
   return (
-    <div className="reorder-controls">
+    <div className={`reorder-controls ${stacked ? "stacked" : ""}`}>
       <button
         type="button"
         className="icon-button drag-handle"
