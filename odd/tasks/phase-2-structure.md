@@ -44,7 +44,13 @@ Restructure the app so Phase 3 (sorting + pagination) and Phase 4 (recipe images
   - `src/lib/dates.js`: `formatRelativeDate(timestamp, now)` (Intl.RelativeTimeFormat "es", numeric auto: "ahora", "hace 5 horas", "ayer", "anteayer", "hace 3 días", weeks/months/years; future → "ahora"; invalid → "") and `formatMonthYear(date)` ("Agosto 2026"). Overview's eyebrow now uses the current month instead of the hardcoded "Agosto 2026".
   - RED: `dates.test.js` (module not found), 6 backup tests, the migration label test, 2 store date tests, and the App relative-date test all failed before implementation; GREEN after. The "2 days" case returned "anteayer" (valid es output), so the test expectation was corrected to it and a 3-day case added.
   - Verification: `corepack pnpm test` 129 passed (8 files); `corepack pnpm build` OK. Previous commit: f8b3911.
-- [ ] T2.3 Split `App.jsx` (layout + containers) — route: delegated
+- [x] T2.3 Split `App.jsx` (layout + containers) — route: delegated
+  - `src/app/`: `AppLayout` (container: counts, mobile menu, closes it on navigation), presentational `Sidebar` + `Topbar` (reads save status), `ToastRegion`, `navigation.js` (view ids, labels, icons).
+  - Toasts: `src/stores/useToastStore.js` (`showToast`; a new id per toast restarts the 2.5 s timer).
+  - Containers: `OverviewPage`, `IngredientsPage`, `RecipesPage`, `SettingsPage` read the store and own their modals/confirmations; `useNewRecipeModal` is the shared "Nueva receta" flow (Overview + Recipes). Existing views stay presentational and unchanged.
+  - `App.jsx` (315 → 42 lines) keeps only the active view and selected recipe id (replaced by the URL in T2.4).
+  - RED exception: pure refactor; the T2.0/T2.1/T2.2 UI tests are the safety net and passed unmodified. Only `src/test/renderApp.jsx` changed: it also resets the new toast store so a toast cannot leak between tests.
+  - Verification: `corepack pnpm test` 129 passed (8 files); `corepack pnpm build` OK. Previous commit: f082749.
 - [ ] T2.4 Routes — route: delegated
 
 Route evidence: 5 tasks touching App, store, every feature view, main.jsx and new layout/container files → writer trigger; one bounded writer, sequential.
