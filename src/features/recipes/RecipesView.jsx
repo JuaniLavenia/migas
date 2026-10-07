@@ -9,6 +9,8 @@ import { rectSortingStrategy } from "@dnd-kit/sortable";
 import { currency, unitLabels } from "../../lib/format";
 import { ingredientCost } from "../../lib/recipeMath";
 import { formatRelativeDate } from "../../lib/dates";
+import RecipeImageField from "./RecipeImageField";
+import RecipeThumb from "./RecipeThumb";
 
 function LibraryItem({ recipe, selected, onSelect }) {
   return (
@@ -16,7 +18,13 @@ function LibraryItem({ recipe, selected, onSelect }) {
       onClick={() => onSelect(recipe.id)}
       className={`selector-item ${selected ? "selected" : ""}`}
     >
-      <span className="selector-avatar">{recipe.name.charAt(0)}</span>
+      <RecipeThumb
+        recipe={recipe}
+        className="selector-avatar"
+        fallback={
+          <span className="selector-avatar">{recipe.name.charAt(0)}</span>
+        }
+      />
       <span>
         <strong>{recipe.name}</strong>
         <small>Rinde {recipe.yield} unidades</small>
@@ -28,7 +36,8 @@ function LibraryItem({ recipe, selected, onSelect }) {
 // `recipes` is the current library page, already sorted; `recipeCount` is the
 // total. `selectedRecipe` may be on another page. `reorder` ({ onReorder,
 // onMove, firstId, lastId }) enables the custom order controls; null hides
-// them. First/last refer to the full library, not the page.
+// them. First/last refer to the full library, not the page. `imageField`
+// holds the props of the open recipe's RecipeImageField.
 function RecipesView({
   recipes,
   recipeCount,
@@ -48,6 +57,7 @@ function RecipesView({
   selectedRecipe,
   updateRecipe,
   onDelete,
+  imageField,
   reorder = null,
 }) {
   function updateItem(index, field, value) {
@@ -202,6 +212,7 @@ function RecipesView({
                 </button>
               </div>
             </div>
+            {imageField && <RecipeImageField {...imageField} />}
             <div className="editor-grid">
               <div className="field-group">
                 <label>Rendimiento</label>

@@ -29,7 +29,7 @@ Let the user attach a photo to each recipe, stored locally in the browser withou
 
 ## Tasks
 - [x] T4.1 `imageStore` port + IndexedDB adapter + image preparation — route: delegated
-- [ ] T4.2 Recipe image UI + cleanup — route: delegated
+- [x] T4.2 Recipe image UI + cleanup — route: delegated
 - [ ] T4.3 Backup with images — route: delegated
 - [ ] T4.4 Storage panel + alerts — route: delegated
 
@@ -60,6 +60,10 @@ Route evidence: new storage adapter, image processing, store, three feature view
   - RED: new test files failed to load (modules missing): 4 files failed, 188 existing tests passed.
   - GREEN: 15 files / 218 tests passed. Exception: node/jsdom have no image decoder or canvas, so `prepareImage` takes `decode`/`createCanvas` as dependencies and the tests use fakes; real output size is checked in the manual smoke.
   - Verification: `corepack pnpm test`: 218 passed; `corepack pnpm build`: built OK.
+- T4.2 (previous commit 08c526e): recipes get an optional `imageId`; `setRecipeImage(id, imageId | null)` refreshes `updatedAt` (changing the photo is an edit). No persist version bump: the field is optional and additive, v1 data passes through `migrateRecipeState` unchanged; `sanitizeBackup` keeps a non-empty string `imageId`. `useRecipeImage` (object URL revoked on change/unmount), `RecipeThumb` (photo or the old letter/number fallback, `alt` = recipe name) in the library and the Overview list, `RecipeImageField` + `useRecipeImageEditor` (add/replace/remove with ConfirmDialog, recipe only changes after the image is stored, previous image discarded afterwards, Spanish toasts for invalid file / no space / save failure), unavailable explanation when the image store cannot be used. Deleting a recipe discards its image (best effort). Startup orphan cleanup (`lib/images/orphans.js` + `app/useOrphanImageCleanup.js`) runs once per app mount after hydration, reads the referenced ids after listing, and is skipped when localStorage cannot be read (the store would show demo data and every image would look orphaned).
+  - RED: 11 failing tests (backup imageId, store setRecipeImage, 9 UI tests) + orphans test file failing to load; the migration keep-imageId test passed immediately (v1 is a pass-through; kept as a regression guard).
+  - GREEN: 17 files / 234 tests passed. Exception: UI tests mock `prepareImage` (no canvas in jsdom), stub `URL.createObjectURL`, and use the in-memory image store.
+  - Verification: `corepack pnpm test`: 234 passed; `corepack pnpm build`: built OK.
 
 ## Next step
 Delegate T4.1–T4.4 to one writer.

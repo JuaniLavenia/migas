@@ -14,8 +14,10 @@ import {
 import useListingParams from "../../shared/useListingParams";
 import { recipePath, viewPath } from "../../app/navigation";
 import ConfirmDialog from "../../shared/ConfirmDialog";
+import { discardImage } from "../../lib/images/imageStore";
 import RecipesView from "./RecipesView";
 import useNewRecipeModal from "./useNewRecipeModal";
+import useRecipeImageEditor from "./useRecipeImageEditor";
 import {
   RECIPES_PER_PAGE,
   recipeListingDefaults,
@@ -29,7 +31,7 @@ const emptyTotals = { cost: 0, unitCost: 0, price: 0, missingCount: 0 };
 // Container of the recipes view. The open recipe comes from the URL:
 // /recetas redirects to the last opened (or first) recipe, and an unknown id
 // falls back to /recetas. Owns the create/delete flows and the library's
-// sort and pagination, whose query string (`?orden=…`) is kept when moving
+// sort and pagination, and the open recipe's photo, whose query string (`?orden=…`) is kept when moving
 // between recipes here. The open recipe does not need to be on the visible
 // library page.
 function RecipesPage() {
@@ -59,6 +61,8 @@ function RecipesPage() {
     recipeId === undefined
       ? null
       : recipes.find((recipe) => recipe.id === recipeId) ?? null;
+  const { imageField, removeImageDialog } =
+    useRecipeImageEditor(selectedRecipe);
   const fallbackRecipe = resolveSelectedRecipe(recipes, lastRecipeId);
 
   let redirectPath = null;
@@ -125,12 +129,13 @@ function RecipesPage() {
 
   function requestDelete(id) {
     const recipe = recipes.find((entry) => entry.id === id);
-    setPendingDelete({ id, name: recipe?.name });
+    setPendingDelete({ id, name: recipe?.name, imageId: recipe?.imageId });
   }
 
   function confirmDelete() {
     if (!pendingDelete) return;
     deleteRecipe(pendingDelete.id);
+    discardImage(pendingDelete.imageId);
     if (pendingDelete.id === selectedRecipe?.id) {
       const next = recipes.find((recipe) => recipe.id !== pendingDelete.id);
       // replace: the deleted recipe's URL should not stay in the history.
@@ -164,9 +169,11 @@ function RecipesPage() {
         selectedRecipe={selectedRecipe}
         updateRecipe={updateRecipe}
         onDelete={requestDelete}
+        imageField={imageField}
         reorder={reorder}
       />
       {newRecipeModal}
+      {removeImageDialog}
       <ConfirmDialog
         open={pendingDelete !== null}
         title="Eliminar receta"

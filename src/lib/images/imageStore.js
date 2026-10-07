@@ -28,3 +28,15 @@ export function getImageStore() {
 export function setImageStore(store) {
   current = store;
 }
+
+// Best-effort removal for images that are no longer referenced (recipe
+// deleted, photo replaced or removed). A failure leaves an orphan that the
+// startup cleanup removes later, so it is not reported.
+export async function discardImage(id) {
+  if (!id) return;
+  try {
+    await getImageStore().remove(id);
+  } catch {
+    // Removed by the orphan cleanup on a later start.
+  }
+}

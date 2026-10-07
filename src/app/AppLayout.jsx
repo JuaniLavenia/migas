@@ -5,14 +5,17 @@ import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 import ToastRegion from "./ToastRegion";
 import { viewForPath } from "./navigation";
+import useOrphanImageCleanup from "./useOrphanImageCleanup";
 
 // Shell shared by every route: sidebar, topbar, footer and toasts. The mobile
-// menu closes whenever the user navigates (or taps the current item).
+// menu closes whenever the user navigates (or taps the current item). Also
+// runs the startup cleanup of orphaned recipe images.
 function AppLayout() {
   const ingredientCount = useRecipeStore((state) => state.ingredients.length);
   const recipeCount = useRecipeStore((state) => state.recipes.length);
   const { pathname } = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  useOrphanImageCleanup();
 
   useEffect(() => setMenuOpen(false), [pathname]);
 
