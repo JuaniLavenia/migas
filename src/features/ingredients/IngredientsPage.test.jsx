@@ -1,10 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { screen, within } from "@testing-library/react";
 import {
   currentPath,
   currentSearchParams,
   renderApp,
 } from "../../test/renderApp";
+import useRecipeStore from "../../stores/useRecipeStore";
 
 // "Insumo 1".."Insumo <count>" with unit price n (pack of 100 g at n * 100),
 // plus one last ingredient with an invalid pack size (no unit price).
@@ -231,5 +232,142 @@ describe("Ingredients sorting and pagination", () => {
     expect(visibleNames()[0]).toBe("Insumo 11");
     expect(pagination()).toHaveTextContent("Página 2 de 2");
     expect(currentSearchParams().get("pagina")).toBe("2");
+  });
+});
+
+describe("Ingredients custom order", () => {
+  const storedNames = () =>
+    useRecipeStore.getState().ingredients.map((item) => item.name);
+
+  it("moves an ingredient up and down in the stored order", async () => {
+    const { user } = renderApp({ route: "/insumos", state: seedIngredients(4) });
+    expect(
+      screen.getByRole("button", { name: "Subir Insumo 1" }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Bajar Insumo 5" }),
+    ).toBeDisabled();
+
+    await user.click(screen.getByRole("button", { name: "Bajar Insumo 1" }));
+    expect(visibleNames().slice(0, 3)).toEqual([
+      "Insumo 2",
+      "Insumo 1",
+      "Insumo 3",
+    ]);
+    await user.click(screen.getByRole("button", { name: "Subir Insumo 3" }));
+    expect(storedNames().slice(0, 3)).toEqual([
+      "Insumo 2",
+      "Insumo 3",
+      "Insumo 1",
+    ]);
+    expect(visibleNames().slice(0, 3)).toEqual([
+      "Insumo 2",
+      "Insumo 3",
+      "Insumo 1",
+    ]);
+  });
+
+  it("follows the moved ingredient to its new page", async () => {
+    const { user } = renderApp({ route: "/insumos", state: seedIngredients(25) });
+    await user.click(screen.getByRole("button", { name: "Bajar Insumo 10" }));
+    expect(storedNames()[10]).toBe("Insumo 10");
+    expect(pagination()).toHaveTextContent("Página 2 de 3");
+    expect(currentSearchParams().get("pagina")).toBe("2");
+    expect(visibleNames().slice(0, 2)).toEqual(["Insumo 10", "Insumo 12"]);
+    // The keyboard focus stays on the moved ingredient.
+    expect(
+      screen.getByRole("button", { name: "Bajar Insumo 10" }),
+    ).toHaveFocus();
+
+    await user.click(screen.getByRole("button", { name: "Subir Insumo 10" }));
+    expect(pagination()).toHaveTextContent("Página 1 de 3");
+    expect(visibleNames().at(-1)).toBe("Insumo 10");
+    expect(
+      screen.getByRole("button", { name: "Subir Insumo 10" }),
+    ).toHaveFocus();
+  });
+
+  it("offers a drag handle per row with Spanish screen reader instructions", () => {
+    renderApp({ route: "/insumos", state: seedIngredients(4) });
+    const handle = screen.getByRole("button", { name: "Reordenar Insumo 2" });
+    expect(handle).toHaveAccessibleDescription(/presioná espacio o enter/i);
+  });
+
+  it("hides the reorder controls with another sort or while searching", async () => {
+    const { user } = renderApp({ route: "/insumos", state: seedIngredients(4) });
+    await user.type(
+      screen.getByPlaceholderText("Buscar insumo o categoría..."),
+      "Insumo",
+    );
+    expect(
+      screen.queryByRole("button", { name: /^(Subir|Bajar|Reordenar) / }),
+    ).not.toBeInTheDocument();
+    await user.clear(
+      screen.getByPlaceholderText("Buscar insumo o categoría..."),
+    );
+    expect(
+      screen.getAllByRole("button", { name: /^Reordenar / }),
+    ).toHaveLength(5);
+
+    await user.selectOptions(screen.getByLabelText("Ordenar por"), "Nombre");
+    expect(
+      screen.queryByRole("button", { name: /^(Subir|Bajar|Reordenar) / }),
+    ).not.toBeInTheDocument();
+  });
+});
+
+describe("Ingredients keyboard drag and drop", () => {
+  const ROW_HEIGHT = 60;
+  let restore;
+
+  // jsdom has no layout: give every table row a stacked rect so dnd-kit's
+  // keyboard coordinates can find the row below.
+  beforeEach(() => {
+    const original = Element.prototype.getBoundingClientRect;
+    Element.prototype.getBoundingClientRect = function getRect() {
+      const row = this.closest?.(".table-row");
+      if (!row) return original.call(this);
+      const rows = [...document.querySelectorAll(".table-row")];
+      const top = rows.indexOf(row) * ROW_HEIGHT;
+      return {
+        x: 0,
+        y: top,
+        top,
+        left: 0,
+        width: 600,
+        height: ROW_HEIGHT,
+        right: 600,
+        bottom: top + ROW_HEIGHT,
+        toJSON: () => ({}),
+      };
+    };
+    restore = () => {
+      Element.prototype.getBoundingClientRect = original;
+    };
+  });
+  afterEach(() => restore());
+
+  it("reorders with the keyboard through the drag handle", async () => {
+    const { user } = renderApp({ route: "/insumos", state: seedIngredients(4) });
+    screen.getByRole("button", { name: "Reordenar Insumo 1" }).focus();
+    await user.keyboard(" ");
+    await user.keyboard("{ArrowDown}");
+    await user.keyboard(" ");
+    expect(
+      useRecipeStore.getState().ingredients.map((item) => item.name),
+    ).toEqual(["Insumo 2", "Insumo 1", "Insumo 3", "Insumo 4", "Insumo 5"]);
+    expect(visibleNames().slice(0, 2)).toEqual(["Insumo 2", "Insumo 1"]);
+  });
+
+  it("cancels a keyboard drag with escape", async () => {
+    const { user } = renderApp({ route: "/insumos", state: seedIngredients(4) });
+    screen.getByRole("button", { name: "Reordenar Insumo 1" }).focus();
+    await user.keyboard(" ");
+    await user.keyboard("{ArrowDown}");
+    await user.keyboard("{Escape}");
+    expect(
+      await screen.findByText(/Movimiento cancelado: Insumo 1/),
+    ).toBeInTheDocument();
+    expect(visibleNames().slice(0, 2)).toEqual(["Insumo 1", "Insumo 2"]);
   });
 });

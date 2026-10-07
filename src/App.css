@@ -853,6 +853,48 @@ h3 {
   font-family: "Playfair Display", serif;
   font-size: 16px;
 }
+/* Custom order: drag handle + "Subir"/"Bajar" (shared by both lists). */
+.reorder-controls {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+}
+.reorder-controls .icon-button {
+  padding: 4px;
+}
+.reorder-controls .icon-button:disabled {
+  opacity: 0.35;
+  cursor: default;
+  background: transparent;
+}
+.drag-handle {
+  cursor: grab;
+  touch-action: none;
+}
+.dragging {
+  position: relative;
+  z-index: 2;
+  opacity: 0.85;
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+.dragging .drag-handle {
+  cursor: grabbing;
+}
+.table-panel.reorderable .table-header,
+.table-panel.reorderable .table-row {
+  grid-template-columns: 76px 2fr 1fr 1fr 1.3fr 70px;
+}
+.selector-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  border-radius: 7px;
+}
+.selector-row .selector-item {
+  flex: 1;
+  min-width: 0;
+}
 .recipe-editor {
   background: #fff;
   border: 1px solid var(--line);
@@ -1235,6 +1277,18 @@ h3 {
   }
   .recipe-selector .sort-control {
     padding: 0 0 10px;
+  }
+  .table-panel.reorderable .table-header,
+  .table-panel.reorderable .table-row {
+    min-width: 750px;
+  }
+  /* Each library card keeps its controls; the row, not the item, is the
+     scroller's child. */
+  .selector-row {
+    flex: 0 0 auto;
+  }
+  .selector-row .selector-item {
+    min-width: 150px;
   }
   .selector-heading {
     display: none;

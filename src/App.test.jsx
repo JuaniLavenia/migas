@@ -64,7 +64,10 @@ describe("App", () => {
     expect(currentPath()).toBe("/recetas/brownie");
     expect(screen.getByDisplayValue("Brownie clásico")).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: /Cookies de chocolate/ }));
+    // The library item itself, not its "Subir"/"Bajar"/"Reordenar" controls.
+    await user.click(
+      screen.getByRole("button", { name: /^C Cookies de chocolate/ }),
+    );
     expect(currentPath()).toBe("/recetas/cookies");
 
     // The overview keeps showing the last recipe opened.

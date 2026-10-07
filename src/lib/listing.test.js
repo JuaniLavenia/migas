@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   moveItem,
+  pageOfIndex,
   paginate,
   parseListingParams,
   sortBy,
@@ -191,5 +192,14 @@ describe("sortListing", () => {
     const items = [{ name: "b" }, { name: "a" }];
     expect(sortListing(items, null, "desc")).toBe(items);
     expect(sortListing(items, byName, "asc").map(byName)).toEqual(["a", "b"]);
+  });
+});
+
+describe("pageOfIndex", () => {
+  it("returns the 1-based page of a 0-based index", () => {
+    expect(pageOfIndex(0, 10)).toBe(1);
+    expect(pageOfIndex(9, 10)).toBe(1);
+    expect(pageOfIndex(10, 10)).toBe(2);
+    expect(pageOfIndex(-3, 10)).toBe(1);
   });
 });

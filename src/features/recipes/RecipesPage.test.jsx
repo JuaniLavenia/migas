@@ -5,6 +5,7 @@ import {
   currentSearchParams,
   renderApp,
 } from "../../test/renderApp";
+import useRecipeStore from "../../stores/useRecipeStore";
 
 const BASE_TIME = Date.UTC(2026, 0, 1);
 
@@ -175,5 +176,74 @@ describe("Recipes library sorting and pagination", () => {
     );
     expect(libraryNames()[0]).toBe("Receta 1");
     expect(pagination()).toHaveTextContent("Página 1 de 3");
+  });
+});
+
+describe("Recipes library custom order", () => {
+  const storedIds = () =>
+    useRecipeStore.getState().recipes.map((recipe) => recipe.id);
+
+  it("moves a recipe without touching its last update", async () => {
+    const { user } = renderApp({
+      route: "/recetas/receta-1",
+      state: seedRecipes(3),
+    });
+    expect(
+      within(library()).getByRole("button", { name: "Subir Receta 1" }),
+    ).toBeDisabled();
+    await user.click(
+      within(library()).getByRole("button", { name: "Bajar Receta 1" }),
+    );
+    expect(libraryNames()).toEqual(["Receta 2", "Receta 1", "Receta 3"]);
+    expect(storedIds()).toEqual(["receta-2", "receta-1", "receta-3"]);
+    expect(useRecipeStore.getState().getRecipe("receta-1").updatedAt).toBe(
+      BASE_TIME + 1000,
+    );
+    // Reordering is not navigation.
+    expect(currentPath()).toBe("/recetas/receta-1");
+  });
+
+  it("follows the moved recipe to its new page", async () => {
+    const { user } = renderApp({
+      route: "/recetas/receta-1",
+      state: seedRecipes(20),
+    });
+    await user.click(
+      within(library()).getByRole("button", { name: "Bajar Receta 8" }),
+    );
+    expect(pagination()).toHaveTextContent("Página 2 de 3");
+    expect(libraryNames().slice(0, 2)).toEqual(["Receta 8", "Receta 10"]);
+    expect(currentPath()).toBe("/recetas/receta-1");
+  });
+
+  it("still opens a recipe on click", async () => {
+    const { user } = renderApp({
+      route: "/recetas/receta-1",
+      state: seedRecipes(3),
+    });
+    await user.click(
+      within(library()).getByRole("button", { name: /^R Receta 3/ }),
+    );
+    expect(currentPath()).toBe("/recetas/receta-3");
+    expect(screen.getByDisplayValue("Receta 3")).toBeInTheDocument();
+  });
+
+  it("shows the reorder controls only with the custom order", async () => {
+    const { user } = renderApp({
+      route: "/recetas/receta-1",
+      state: seedRecipes(3),
+    });
+    expect(
+      within(library()).getAllByRole("button", { name: /^Reordenar / }),
+    ).toHaveLength(3);
+    await user.selectOptions(
+      within(library()).getByLabelText("Ordenar por"),
+      "Nombre",
+    );
+    expect(
+      within(library()).queryByRole("button", {
+        name: /^(Subir|Bajar|Reordenar) /,
+      }),
+    ).not.toBeInTheDocument();
   });
 });

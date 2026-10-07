@@ -5,7 +5,12 @@ import useRecipeSelectionStore from "../../stores/useRecipeSelectionStore";
 import useToastStore from "../../stores/useToastStore";
 import { recipeTotals } from "../../lib/recipeMath";
 import { resolveSelectedRecipe } from "../../lib/recipeSelection";
-import { paginate, sortListing } from "../../lib/listing";
+import {
+  CUSTOM_SORT,
+  pageOfIndex,
+  paginate,
+  sortListing,
+} from "../../lib/listing";
 import useListingParams from "../../shared/useListingParams";
 import { recipePath, viewPath } from "../../app/navigation";
 import ConfirmDialog from "../../shared/ConfirmDialog";
@@ -36,6 +41,8 @@ function RecipesPage() {
   const recipes = useRecipeStore((state) => state.recipes);
   const updateRecipeInStore = useRecipeStore((state) => state.updateRecipe);
   const deleteRecipe = useRecipeStore((state) => state.deleteRecipe);
+  const reorderRecipes = useRecipeStore((state) => state.reorderRecipes);
+  const moveRecipe = useRecipeStore((state) => state.moveRecipe);
   const lastRecipeId = useRecipeSelectionStore((state) => state.lastRecipeId);
   const setLastRecipeId = useRecipeSelectionStore(
     (state) => state.setLastRecipeId,
@@ -95,6 +102,27 @@ function RecipesPage() {
     });
   }
 
+  // Moves one position in the full library and, when the recipe leaves the
+  // visible page, follows it so it stays in view. The open recipe stays open.
+  function move(id, delta) {
+    const target = recipes.findIndex((recipe) => recipe.id === id) + delta;
+    if (target < 0 || target >= recipes.length) return;
+    moveRecipe(id, delta);
+    const targetPage = pageOfIndex(target, RECIPES_PER_PAGE);
+    if (targetPage !== pageInfo.page) listing.setPage(targetPage);
+  }
+
+  // In the custom order the visible order is the stored order.
+  const reorder =
+    listing.sort === CUSTOM_SORT
+      ? {
+          onReorder: reorderRecipes,
+          onMove: move,
+          firstId: recipes[0]?.id,
+          lastId: recipes.at(-1)?.id,
+        }
+      : null;
+
   function requestDelete(id) {
     const recipe = recipes.find((entry) => entry.id === id);
     setPendingDelete({ id, name: recipe?.name });
@@ -136,6 +164,7 @@ function RecipesPage() {
         selectedRecipe={selectedRecipe}
         updateRecipe={updateRecipe}
         onDelete={requestDelete}
+        reorder={reorder}
       />
       {newRecipeModal}
       <ConfirmDialog

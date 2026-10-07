@@ -29,7 +29,7 @@ Let the user sort and page through ingredients and recipes, so the lists stay us
 - [x] T3.2 Ingredients sort + pagination — route: delegated
 - [x] T3.3 Recipes library sort + pagination — route: delegated
 - [x] T3.4a Store reorder actions + pure `moveItem` + "Personalizado" sort option as default — route: delegated
-- [ ] T3.4b Drag and drop (`@dnd-kit`) + "Subir"/"Bajar" buttons in both lists — route: delegated
+- [x] T3.4b Drag and drop (`@dnd-kit`) + "Subir"/"Bajar" buttons in both lists — route: delegated
 
 Route evidence: shared helpers + a shared pagination component + two feature views/containers + tests → writer trigger; one bounded writer, sequential.
 
@@ -79,5 +79,15 @@ Route evidence: shared helpers + a shared pagination component + two feature vie
   - RED: `pnpm test src/lib/listing.test.js src/stores/useRecipeStore.test.js` → 7 failed, 18 passed (moveItem/store actions missing); `pnpm test src/features` → 8 failed, 12 passed.
   - GREEN: full suite 177/177 passed; `pnpm build` passed.
 
+- T3.4b done (previous commit 280b8cd). Dependencies: `@dnd-kit/core` 6.3.1, `@dnd-kit/sortable` 10.0.0, `@dnd-kit/utilities` 3.2.2 (React ≥16.8). Shared `src/shared/SortableList.jsx` (`SortableList`: DndContext + SortableContext, PointerSensor with a 5 px activation distance, KeyboardSensor with `sortableKeyboardCoordinates`, Spanish announcements and screen reader instructions; `SortableItem`: render prop that hands the handle props) and `src/shared/ReorderControls.jsx` (handle "Reordenar <nombre>", "Subir <nombre>", "Bajar <nombre>"; GripVertical/ChevronUp/ChevronDown icons). A drop calls `reorder*(activeId, overId)` on the full list (the visible page is a slice of it). Pure `pageOfIndex` in `src/lib/listing.js`.
+  - Containers build a `reorder` prop (`onReorder`, `onMove`, global `firstId`/`lastId`) only for "Personalizado" without a search (ingredients) / with "Personalizado" (recipes); otherwise `null` and the controls are not rendered. Subir/Bajar are disabled at the global first/last position.
+  - Page follow: when Subir/Bajar moves an item off the visible page, the container moves to the page where it now is (`pageOfIndex`), so the item stays in view and repeated presses keep working. The keyboard focus stays on the moved item's button (or its sibling when the button ended up disabled); the focus request survives up to 3 renders because the URL page change renders after the store change.
+  - Layout: ingredients get a leading "Orden" column (`.table-panel.reorderable`, 750 px min width in the mobile horizontal table scroll); recipe items are wrapped in `.selector-row` (item + compact controls), which becomes the horizontal scroller's child on mobile. Recipes use `rectSortingStrategy` (works for the desktop column and the mobile row). A recipe click still navigates (the pointer listeners are only on the handle).
+  - Test adapted: `App.test.jsx` "opens a recipe from the overview and the recipe selector" now clicks `/^C Cookies de chocolate/` (the library item), because "Subir/Bajar/Reordenar Cookies de chocolate" also matched `/Cookies de chocolate/`.
+  - Drag in jsdom: keyboard drag is tested for real (handle focus → space → ArrowDown → space reorders the store; escape cancels with the Spanish announcement) by stubbing `getBoundingClientRect` with stacked row rects in that describe block. Pointer drag is not tested (jsdom has no layout/pointer capture).
+  - RED: `pnpm test src/features` → 7 failed, 21 passed (the "recipe click still navigates" case passes vacuously before the feature). The keyboard-drag tests and `pageOfIndex` test were written after the shared components existed (no RED observed for them).
+  - GREEN: full suite 188/188 passed; `pnpm build` passed (JS 328 kB, +51 kB from dnd-kit).
+  - Not verified: manual smoke of drag and drop and the mobile layout in a real browser.
+
 ## Next step
-T3.4b: drag and drop + Subir/Bajar. Then open the PR (single-pr).
+Manual smoke in Chrome (drag with mouse and keyboard, Subir/Bajar across pages, mobile width), then open the PR (single-pr).

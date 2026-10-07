@@ -3,12 +3,33 @@ import PageHeader from "../../shared/PageHeader";
 import NumericInput from "../../shared/NumericInput";
 import Pagination from "../../shared/Pagination";
 import SortControl from "../../shared/SortControl";
+import ReorderControls from "../../shared/ReorderControls";
+import { SortableItem, SortableList } from "../../shared/SortableList";
+import { rectSortingStrategy } from "@dnd-kit/sortable";
 import { currency, unitLabels } from "../../lib/format";
 import { ingredientCost } from "../../lib/recipeMath";
 import { formatRelativeDate } from "../../lib/dates";
 
+function LibraryItem({ recipe, selected, onSelect }) {
+  return (
+    <button
+      onClick={() => onSelect(recipe.id)}
+      className={`selector-item ${selected ? "selected" : ""}`}
+    >
+      <span className="selector-avatar">{recipe.name.charAt(0)}</span>
+      <span>
+        <strong>{recipe.name}</strong>
+        <small>Rinde {recipe.yield} unidades</small>
+      </span>
+      <ChevronRight size={15} />
+    </button>
+  );
+}
+
 // `recipes` is the current library page, already sorted; `recipeCount` is the
-// total. `selectedRecipe` may be on another page.
+// total. `selectedRecipe` may be on another page. `reorder` ({ onReorder,
+// onMove, firstId, lastId }) enables the custom order controls; null hides
+// them. First/last refer to the full library, not the page.
 function RecipesView({
   recipes,
   recipeCount,
@@ -28,6 +49,7 @@ function RecipesView({
   selectedRecipe,
   updateRecipe,
   onDelete,
+  reorder = null,
 }) {
   function updateItem(index, field, value) {
     updateRecipe(
@@ -89,20 +111,53 @@ function RecipesView({
             />
           )}
           <div className="selector-list">
-            {recipes.map((recipe) => (
-              <button
-                key={recipe.id}
-                onClick={() => onSelect(recipe.id)}
-                className={`selector-item ${selectedId === recipe.id ? "selected" : ""}`}
+            {reorder ? (
+              // The rect strategy works both for the desktop column and the
+              // horizontal scroller on mobile.
+              <SortableList
+                ids={recipes.map((recipe) => recipe.id)}
+                getLabel={(id) =>
+                  recipes.find((recipe) => recipe.id === id)?.name
+                }
+                onReorder={reorder.onReorder}
+                strategy={rectSortingStrategy}
               >
-                <span className="selector-avatar">{recipe.name.charAt(0)}</span>
-                <span>
-                  <strong>{recipe.name}</strong>
-                  <small>Rinde {recipe.yield} unidades</small>
-                </span>
-                <ChevronRight size={15} />
-              </button>
-            ))}
+                {recipes.map((recipe) => (
+                  <SortableItem
+                    key={recipe.id}
+                    id={recipe.id}
+                    className="selector-row"
+                  >
+                    {(handleProps) => (
+                      <>
+                        <LibraryItem
+                          recipe={recipe}
+                          selected={selectedId === recipe.id}
+                          onSelect={onSelect}
+                        />
+                        <ReorderControls
+                          id={recipe.id}
+                          name={recipe.name}
+                          handleProps={handleProps}
+                          canMoveUp={recipe.id !== reorder.firstId}
+                          canMoveDown={recipe.id !== reorder.lastId}
+                          onMove={(delta) => reorder.onMove(recipe.id, delta)}
+                        />
+                      </>
+                    )}
+                  </SortableItem>
+                ))}
+              </SortableList>
+            ) : (
+              recipes.map((recipe) => (
+                <LibraryItem
+                  key={recipe.id}
+                  recipe={recipe}
+                  selected={selectedId === recipe.id}
+                  onSelect={onSelect}
+                />
+              ))
+            )}
           </div>
           <Pagination
             className="pagination-compact"

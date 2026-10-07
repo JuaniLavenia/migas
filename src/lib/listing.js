@@ -54,6 +54,11 @@ export function paginate(items, page, pageSize) {
   };
 }
 
+// 1-based page that shows the item at `index` (0-based) of the full list.
+export function pageOfIndex(index, pageSize) {
+  return Math.floor(Math.max(index, 0) / pageSize) + 1;
+}
+
 // Returns a new array with the item at `fromIndex` moved to `toIndex` (clamped
 // to the list bounds). An out-of-range source or a move onto the same index
 // returns `items` itself, so callers can skip the update.

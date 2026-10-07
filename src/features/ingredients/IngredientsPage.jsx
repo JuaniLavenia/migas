@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import useRecipeStore from "../../stores/useRecipeStore";
 import useToastStore from "../../stores/useToastStore";
 import { countRecipesUsingIngredient } from "../../lib/recipeMath";
-import { paginate, sortBy } from "../../lib/listing";
+import { CUSTOM_SORT, pageOfIndex, paginate, sortBy } from "../../lib/listing";
 import useListingParams from "../../shared/useListingParams";
 import ConfirmDialog from "../../shared/ConfirmDialog";
 import IngredientsView from "./IngredientsView";
@@ -33,6 +33,10 @@ function IngredientsPage() {
   const addIngredient = useRecipeStore((state) => state.addIngredient);
   const updateIngredient = useRecipeStore((state) => state.updateIngredient);
   const deleteIngredient = useRecipeStore((state) => state.deleteIngredient);
+  const reorderIngredients = useRecipeStore(
+    (state) => state.reorderIngredients,
+  );
+  const moveIngredient = useRecipeStore((state) => state.moveIngredient);
   const showToast = useToastStore((state) => state.showToast);
   const [search, setSearch] = useState("");
   const listing = useListingParams(ingredientListingDefaults);
@@ -62,6 +66,28 @@ function IngredientsPage() {
   useEffect(() => {
     if (listing.page !== pageInfo.page) listing.setPage(pageInfo.page);
   }, [listing.page, pageInfo.page]);
+
+  // Moves one position in the full list and, when the ingredient leaves the
+  // visible page, follows it so it stays in view.
+  function move(id, delta) {
+    const target = ingredients.findIndex((item) => item.id === id) + delta;
+    if (target < 0 || target >= ingredients.length) return;
+    moveIngredient(id, delta);
+    const targetPage = pageOfIndex(target, INGREDIENTS_PER_PAGE);
+    if (targetPage !== pageInfo.page) listing.setPage(targetPage);
+  }
+
+  // Only the unfiltered custom order can be rearranged: there the visible
+  // order is the stored order.
+  const reorder =
+    listing.sort === CUSTOM_SORT && search === ""
+      ? {
+          onReorder: reorderIngredients,
+          onMove: move,
+          firstId: ingredients[0]?.id,
+          lastId: ingredients.at(-1)?.id,
+        }
+      : null;
 
   function changeSearch(value) {
     setSearch(value);
@@ -115,6 +141,7 @@ function IngredientsPage() {
         onAdd={() => setEditing({})}
         onEdit={setEditing}
         onDelete={requestDelete}
+        reorder={reorder}
       />
       {editing !== null && (
         <IngredientModal
