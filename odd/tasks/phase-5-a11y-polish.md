@@ -31,7 +31,7 @@ Make the app usable with keyboard and screen readers, fix the broken mobile reci
 
 ## Tasks
 - [x] T5.1 Mobile layout + font sizes — route: delegated
-- [ ] T5.2 Form labels + icon button names — route: delegated
+- [x] T5.2 Form labels + icon button names — route: delegated
 - [ ] T5.3 ModalShell → Radix Dialog — route: delegated
 - [ ] T5.4 Mobile sidebar + toast live region — route: delegated
 - [ ] T5.5 Shared recipe item logic + recipeTotals Map/memo — route: delegated
@@ -61,7 +61,8 @@ Route evidence: CSS plus several feature components, shared components and tests
 
 ## Progress
 - Branch created. Mobile overflow diagnosed in Chrome (see Problem). Code mapped by an explorer.
-- T5.1 (`App.css` only): every flexible grid track that holds content now uses `minmax(0, …fr)` (`.recipe-workspace` desktop and mobile, `.stats-grid`, `.overview-grid`, `.cost-progress`, `.editor-grid`, `.editor-cost-card`, `.used-row`, `.form-grid`, `.modal-ingredient-row`); `.recipe-workspace > *` and `.stat-card > *` get `min-width: 0`. The ingredients table keeps its intentional `min-width` inside the `.table-panel` scroller. `.editor-top` gets a gap and its title block shrinks; under 680 px it wraps (name on its own line). Under 680 px `.used-row` becomes a two-line grid (ingredient + remove / quantity + cost) with 14 px inputs and larger touch targets, and `.editor-cost-card` gets 18 px wrapping amounts. All 9/10 px font sizes raised to 11 px (`.selector-item strong` 11 → 12 px to keep hierarchy; the mobile 9 px `.stat-card` override removed). RED exception: CSS layout has no runnable RED in jsdom; to be verified by measurement in Chrome at 360/390 px. GREEN: `corepack pnpm test` 279/279; `corepack pnpm build` OK.
+- T5.1 (`App.css` only): every flexible grid track that holds content now uses `minmax(0, …fr)` (`.recipe-workspace` desktop and mobile, `.stats-grid`, `.overview-grid`, `.cost-progress`, `.editor-grid`, `.editor-cost-card`, `.used-row`, `.form-grid`, `.modal-ingredient-row`); `.recipe-workspace > *` and `.stat-card > *` get `min-width: 0`. The ingredients table keeps its intentional `min-width` inside the `.table-panel` scroller. `.editor-top` gets a gap and its title block shrinks; under 680 px it wraps (name on its own line). Under 680 px `.used-row` becomes a two-line grid (ingredient + remove / quantity + cost) with 14 px inputs and larger touch targets, and `.editor-cost-card` gets 18 px wrapping amounts. All 9/10 px font sizes raised to 11 px (`.selector-item strong` 11 → 12 px to keep hierarchy; the mobile 9 px `.stat-card` override removed). RED exception: CSS layout has no runnable RED in jsdom; to be verified by measurement in Chrome at 360/390 px. GREEN: `corepack pnpm test` 279/279; `corepack pnpm build` OK. Commit c3574cb.
+- T5.2: labels linked with `htmlFor` + `useId` ids in `RecipeModal`, `RecipesView` editor and `IngredientModal`; `aria-label` on compact controls (recipe name input "Nombre de la receta", item select "Insumo", item quantity "Cantidad", ingredient search "Buscar insumo o categoría"); explicit `aria-label` on icon-only buttons (`ModalShell` "Cerrar", sidebar "Cerrar menú", topbar "Abrir menú", avatar "Mi perfil", "Quitar insumo", "Eliminar receta", ingredient row "Editar"/"Eliminar" — same names the `title` already gave, so existing tests keep their queries). `RecipeImageField` already labels its file input by wrapping it in the button label; `SortControl` already used `htmlFor`. New `src/FormAccessibility.test.jsx` (5 tests). RED: 5/5 failed ("Unable to find an accessible element with the role textbox and name Nombre de la receta", "… Nombre del insumo", "… Buscar insumo o categoría", "… button and name Abrir menú"). GREEN: 284/284; build OK.
 
 ## Next step
-T5.2.
+T5.3.

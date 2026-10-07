@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { AlertTriangle, Plus, Trash2 } from "lucide-react";
 import PageHeader from "../../shared/PageHeader";
 import NumericInput from "../../shared/NumericInput";
@@ -60,6 +61,7 @@ function RecipesView({
   imageField,
   reorder = null,
 }) {
+  const fieldId = useId();
   function updateItem(index, field, value) {
     updateRecipe(
       "items",
@@ -191,6 +193,7 @@ function RecipesView({
                 <span className="eyebrow">Editando receta</span>
                 <input
                   className="recipe-name-input"
+                  aria-label="Nombre de la receta"
                   value={selectedRecipe.name}
                   onChange={(event) =>
                     updateRecipe("name", event.target.value)
@@ -206,6 +209,7 @@ function RecipesView({
                   type="button"
                   className="icon-button danger"
                   title="Eliminar receta"
+                  aria-label="Eliminar receta"
                   onClick={() => onDelete(selectedRecipe.id)}
                 >
                   <Trash2 size={16} />
@@ -215,9 +219,10 @@ function RecipesView({
             {imageField && <RecipeImageField {...imageField} />}
             <div className="editor-grid">
               <div className="field-group">
-                <label>Rendimiento</label>
+                <label htmlFor={`${fieldId}-yield`}>Rendimiento</label>
                 <div className="input-with-suffix">
                   <NumericInput
+                    id={`${fieldId}-yield`}
                     min={1}
                     value={selectedRecipe.yield}
                     onChange={(value) => updateRecipe("yield", value)}
@@ -226,9 +231,10 @@ function RecipesView({
                 </div>
               </div>
               <div className="field-group">
-                <label>Margen de ganancia</label>
+                <label htmlFor={`${fieldId}-margin`}>Margen de ganancia</label>
                 <div className="input-with-suffix">
                   <NumericInput
+                    id={`${fieldId}-margin`}
                     min={0}
                     value={selectedRecipe.margin}
                     onChange={(value) => updateRecipe("margin", value)}
@@ -237,9 +243,10 @@ function RecipesView({
                 </div>
               </div>
               <div className="field-group">
-                <label>Gastos extra</label>
+                <label htmlFor={`${fieldId}-extras`}>Gastos extra</label>
                 <div className="input-with-suffix">
                   <NumericInput
+                    id={`${fieldId}-extras`}
                     min={0}
                     value={selectedRecipe.extras}
                     onChange={(value) => updateRecipe("extras", value)}
@@ -294,6 +301,7 @@ function RecipesView({
                   <div className="used-row" key={index}>
                     <span className="used-dot" />
                     <select
+                      aria-label="Insumo"
                       value={item.ingredientId}
                       onChange={(event) =>
                         updateItem(index, "ingredientId", event.target.value)
@@ -312,6 +320,7 @@ function RecipesView({
                     </select>
                     <div className="used-quantity">
                       <NumericInput
+                        aria-label="Cantidad"
                         min={0}
                         value={item.quantity}
                         onChange={(value) =>
@@ -331,6 +340,7 @@ function RecipesView({
                       type="button"
                       className="icon-button danger"
                       title="Quitar insumo"
+                      aria-label="Quitar insumo"
                       onClick={() => removeItem(index)}
                     >
                       <Trash2 size={14} />

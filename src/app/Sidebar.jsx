@@ -34,7 +34,12 @@ function Sidebar({ counts, open, onNavigate, onClose }) {
           <Utensils size={18} />
         </span>
         <span>Miga</span>
-        <button className="icon-button mobile-close" onClick={onClose}>
+        <button
+          type="button"
+          className="icon-button mobile-close"
+          aria-label="Cerrar menú"
+          onClick={onClose}
+        >
           <X size={18} />
         </button>
       </div>

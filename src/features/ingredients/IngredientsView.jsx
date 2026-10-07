@@ -42,6 +42,7 @@ function IngredientRow({ item, onEdit, onDelete, reorderControls }) {
         <button
           className="icon-button"
           title="Editar"
+          aria-label="Editar"
           onClick={() => onEdit(item)}
         >
           <Edit3 size={16} />
@@ -49,6 +50,7 @@ function IngredientRow({ item, onEdit, onDelete, reorderControls }) {
         <button
           className="icon-button danger"
           title="Eliminar"
+          aria-label="Eliminar"
           onClick={() => onDelete(item.id)}
         >
           <Trash2 size={16} />
@@ -130,8 +132,9 @@ function IngredientsView({
       />
       <div className="toolbar">
         <div className="search-field">
-          <Search size={17} />
+          <Search size={17} aria-hidden="true" />
           <input
+            aria-label="Buscar insumo o categoría"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Buscar insumo o categoría..."

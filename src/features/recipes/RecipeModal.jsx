@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import ModalShell from "../../shared/ModalShell";
 import NumericInput from "../../shared/NumericInput";
 
 function RecipeModal({ ingredients, onClose, onSave }) {
+  const fieldId = useId();
   const [form, setForm] = useState({
     name: "",
     yield: 12,
@@ -52,8 +53,9 @@ function RecipeModal({ ingredients, onClose, onSave }) {
       >
         <div className="form-grid">
           <div className="field-group full">
-            <label>Nombre de la receta</label>
+            <label htmlFor={`${fieldId}-name`}>Nombre de la receta</label>
             <input
+              id={`${fieldId}-name`}
               required
               value={form.name}
               onChange={(event) =>
@@ -63,17 +65,19 @@ function RecipeModal({ ingredients, onClose, onSave }) {
             />
           </div>
           <div className="field-group">
-            <label>Rinde</label>
+            <label htmlFor={`${fieldId}-yield`}>Rinde</label>
             <NumericInput
+              id={`${fieldId}-yield`}
               min={1}
               value={form.yield}
               onChange={(value) => setForm({ ...form, yield: value })}
             />
           </div>
           <div className="field-group">
-            <label>Margen</label>
+            <label htmlFor={`${fieldId}-margin`}>Margen</label>
             <div className="input-with-suffix">
               <NumericInput
+                id={`${fieldId}-margin`}
                 min={0}
                 value={form.margin}
                 onChange={(value) => setForm({ ...form, margin: value })}
@@ -82,9 +86,10 @@ function RecipeModal({ ingredients, onClose, onSave }) {
             </div>
           </div>
           <div className="field-group full">
-            <label>Gastos extra</label>
+            <label htmlFor={`${fieldId}-extras`}>Gastos extra</label>
             <div className="input-with-suffix">
               <NumericInput
+                id={`${fieldId}-extras`}
                 min={0}
                 value={form.extras}
                 onChange={(value) => setForm({ ...form, extras: value })}
@@ -98,6 +103,7 @@ function RecipeModal({ ingredients, onClose, onSave }) {
           {form.items.map((item, index) => (
             <div className="modal-ingredient-row" key={index}>
               <select
+                aria-label="Insumo"
                 value={item.ingredientId}
                 onChange={(event) =>
                   updateItem(index, "ingredientId", event.target.value)
@@ -117,6 +123,7 @@ function RecipeModal({ ingredients, onClose, onSave }) {
                 ))}
               </select>
               <NumericInput
+                aria-label="Cantidad"
                 min={0}
                 value={item.quantity}
                 onChange={(value) => updateItem(index, "quantity", value)}
@@ -133,6 +140,7 @@ function RecipeModal({ ingredients, onClose, onSave }) {
                 type="button"
                 className="icon-button danger"
                 title="Quitar insumo"
+                aria-label="Quitar insumo"
                 onClick={() => removeItem(index)}
               >
                 <Trash2 size={14} />

@@ -5,7 +5,12 @@ function Topbar({ title, onOpenMenu }) {
   const saveFailed = useSaveStatusStore((state) => state.status === "error");
   return (
     <header className="topbar">
-      <button className="icon-button menu-button" onClick={onOpenMenu}>
+      <button
+        type="button"
+        className="icon-button menu-button"
+        aria-label="Abrir menú"
+        onClick={onOpenMenu}
+      >
         <Menu size={21} />
       </button>
       <div className="breadcrumbs">
@@ -26,7 +31,9 @@ function Topbar({ title, onOpenMenu }) {
           <span className="status-dot" />{" "}
           {saveFailed ? "No se pudo guardar" : "Guardado localmente"}
         </span>
-        <button className="avatar small">MP</button>
+        <button type="button" className="avatar small" aria-label="Mi perfil">
+          MP
+        </button>
       </div>
     </header>
   );
