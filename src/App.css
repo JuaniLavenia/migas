@@ -1113,6 +1113,17 @@ h3 {
   padding: 25px;
   box-shadow: 0 24px 80px rgba(18, 45, 38, 0.2);
 }
+/* Radix renders the content next to the overlay, not inside it, so the
+   backdrop's grid centering does not apply: center it on its own. */
+.modal-dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 11;
+  width: min(510px, calc(100% - 40px));
+  max-height: calc(100vh - 40px);
+}
 .modal-heading {
   display: flex;
   justify-content: space-between;
