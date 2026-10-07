@@ -25,7 +25,7 @@ Let the user sort and page through ingredients and recipes, so the lists stay us
 
 ## Tasks
 - [x] T3.1 Pure `sortBy` + `paginate` helpers — route: delegated
-- [ ] T3.2 Ingredients sort + pagination — route: delegated
+- [x] T3.2 Ingredients sort + pagination — route: delegated
 - [ ] T3.3 Recipes library sort + pagination — route: delegated
 
 Route evidence: shared helpers + a shared pagination component + two feature views/containers + tests → writer trigger; one bounded writer, sequential.
@@ -54,5 +54,9 @@ Route evidence: shared helpers + a shared pagination component + two feature vie
   - RED: `pnpm test src/lib/listing.test.js` failed to load `./listing` (module missing).
   - GREEN: 14/14; full suite 149/149 passed; `pnpm build` passed.
 
+- T3.2 done (previous commit 1ccd459). Shared `useListingParams` hook (URL state, defaults omitted, `replace` history on every sort/dir/page change), `Pagination` (prev/next, "Página X de Y", numbered buttons with `aria-current` up to 7 pages) and `SortControl` (labelled select + direction toggle) in `src/shared`; sort options in `features/ingredients/ingredientListing.js` (name breaks ties). Search → sort → paginate in `IngredientsPage`; an out-of-range page is clamped and the URL corrected by an effect. `renderApp` gained a query-string probe (`currentSearchParams`). The App test that deleted "the first row" now searches "Harina" first (rows are sorted by name now).
+  - RED: `pnpm test src/features/ingredients` → 8 failed, 1 passed (the "pagination hidden on one page" case passes vacuously before the feature).
+  - GREEN: full suite 158/158 passed; `pnpm build` passed.
+
 ## Next step
-T3.2 ingredients sort + pagination.
+T3.3 recipes library sort + pagination.

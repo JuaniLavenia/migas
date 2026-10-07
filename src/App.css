@@ -614,6 +614,74 @@ h3 {
   color: #9aa6a0;
   font-size: 11px;
 }
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.sort-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #9aa6a0;
+  font-size: 11px;
+}
+.sort-control select {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 7px 9px;
+  font-size: 12px;
+  color: var(--ink);
+}
+.sort-direction {
+  border: 1px solid var(--line);
+  background: #fff;
+}
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+.pagination-step,
+.pagination-page {
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.pagination-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 7px 11px;
+}
+.pagination-step:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.pagination-pages {
+  display: flex;
+  gap: 4px;
+}
+.pagination-page {
+  min-width: 30px;
+  padding: 7px 6px;
+}
+.pagination-page[aria-current="page"] {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+.pagination-status {
+  color: #9aa6a0;
+  font-size: 11px;
+}
 .table-panel {
   overflow: hidden;
 }
@@ -1157,6 +1225,12 @@ h3 {
   }
   .search-field {
     width: 100%;
+  }
+  .toolbar-actions {
+    justify-content: space-between;
+  }
+  .pagination {
+    justify-content: center;
   }
   .form-grid {
     grid-template-columns: 1fr;

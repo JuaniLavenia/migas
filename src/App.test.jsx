@@ -131,8 +131,12 @@ describe("App", () => {
   it("warns before deleting an ingredient used by recipes", async () => {
     const { user } = renderApp();
     await user.click(navItem(/^Insumos/));
-    // First row: Harina 0000, used by both demo recipes.
-    await user.click(screen.getAllByRole("button", { name: "Eliminar" })[0]);
+    // Harina 0000 is used by both demo recipes.
+    await user.type(
+      screen.getByPlaceholderText("Buscar insumo o categoría..."),
+      "Harina",
+    );
+    await user.click(screen.getByRole("button", { name: "Eliminar" }));
 
     const dialog = screen.getByRole("alertdialog");
     expect(

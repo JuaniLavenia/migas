@@ -1,5 +1,7 @@
 import { Edit3, Package, Plus, Search, Trash2 } from "lucide-react";
 import PageHeader from "../../shared/PageHeader";
+import Pagination from "../../shared/Pagination";
+import SortControl from "../../shared/SortControl";
 import { currency } from "../../lib/format";
 import { unitPrice } from "../../lib/recipeMath";
 
@@ -9,10 +11,28 @@ function formatUnitPrice(item) {
   return price === null ? "—" : `${currency.format(price)} / ${item.unit}`;
 }
 
+// Totals, not page sizes: "N insumos", or "N de M insumos" while searching.
+function countLabel(matchCount, totalCount, searching) {
+  return searching
+    ? `${matchCount} de ${totalCount} insumos`
+    : `${totalCount} insumos`;
+}
+
+// `ingredients` is the current page, already filtered and sorted.
 function IngredientsView({
   ingredients,
+  matchCount,
+  totalCount,
   search,
   setSearch,
+  sortOptions,
+  sort,
+  direction,
+  onSortChange,
+  onDirectionChange,
+  page,
+  pageCount,
+  onPageChange,
   onAdd,
   onEdit,
   onDelete,
@@ -38,7 +58,18 @@ function IngredientsView({
             placeholder="Buscar insumo o categoría..."
           />
         </div>
-        <span className="toolbar-count">{ingredients.length} insumos</span>
+        <div className="toolbar-actions">
+          <SortControl
+            options={sortOptions}
+            sort={sort}
+            direction={direction}
+            onSortChange={onSortChange}
+            onDirectionChange={onDirectionChange}
+          />
+          <span className="toolbar-count">
+            {countLabel(matchCount, totalCount, search !== "")}
+          </span>
+        </div>
       </div>
       <section className="panel table-panel">
         <div className="table-header">
@@ -90,6 +121,11 @@ function IngredientsView({
           </div>
         )}
       </section>
+      <Pagination
+        page={page}
+        pageCount={pageCount}
+        onPageChange={onPageChange}
+      />
     </>
   );
 }
