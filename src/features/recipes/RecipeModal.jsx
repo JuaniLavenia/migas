@@ -1,9 +1,13 @@
-import { useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { useId, useMemo, useState } from "react";
+import { Plus } from "lucide-react";
 import ModalShell from "../../shared/ModalShell";
 import NumericInput from "../../shared/NumericInput";
+import { addNextItem, removeItemAt, updateItemAt } from "../../lib/recipeItems";
+import { indexIngredients } from "../../lib/recipeMath";
+import RecipeItemRow from "./RecipeItemRow";
 
 function RecipeModal({ ingredients, onClose, onSave }) {
+  const fieldId = useId();
   const [form, setForm] = useState({
     name: "",
     yield: 12,
@@ -13,32 +17,17 @@ function RecipeModal({ ingredients, onClose, onSave }) {
       .slice(0, 3)
       .map((item) => ({ ingredientId: item.id, quantity: 0 })),
   });
-  const updateItem = (index, field, value) =>
-    setForm((current) => ({
-      ...current,
-      items: current.items.map((item, itemIndex) =>
-        itemIndex === index
-          ? { ...item, [field]: field === "quantity" ? Number(value) : value }
-          : item,
-      ),
-    }));
-  const addItem = () =>
+  const byId = useMemo(() => indexIngredients(ingredients), [ingredients]);
+  const setItems = (change) =>
     setForm((current) => {
-      const used = new Set(current.items.map((item) => item.ingredientId));
-      const next =
-        ingredients.find((ingredient) => !used.has(ingredient.id)) ||
-        ingredients[0];
-      if (!next) return current;
-      return {
-        ...current,
-        items: [...current.items, { ingredientId: next.id, quantity: 0 }],
-      };
+      const items = change(current.items);
+      return items === current.items ? current : { ...current, items };
     });
+  const updateItem = (index, field, value) =>
+    setItems((items) => updateItemAt(items, index, field, value));
+  const addItem = () => setItems((items) => addNextItem(items, ingredients));
   const removeItem = (index) =>
-    setForm((current) => ({
-      ...current,
-      items: current.items.filter((_, itemIndex) => itemIndex !== index),
-    }));
+    setItems((items) => removeItemAt(items, index));
   return (
     <ModalShell title="Nueva receta" onClose={onClose}>
       <form
@@ -52,8 +41,9 @@ function RecipeModal({ ingredients, onClose, onSave }) {
       >
         <div className="form-grid">
           <div className="field-group full">
-            <label>Nombre de la receta</label>
+            <label htmlFor={`${fieldId}-name`}>Nombre de la receta</label>
             <input
+              id={`${fieldId}-name`}
               required
               value={form.name}
               onChange={(event) =>
@@ -63,17 +53,19 @@ function RecipeModal({ ingredients, onClose, onSave }) {
             />
           </div>
           <div className="field-group">
-            <label>Rinde</label>
+            <label htmlFor={`${fieldId}-yield`}>Rinde</label>
             <NumericInput
+              id={`${fieldId}-yield`}
               min={1}
               value={form.yield}
               onChange={(value) => setForm({ ...form, yield: value })}
             />
           </div>
           <div className="field-group">
-            <label>Margen</label>
+            <label htmlFor={`${fieldId}-margin`}>Margen</label>
             <div className="input-with-suffix">
               <NumericInput
+                id={`${fieldId}-margin`}
                 min={0}
                 value={form.margin}
                 onChange={(value) => setForm({ ...form, margin: value })}
@@ -82,9 +74,10 @@ function RecipeModal({ ingredients, onClose, onSave }) {
             </div>
           </div>
           <div className="field-group full">
-            <label>Gastos extra</label>
+            <label htmlFor={`${fieldId}-extras`}>Gastos extra</label>
             <div className="input-with-suffix">
               <NumericInput
+                id={`${fieldId}-extras`}
                 min={0}
                 value={form.extras}
                 onChange={(value) => setForm({ ...form, extras: value })}
@@ -96,48 +89,15 @@ function RecipeModal({ ingredients, onClose, onSave }) {
         <div className="modal-subheading">Insumos de la receta</div>
         <div className="modal-ingredients">
           {form.items.map((item, index) => (
-            <div className="modal-ingredient-row" key={index}>
-              <select
-                value={item.ingredientId}
-                onChange={(event) =>
-                  updateItem(index, "ingredientId", event.target.value)
-                }
-              >
-                {!ingredients.some(
-                  (ingredient) => ingredient.id === item.ingredientId,
-                ) && (
-                  <option value={item.ingredientId} disabled>
-                    Insumo eliminado
-                  </option>
-                )}
-                {ingredients.map((ingredient) => (
-                  <option key={ingredient.id} value={ingredient.id}>
-                    {ingredient.name}
-                  </option>
-                ))}
-              </select>
-              <NumericInput
-                min={0}
-                value={item.quantity}
-                onChange={(value) => updateItem(index, "quantity", value)}
-                placeholder="Cantidad"
-              />
-              <span>
-                {
-                  ingredients.find(
-                    (ingredient) => ingredient.id === item.ingredientId,
-                  )?.unit
-                }
-              </span>
-              <button
-                type="button"
-                className="icon-button danger"
-                title="Quitar insumo"
-                onClick={() => removeItem(index)}
-              >
-                <Trash2 size={14} />
-              </button>
-            </div>
+            <RecipeItemRow
+              key={index}
+              variant="modal"
+              item={item}
+              ingredient={byId.get(item.ingredientId)}
+              ingredients={ingredients}
+              onChange={(field, value) => updateItem(index, field, value)}
+              onRemove={() => removeItem(index)}
+            />
           ))}
           <button
             type="button"

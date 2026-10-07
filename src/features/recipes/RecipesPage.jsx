@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
 import useRecipeStore from "../../stores/useRecipeStore";
 import useRecipeSelectionStore from "../../stores/useRecipeSelectionStore";
@@ -72,10 +72,21 @@ function RecipesPage() {
     redirectPath = recipePath(fallbackRecipe.id);
   }
 
-  const sortedRecipes = sortListing(
-    recipes,
-    recipeSortValue(listing.sort, ingredients),
-    listing.direction,
+  // Cost/price sorting computes every recipe's totals: only redo it when the
+  // data or the sort changes.
+  const sortedRecipes = useMemo(
+    () =>
+      sortListing(
+        recipes,
+        recipeSortValue(listing.sort, ingredients),
+        listing.direction,
+      ),
+    [recipes, ingredients, listing.sort, listing.direction],
+  );
+  const totals = useMemo(
+    () =>
+      selectedRecipe ? recipeTotals(selectedRecipe, ingredients) : emptyTotals,
+    [selectedRecipe, ingredients],
   );
   const pageInfo = paginate(sortedRecipes, listing.page, RECIPES_PER_PAGE);
 
@@ -94,10 +105,6 @@ function RecipesPage() {
   if (redirectPath) {
     return <Navigate to={withQuery(redirectPath)} replace />;
   }
-
-  const totals = selectedRecipe
-    ? recipeTotals(selectedRecipe, ingredients)
-    : emptyTotals;
 
   function updateRecipe(field, value) {
     if (!selectedRecipe) return;

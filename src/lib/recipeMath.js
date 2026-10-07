@@ -17,15 +17,28 @@ function recipeItems(recipe) {
   return Array.isArray(recipe?.items) ? recipe.items : [];
 }
 
+// id → ingredient. A repeated id keeps its first ingredient, as Array#find
+// would.
+export function indexIngredients(ingredients) {
+  const byId = new Map();
+  for (const ingredient of ingredients) {
+    if (!byId.has(ingredient.id)) byId.set(ingredient.id, ingredient);
+  }
+  return byId;
+}
+
 // missingCount: lines whose ingredient was deleted or has no unit price.
-// They cost 0, so the UI must warn that the total is incomplete.
-export function recipeTotals(recipe, ingredients) {
+// They cost 0, so the UI must warn that the total is incomplete. Callers
+// computing totals for many recipes pass a prebuilt `byId` index.
+export function recipeTotals(
+  recipe,
+  ingredients,
+  byId = indexIngredients(ingredients),
+) {
   let missingCount = 0;
   const cost =
     recipeItems(recipe).reduce((total, item) => {
-      const ingredient = ingredients.find(
-        (entry) => entry.id === item.ingredientId,
-      );
+      const ingredient = byId.get(item.ingredientId);
       if (!ingredient || unitPrice(ingredient) === null) {
         missingCount += 1;
         return total;

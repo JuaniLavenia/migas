@@ -6,6 +6,7 @@
 import { describe, expect, it } from "vitest";
 import {
   countRecipesUsingIngredient,
+  indexIngredients,
   ingredientCost,
   recipeTotals,
   unitPrice,
@@ -181,6 +182,27 @@ describe("recipeTotals", () => {
     expect(totals.cost).toBeCloseTo(1350);
     expect(totals.unitCost).toBeCloseTo(675);
     expect(totals.price).toBeCloseTo(742.5);
+  });
+
+  it("gives the same totals with a prebuilt ingredient index", () => {
+    expect(
+      recipeTotals(cookies, ingredients, indexIngredients(ingredients)),
+    ).toEqual(recipeTotals(cookies, ingredients));
+  });
+});
+
+describe("indexIngredients", () => {
+  it("maps each id to its ingredient", () => {
+    const byId = indexIngredients(ingredients);
+    expect(byId.size).toBe(ingredients.length);
+    expect(byId.get("manteca")).toBe(ingredients[1]);
+  });
+
+  it("keeps the first ingredient of a repeated id, like Array#find", () => {
+    const duplicate = { ...ingredients[0], packCost: 1 };
+    expect(indexIngredients([...ingredients, duplicate]).get("harina")).toBe(
+      ingredients[0],
+    );
   });
 });
 

@@ -1,3 +1,4 @@
+import { useId, useMemo } from "react";
 import { AlertTriangle, Plus, Trash2 } from "lucide-react";
 import PageHeader from "../../shared/PageHeader";
 import NumericInput from "../../shared/NumericInput";
@@ -6,10 +7,12 @@ import SortControl from "../../shared/SortControl";
 import ReorderControls from "../../shared/ReorderControls";
 import { SortableItem, SortableList } from "../../shared/SortableList";
 import { rectSortingStrategy } from "@dnd-kit/sortable";
-import { currency, unitLabels } from "../../lib/format";
-import { ingredientCost } from "../../lib/recipeMath";
+import { currency } from "../../lib/format";
+import { indexIngredients } from "../../lib/recipeMath";
+import { addNextItem, removeItemAt, updateItemAt } from "../../lib/recipeItems";
 import { formatRelativeDate } from "../../lib/dates";
 import RecipeImageField from "./RecipeImageField";
+import RecipeItemRow from "./RecipeItemRow";
 import RecipeThumb from "./RecipeThumb";
 
 function LibraryItem({ recipe, selected, onSelect }) {
@@ -60,34 +63,19 @@ function RecipesView({
   imageField,
   reorder = null,
 }) {
+  const fieldId = useId();
+  const byId = useMemo(() => indexIngredients(ingredients), [ingredients]);
+  function setItems(items) {
+    if (items !== selectedRecipe.items) updateRecipe("items", items);
+  }
   function updateItem(index, field, value) {
-    updateRecipe(
-      "items",
-      selectedRecipe.items.map((item, itemIndex) =>
-        itemIndex === index
-          ? { ...item, [field]: field === "quantity" ? Number(value) : value }
-          : item,
-      ),
-    );
+    setItems(updateItemAt(selectedRecipe.items, index, field, value));
   }
   function addItem() {
-    const used = new Set(
-      selectedRecipe.items.map((item) => item.ingredientId),
-    );
-    const next =
-      ingredients.find((ingredient) => !used.has(ingredient.id)) ||
-      ingredients[0];
-    if (!next) return;
-    updateRecipe("items", [
-      ...selectedRecipe.items,
-      { ingredientId: next.id, quantity: 0 },
-    ]);
+    setItems(addNextItem(selectedRecipe.items, ingredients));
   }
   function removeItem(index) {
-    updateRecipe(
-      "items",
-      selectedRecipe.items.filter((_, itemIndex) => itemIndex !== index),
-    );
+    setItems(removeItemAt(selectedRecipe.items, index));
   }
   return (
     <>
@@ -191,6 +179,7 @@ function RecipesView({
                 <span className="eyebrow">Editando receta</span>
                 <input
                   className="recipe-name-input"
+                  aria-label="Nombre de la receta"
                   value={selectedRecipe.name}
                   onChange={(event) =>
                     updateRecipe("name", event.target.value)
@@ -206,6 +195,7 @@ function RecipesView({
                   type="button"
                   className="icon-button danger"
                   title="Eliminar receta"
+                  aria-label="Eliminar receta"
                   onClick={() => onDelete(selectedRecipe.id)}
                 >
                   <Trash2 size={16} />
@@ -215,9 +205,10 @@ function RecipesView({
             {imageField && <RecipeImageField {...imageField} />}
             <div className="editor-grid">
               <div className="field-group">
-                <label>Rendimiento</label>
+                <label htmlFor={`${fieldId}-yield`}>Rendimiento</label>
                 <div className="input-with-suffix">
                   <NumericInput
+                    id={`${fieldId}-yield`}
                     min={1}
                     value={selectedRecipe.yield}
                     onChange={(value) => updateRecipe("yield", value)}
@@ -226,9 +217,10 @@ function RecipesView({
                 </div>
               </div>
               <div className="field-group">
-                <label>Margen de ganancia</label>
+                <label htmlFor={`${fieldId}-margin`}>Margen de ganancia</label>
                 <div className="input-with-suffix">
                   <NumericInput
+                    id={`${fieldId}-margin`}
                     min={0}
                     value={selectedRecipe.margin}
                     onChange={(value) => updateRecipe("margin", value)}
@@ -237,9 +229,10 @@ function RecipesView({
                 </div>
               </div>
               <div className="field-group">
-                <label>Gastos extra</label>
+                <label htmlFor={`${fieldId}-extras`}>Gastos extra</label>
                 <div className="input-with-suffix">
                   <NumericInput
+                    id={`${fieldId}-extras`}
                     min={0}
                     value={selectedRecipe.extras}
                     onChange={(value) => updateRecipe("extras", value)}
@@ -286,58 +279,16 @@ function RecipesView({
                 </div>
                 <span className="mini-label">Costo proporcional</span>
               </div>
-              {selectedRecipe.items.map((item, index) => {
-                const ingredient = ingredients.find(
-                  (entry) => entry.id === item.ingredientId,
-                );
-                return (
-                  <div className="used-row" key={index}>
-                    <span className="used-dot" />
-                    <select
-                      value={item.ingredientId}
-                      onChange={(event) =>
-                        updateItem(index, "ingredientId", event.target.value)
-                      }
-                    >
-                      {!ingredient && (
-                        <option value={item.ingredientId} disabled>
-                          Insumo eliminado
-                        </option>
-                      )}
-                      {ingredients.map((option) => (
-                        <option key={option.id} value={option.id}>
-                          {option.name}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="used-quantity">
-                      <NumericInput
-                        min={0}
-                        value={item.quantity}
-                        onChange={(value) =>
-                          updateItem(index, "quantity", value)
-                        }
-                      />
-                      <span>{unitLabels[ingredient?.unit] || ingredient?.unit}</span>
-                    </div>
-                    <strong className="used-cost">
-                      {currency.format(
-                        ingredient
-                          ? ingredientCost(ingredient, item.quantity)
-                          : 0,
-                      )}
-                    </strong>
-                    <button
-                      type="button"
-                      className="icon-button danger"
-                      title="Quitar insumo"
-                      onClick={() => removeItem(index)}
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                );
-              })}
+              {selectedRecipe.items.map((item, index) => (
+                <RecipeItemRow
+                  key={index}
+                  item={item}
+                  ingredient={byId.get(item.ingredientId)}
+                  ingredients={ingredients}
+                  onChange={(field, value) => updateItem(index, field, value)}
+                  onRemove={() => removeItem(index)}
+                />
+              ))}
               <button
                 type="button"
                 className="secondary-button"

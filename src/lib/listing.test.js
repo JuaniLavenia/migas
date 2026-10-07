@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   moveItem,
   pageOfIndex,
@@ -192,6 +192,15 @@ describe("sortListing", () => {
     const items = [{ name: "b" }, { name: "a" }];
     expect(sortListing(items, null, "desc")).toBe(items);
     expect(sortListing(items, byName, "asc").map(byName)).toEqual(["a", "b"]);
+  });
+
+  // Value readers can be costly (recipe totals), so they run once per item,
+  // not once per comparison.
+  it("reads each item's value once", () => {
+    const items = ["d", "a", "c", "b", "e"].map((name) => ({ name }));
+    const getValue = vi.fn(byName);
+    sortListing(items, getValue, "asc");
+    expect(getValue).toHaveBeenCalledTimes(items.length);
   });
 });
 

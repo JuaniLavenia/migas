@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import {
   ArrowUpRight,
   Calculator,
@@ -12,7 +13,7 @@ import {
 import PageHeader from "../../shared/PageHeader";
 import StatCard from "../../shared/StatCard";
 import { currency } from "../../lib/format";
-import { recipeTotals } from "../../lib/recipeMath";
+import { indexIngredients, recipeTotals } from "../../lib/recipeMath";
 import { formatMonthYear, formatRelativeDate } from "../../lib/dates";
 import RecipeThumb from "../recipes/RecipeThumb";
 
@@ -26,6 +27,14 @@ function Overview({
   onNewRecipe,
 }) {
   const now = Date.now();
+  // One ingredient index and one totals computation per recipe, redone only
+  // when the data changes.
+  const costs = useMemo(() => {
+    const byId = indexIngredients(ingredients);
+    return recipes.map(
+      (recipe) => recipeTotals(recipe, ingredients, byId).cost,
+    );
+  }, [recipes, ingredients]);
   return (
     <>
       <PageHeader
@@ -171,7 +180,7 @@ function Overview({
         </div>
         <div className="recipe-list">
           {recipes.map((recipe, index) => {
-            const data = recipeTotals(recipe, ingredients);
+            const cost = costs[index];
             return (
               <button
                 className="recipe-row"
@@ -199,7 +208,7 @@ function Overview({
                 </span>
                 <span className="recipe-row-cost">
                   <small>Costo total</small>
-                  <strong>{currency.format(data.cost)}</strong>
+                  <strong>{currency.format(cost)}</strong>
                 </span>
                 <ChevronRight size={17} />
               </button>

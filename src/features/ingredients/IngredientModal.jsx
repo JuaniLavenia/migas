@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import ModalShell from "../../shared/ModalShell";
 
 function IngredientModal({ initial, onClose, onSave }) {
+  const fieldId = useId();
   const [form, setForm] = useState({
     name: initial.name || "",
     category: initial.category || "Secos",
@@ -25,8 +26,9 @@ function IngredientModal({ initial, onClose, onSave }) {
       >
         <div className="form-grid">
           <div className="field-group full">
-            <label>Nombre del insumo</label>
+            <label htmlFor={`${fieldId}-name`}>Nombre del insumo</label>
             <input
+              id={`${fieldId}-name`}
               required
               value={form.name}
               onChange={(event) => change("name", event.target.value)}
@@ -34,16 +36,18 @@ function IngredientModal({ initial, onClose, onSave }) {
             />
           </div>
           <div className="field-group">
-            <label>Categoría</label>
+            <label htmlFor={`${fieldId}-category`}>Categoría</label>
             <input
+              id={`${fieldId}-category`}
               value={form.category}
               onChange={(event) => change("category", event.target.value)}
               placeholder="Ej. Secos"
             />
           </div>
           <div className="field-group">
-            <label>Unidad base</label>
+            <label htmlFor={`${fieldId}-unit`}>Unidad base</label>
             <select
+              id={`${fieldId}-unit`}
               value={form.unit}
               onChange={(event) => change("unit", event.target.value)}
             >
@@ -53,8 +57,9 @@ function IngredientModal({ initial, onClose, onSave }) {
             </select>
           </div>
           <div className="field-group">
-            <label>Contenido del pack</label>
+            <label htmlFor={`${fieldId}-pack-size`}>Contenido del pack</label>
             <input
+              id={`${fieldId}-pack-size`}
               required
               type="number"
               min="0.01"
@@ -65,9 +70,10 @@ function IngredientModal({ initial, onClose, onSave }) {
             />
           </div>
           <div className="field-group">
-            <label>Costo del pack</label>
+            <label htmlFor={`${fieldId}-pack-cost`}>Costo del pack</label>
             <div className="input-with-suffix">
               <input
+                id={`${fieldId}-pack-cost`}
                 required
                 type="number"
                 min="0"

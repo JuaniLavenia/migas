@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import useRecipeStore from "../../stores/useRecipeStore";
 import useRecipeSelectionStore from "../../stores/useRecipeSelectionStore";
@@ -22,9 +23,11 @@ function OverviewPage() {
   });
 
   const selectedRecipe = resolveSelectedRecipe(recipes, lastRecipeId);
-  const totals = selectedRecipe
-    ? recipeTotals(selectedRecipe, ingredients)
-    : emptyTotals;
+  const totals = useMemo(
+    () =>
+      selectedRecipe ? recipeTotals(selectedRecipe, ingredients) : emptyTotals,
+    [selectedRecipe, ingredients],
+  );
 
   return (
     <>

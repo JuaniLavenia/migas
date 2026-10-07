@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { NavLink } from "react-router-dom";
 import { ChevronRight, Utensils, X } from "lucide-react";
 import { views } from "./navigation";
@@ -17,8 +18,12 @@ function NavItem({ view, count, onNavigate }) {
 }
 
 // `counts` maps a view id to the badge shown next to it. NavLink marks the
-// current view (class + aria-current).
-function Sidebar({ counts, open, onNavigate, onClose }) {
+// current view (class + aria-current). `inert` takes the closed mobile drawer
+// out of the tab order and the accessibility tree.
+const Sidebar = forwardRef(function Sidebar(
+  { id, counts, open, inert, onNavigate, onClose },
+  ref,
+) {
   const renderItem = (view) => (
     <NavItem
       key={view.id}
@@ -28,13 +33,24 @@ function Sidebar({ counts, open, onNavigate, onClose }) {
     />
   );
   return (
-    <aside className={`sidebar ${open ? "sidebar-open" : ""}`}>
+    <aside
+      id={id}
+      ref={ref}
+      className={`sidebar ${open ? "sidebar-open" : ""}`}
+      // React 18 only passes `inert` through as a string attribute.
+      inert={inert ? "" : undefined}
+    >
       <div className="brand">
         <span className="brand-mark">
           <Utensils size={18} />
         </span>
         <span>Miga</span>
-        <button className="icon-button mobile-close" onClick={onClose}>
+        <button
+          type="button"
+          className="icon-button mobile-close"
+          aria-label="Cerrar menú"
+          onClick={onClose}
+        >
           <X size={18} />
         </button>
       </div>
@@ -57,6 +73,6 @@ function Sidebar({ counts, open, onNavigate, onClose }) {
       </div>
     </aside>
   );
-}
+});
 
 export default Sidebar;
