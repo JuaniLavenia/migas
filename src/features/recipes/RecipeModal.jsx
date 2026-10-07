@@ -1,7 +1,10 @@
-import { useId, useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { useId, useMemo, useState } from "react";
+import { Plus } from "lucide-react";
 import ModalShell from "../../shared/ModalShell";
 import NumericInput from "../../shared/NumericInput";
+import { addNextItem, removeItemAt, updateItemAt } from "../../lib/recipeItems";
+import { indexIngredients } from "../../lib/recipeMath";
+import RecipeItemRow from "./RecipeItemRow";
 
 function RecipeModal({ ingredients, onClose, onSave }) {
   const fieldId = useId();
@@ -14,32 +17,17 @@ function RecipeModal({ ingredients, onClose, onSave }) {
       .slice(0, 3)
       .map((item) => ({ ingredientId: item.id, quantity: 0 })),
   });
-  const updateItem = (index, field, value) =>
-    setForm((current) => ({
-      ...current,
-      items: current.items.map((item, itemIndex) =>
-        itemIndex === index
-          ? { ...item, [field]: field === "quantity" ? Number(value) : value }
-          : item,
-      ),
-    }));
-  const addItem = () =>
+  const byId = useMemo(() => indexIngredients(ingredients), [ingredients]);
+  const setItems = (change) =>
     setForm((current) => {
-      const used = new Set(current.items.map((item) => item.ingredientId));
-      const next =
-        ingredients.find((ingredient) => !used.has(ingredient.id)) ||
-        ingredients[0];
-      if (!next) return current;
-      return {
-        ...current,
-        items: [...current.items, { ingredientId: next.id, quantity: 0 }],
-      };
+      const items = change(current.items);
+      return items === current.items ? current : { ...current, items };
     });
+  const updateItem = (index, field, value) =>
+    setItems((items) => updateItemAt(items, index, field, value));
+  const addItem = () => setItems((items) => addNextItem(items, ingredients));
   const removeItem = (index) =>
-    setForm((current) => ({
-      ...current,
-      items: current.items.filter((_, itemIndex) => itemIndex !== index),
-    }));
+    setItems((items) => removeItemAt(items, index));
   return (
     <ModalShell title="Nueva receta" onClose={onClose}>
       <form
@@ -101,51 +89,15 @@ function RecipeModal({ ingredients, onClose, onSave }) {
         <div className="modal-subheading">Insumos de la receta</div>
         <div className="modal-ingredients">
           {form.items.map((item, index) => (
-            <div className="modal-ingredient-row" key={index}>
-              <select
-                aria-label="Insumo"
-                value={item.ingredientId}
-                onChange={(event) =>
-                  updateItem(index, "ingredientId", event.target.value)
-                }
-              >
-                {!ingredients.some(
-                  (ingredient) => ingredient.id === item.ingredientId,
-                ) && (
-                  <option value={item.ingredientId} disabled>
-                    Insumo eliminado
-                  </option>
-                )}
-                {ingredients.map((ingredient) => (
-                  <option key={ingredient.id} value={ingredient.id}>
-                    {ingredient.name}
-                  </option>
-                ))}
-              </select>
-              <NumericInput
-                aria-label="Cantidad"
-                min={0}
-                value={item.quantity}
-                onChange={(value) => updateItem(index, "quantity", value)}
-                placeholder="Cantidad"
-              />
-              <span>
-                {
-                  ingredients.find(
-                    (ingredient) => ingredient.id === item.ingredientId,
-                  )?.unit
-                }
-              </span>
-              <button
-                type="button"
-                className="icon-button danger"
-                title="Quitar insumo"
-                aria-label="Quitar insumo"
-                onClick={() => removeItem(index)}
-              >
-                <Trash2 size={14} />
-              </button>
-            </div>
+            <RecipeItemRow
+              key={index}
+              variant="modal"
+              item={item}
+              ingredient={byId.get(item.ingredientId)}
+              ingredients={ingredients}
+              onChange={(field, value) => updateItem(index, field, value)}
+              onRemove={() => removeItem(index)}
+            />
           ))}
           <button
             type="button"

@@ -1,5 +1,5 @@
 import { CUSTOM_SORT } from "../../lib/listing";
-import { recipeTotals } from "../../lib/recipeMath";
+import { indexIngredients, recipeTotals } from "../../lib/recipeMath";
 
 export const RECIPES_PER_PAGE = 8;
 
@@ -21,16 +21,22 @@ export const recipeListingDefaults = {
   defaultDirection: "desc",
 };
 
+// sortListing reads each recipe's value once (not per comparison), and the
+// ingredient index is built once per reader.
 export function recipeSortValue(sort, ingredients) {
   switch (sort) {
     case CUSTOM_SORT:
       return null;
     case "nombre":
       return (recipe) => recipe.name;
-    case "costo":
-      return (recipe) => recipeTotals(recipe, ingredients).cost;
-    case "precio":
-      return (recipe) => recipeTotals(recipe, ingredients).price;
+    case "costo": {
+      const byId = indexIngredients(ingredients);
+      return (recipe) => recipeTotals(recipe, ingredients, byId).cost;
+    }
+    case "precio": {
+      const byId = indexIngredients(ingredients);
+      return (recipe) => recipeTotals(recipe, ingredients, byId).price;
+    }
     case "actualizacion":
     default:
       return (recipe) => recipe.updatedAt;
