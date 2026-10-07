@@ -30,7 +30,7 @@ Let the user attach a photo to each recipe, stored locally in the browser withou
 ## Tasks
 - [x] T4.1 `imageStore` port + IndexedDB adapter + image preparation — route: delegated
 - [x] T4.2 Recipe image UI + cleanup — route: delegated
-- [ ] T4.3 Backup with images — route: delegated
+- [x] T4.3 Backup with images — route: delegated
 - [ ] T4.4 Storage panel + alerts — route: delegated
 
 Route evidence: new storage adapter, image processing, store, three feature views, settings and tests → writer trigger; one bounded writer, sequential.
@@ -64,6 +64,10 @@ Route evidence: new storage adapter, image processing, store, three feature view
   - RED: 11 failing tests (backup imageId, store setRecipeImage, 9 UI tests) + orphans test file failing to load; the migration keep-imageId test passed immediately (v1 is a pass-through; kept as a regression guard).
   - GREEN: 17 files / 234 tests passed. Exception: UI tests mock `prepareImage` (no canvas in jsdom), stub `URL.createObjectURL`, and use the in-memory image store.
   - Verification: `corepack pnpm test`: 234 passed; `corepack pnpm build`: built OK.
+- T4.3 (previous commit 3124c06): `lib/images/backupImages.js` — export adds `images: { [imageId]: dataURL }` for referenced images only (missing ones left out); import validates each data URL (raster `image/*` only, SVG rejected, strict base64 with length % 4), saves it under a NEW id and remaps the recipes, so imports never collide with stored photos; recipes whose photo is invalid, missing or cannot be saved are imported without `imageId` and counted as "fotos omitidas". Old backups without `images` import unchanged. When an imported recipe replaces a stored one with a photo, the old photo is discarded. `SettingsPage` now owns export/import (async, actions disabled while busy); `SettingsView` only reads the file; `importSummary` moved to the settings feature with photo counts; `shared/downloadFile.js`.
+  - RED: `backupImages.test.js` and `importSummary.test.js` failed to load (modules missing) and the 3 UI backup tests failed; 234 existing tests passed.
+  - GREEN: 20 files / 260 tests passed (export → import round trip on a fresh in-memory image store, invalid photo, old backup).
+  - Verification: `corepack pnpm test`: 260 passed; `corepack pnpm build`: built OK.
 
 ## Next step
 Delegate T4.1–T4.4 to one writer.

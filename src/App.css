@@ -1422,3 +1422,7 @@ img.recipe-thumb {
   opacity: 0.6;
   cursor: default;
 }
+.quick-action:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
