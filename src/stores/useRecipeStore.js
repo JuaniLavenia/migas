@@ -1,6 +1,13 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
 import { v4 as uuidv4 } from "uuid";
+import {
+  RECIPE_STORAGE_KEY,
+  RECIPE_STORAGE_VERSION,
+  createSafeStorage,
+  migrateRecipeState,
+} from "../lib/recipeStorage";
+import { reportSaveResult } from "./useSaveStatusStore";
 
 const demoIngredients = [
   {
@@ -137,7 +144,16 @@ const useRecipeStore = create()(
           ),
         })),
     }),
-    { name: "miga-recipe-storage" },
+    {
+      name: RECIPE_STORAGE_KEY,
+      version: RECIPE_STORAGE_VERSION,
+      migrate: migrateRecipeState,
+      // Only the data is persisted; actions and derived state are rebuilt.
+      partialize: ({ ingredients, recipes }) => ({ ingredients, recipes }),
+      storage: createJSONStorage(() =>
+        createSafeStorage(() => window.localStorage, reportSaveResult),
+      ),
+    },
   ),
 );
 

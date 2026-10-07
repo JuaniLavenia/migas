@@ -1,5 +1,8 @@
 import "@testing-library/jest-dom/vitest";
-import { afterEach } from "vitest";
+import { afterEach, vi } from "vitest";
+
+// Spies (e.g. a failing localStorage) never leak into the next test.
+afterEach(() => vi.restoreAllMocks());
 
 // Vitest runs without globals, so Testing Library cannot register its own
 // cleanup: unmount rendered trees after every UI test here instead.

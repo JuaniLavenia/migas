@@ -172,6 +172,15 @@
   border-radius: 50%;
   background: #67ae86;
 }
+.saved-status.save-error {
+  /* Stays visible on mobile, where the normal status is hidden. */
+  display: flex;
+  color: #be6b61;
+  font-weight: 600;
+}
+.saved-status.save-error .status-dot {
+  background: #be6b61;
+}
 .content-wrap {
   max-width: 1220px;
   margin: 0 auto;

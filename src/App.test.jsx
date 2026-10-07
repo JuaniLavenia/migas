@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { screen, within } from "@testing-library/react";
 import { renderApp } from "./test/renderApp";
 import useRecipeStore from "./stores/useRecipeStore";
@@ -83,6 +83,25 @@ describe("App", () => {
     expect(screen.queryByText("Harina 0000")).not.toBeInTheDocument();
     expect(screen.getByText("Insumo eliminado")).toBeInTheDocument();
     expect(useRecipeStore.getState().ingredients).toHaveLength(4);
+  });
+
+  it("tells the user when saving to the browser fails", async () => {
+    const { user } = renderApp();
+    expect(screen.getByText("Guardado localmente")).toBeInTheDocument();
+
+    const setItem = vi
+      .spyOn(Storage.prototype, "setItem")
+      .mockImplementation(() => {
+        throw new DOMException("full", "QuotaExceededError");
+      });
+    await user.click(navItem(/^Recetas/));
+    await user.type(screen.getByDisplayValue("18"), "0");
+    expect(screen.getByText("No se pudo guardar")).toBeInTheDocument();
+    expect(screen.queryByText("Guardado localmente")).not.toBeInTheDocument();
+
+    setItem.mockRestore();
+    await user.type(screen.getByDisplayValue("65"), "0");
+    expect(screen.getByText("Guardado localmente")).toBeInTheDocument();
   });
 
   it("shows empty states when there are no recipes", async () => {

@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import "./App.css";
 import useRecipeStore from "./stores/useRecipeStore";
+import useSaveStatusStore from "./stores/useSaveStatusStore";
 import { countRecipesUsingIngredient, recipeTotals } from "./lib/recipeMath";
 import { resolveSelectedRecipe } from "./lib/recipeSelection";
 import Overview from "./features/overview/Overview";
@@ -43,6 +44,7 @@ function App() {
   const updateRecipeField = useRecipeStore((state) => state.updateRecipe);
   const deleteRecipeFromStore = useRecipeStore((state) => state.deleteRecipe);
   const importData = useRecipeStore((state) => state.importData);
+  const saveFailed = useSaveStatusStore((state) => state.status === "error");
   const [activeView, setActiveView] = useState("overview");
   const [selectedRecipeId, setSelectedRecipeId] = useState(
     () => useRecipeStore.getState().recipes[0]?.id ?? null,
@@ -223,8 +225,17 @@ function App() {
             </strong>
           </div>
           <div className="topbar-actions">
-            <span className="saved-status">
-              <span className="status-dot" /> Guardado localmente
+            <span
+              className={`saved-status ${saveFailed ? "save-error" : ""}`}
+              role="status"
+              title={
+                saveFailed
+                  ? "El navegador no dejó guardar los cambios. Descargá un backup desde Configuración para no perderlos."
+                  : undefined
+              }
+            >
+              <span className="status-dot" />{" "}
+              {saveFailed ? "No se pudo guardar" : "Guardado localmente"}
             </span>
             <button className="avatar small">MP</button>
           </div>

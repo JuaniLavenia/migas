@@ -31,7 +31,12 @@ Restructure the app so Phase 3 (sorting + pagination) and Phase 4 (recipe images
   - `src/App.test.jsx`: sidebar navigation, clearable recipe numeric field, create ingredient, delete in-use ingredient (dialog text), empty recipes state.
   - RED exception: characterization tests of existing behavior, expected to pass on first run (they did).
   - Verification: `corepack pnpm test` 86 passed (5 files); `corepack pnpm build` OK. Base: 8d07bd6.
-- [ ] T2.1 Persist version/migrate/partialize + save-failure feedback — route: delegated
+- [x] T2.1 Persist version/migrate/partialize + save-failure feedback — route: delegated
+  - `src/lib/recipeStorage.js`: `RECIPE_STORAGE_KEY` (also used by the ErrorBoundary), `RECIPE_STORAGE_VERSION = 1`, pure `migrateRecipeState(persisted, fromVersion)` (keeps only array `ingredients`/`recipes`; anything else falls back to defaults), `createSafeStorage(getStorage, onWrite)` (never throws; reports each write).
+  - Store: `version`, `migrate`, `partialize` (ingredients + recipes), `createJSONStorage` over the safe adapter. `src/stores/useSaveStatusStore.js` holds `saved`/`error`; the topbar shows "No se pudo guardar" (visible on mobile too, with a backup hint in `title`) and recovers on the next successful write.
+  - RED: `recipeStorage.test.js` failed (module not found); App test "tells the user when saving to the browser fails" failed (`Unable to find ... No se pudo guardar`). GREEN after implementation. `useRecipeStore.test.js` (v0 rehydrate → v1, partialize) written after wiring as an integration check.
+  - Test setup now restores spies after each test.
+  - Verification: `corepack pnpm test` 101 passed (7 files); `corepack pnpm build` OK. Previous commit: 41c21d9.
 - [ ] T2.2 `updatedAt` timestamps — route: delegated
 - [ ] T2.3 Split `App.jsx` (layout + containers) — route: delegated
 - [ ] T2.4 Routes — route: delegated

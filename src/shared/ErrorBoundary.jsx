@@ -1,7 +1,5 @@
 import { Component } from "react";
-
-// Must match the persist `name` in src/stores/useRecipeStore.js.
-const STORAGE_KEY = "miga-recipe-storage";
+import { RECIPE_STORAGE_KEY as STORAGE_KEY } from "../lib/recipeStorage";
 
 function readStoredData() {
   try {
