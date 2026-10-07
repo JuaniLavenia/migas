@@ -83,3 +83,73 @@ describe("useRecipeStore recipe dates", () => {
     expect(recipe).not.toHaveProperty("updated");
   });
 });
+
+describe("useRecipeStore custom order", () => {
+  const ids = (list) => list.map((item) => item.id);
+  const recipe = (id, updatedAt) => ({
+    id,
+    name: id,
+    yield: 1,
+    margin: 0,
+    extras: 0,
+    updatedAt,
+    items: [],
+  });
+
+  beforeEach(() => {
+    window.localStorage.clear();
+    useRecipeStore.setState({
+      ingredients: ["a", "b", "c", "d"].map((id) => ({ ...ingredient, id })),
+      recipes: [recipe("r1", 1), recipe("r2", 2), recipe("r3", 3)],
+    });
+  });
+
+  it("reorders ingredients by dropping one onto another's position", () => {
+    useRecipeStore.getState().reorderIngredients("a", "c");
+    expect(ids(useRecipeStore.getState().ingredients)).toEqual([
+      "b",
+      "c",
+      "a",
+      "d",
+    ]);
+    useRecipeStore.getState().reorderIngredients("d", "b");
+    expect(ids(useRecipeStore.getState().ingredients)).toEqual([
+      "d",
+      "b",
+      "c",
+      "a",
+    ]);
+    expect(ids(stored().state.ingredients)).toEqual(["d", "b", "c", "a"]);
+  });
+
+  it("moves an ingredient one position, staying put at the edges", () => {
+    const { moveIngredient } = useRecipeStore.getState();
+    moveIngredient("b", -1);
+    expect(ids(useRecipeStore.getState().ingredients)).toEqual([
+      "b",
+      "a",
+      "c",
+      "d",
+    ]);
+    const before = useRecipeStore.getState().ingredients;
+    moveIngredient("b", -1);
+    moveIngredient("unknown", 1);
+    expect(useRecipeStore.getState().ingredients).toBe(before);
+  });
+
+  it("ignores reorders with unknown ids", () => {
+    const before = useRecipeStore.getState().ingredients;
+    useRecipeStore.getState().reorderIngredients("a", "zzz");
+    useRecipeStore.getState().reorderIngredients("zzz", "a");
+    expect(useRecipeStore.getState().ingredients).toBe(before);
+  });
+
+  it("reorders and moves recipes without touching updatedAt", () => {
+    useRecipeStore.getState().reorderRecipes("r3", "r1");
+    expect(ids(useRecipeStore.getState().recipes)).toEqual(["r3", "r1", "r2"]);
+    useRecipeStore.getState().moveRecipe("r1", 1);
+    const { recipes } = useRecipeStore.getState();
+    expect(ids(recipes)).toEqual(["r3", "r2", "r1"]);
+    expect(recipes.map((entry) => entry.updatedAt)).toEqual([3, 2, 1]);
+  });
+});

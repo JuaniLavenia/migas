@@ -42,7 +42,42 @@ function pagination() {
 }
 
 describe("Ingredients sorting and pagination", () => {
-  it("lists by name A→Z, ten per page, with the total count", () => {
+  it("lists in the custom (stored) order by default, ten per page", () => {
+    const state = seedIngredients(25);
+    state.ingredients.reverse();
+    renderApp({ route: "/insumos", state });
+    expect(visibleNames().slice(0, 3)).toEqual([
+      "Insumo 26",
+      "Insumo 25",
+      "Insumo 24",
+    ]);
+    expect(screen.getByLabelText("Ordenar por")).toHaveValue("personalizado");
+    // The custom order has no direction.
+    expect(
+      screen.queryByRole("button", { name: /^Orden (a|de)scendente$/ }),
+    ).not.toBeInTheDocument();
+    expect(currentSearchParams().has("orden")).toBe(false);
+  });
+
+  it("keeps the default sort out of the URL", async () => {
+    const { user } = renderApp({
+      route: "/insumos?dir=desc",
+      state: seedIngredients(25),
+    });
+    // The direction in the URL does not apply to the custom order.
+    expect(visibleNames()[0]).toBe("Insumo 1");
+    await user.selectOptions(screen.getByLabelText("Ordenar por"), "Nombre");
+    expect(currentSearchParams().get("orden")).toBe("nombre");
+    expect(visibleNames()[0]).toBe("Insumo 26");
+    await user.selectOptions(
+      screen.getByLabelText("Ordenar por"),
+      "Personalizado",
+    );
+    expect(currentSearchParams().has("orden")).toBe(false);
+    expect(visibleNames()[0]).toBe("Insumo 1");
+  });
+
+  it("lists ten per page with the total count", () => {
     renderApp({ route: "/insumos", state: seedIngredients(25) });
     expect(visibleNames()).toEqual([
       "Insumo 1",
@@ -56,7 +91,6 @@ describe("Ingredients sorting and pagination", () => {
       "Insumo 9",
       "Insumo 10",
     ]);
-    expect(screen.getByLabelText("Ordenar por")).toHaveValue("nombre");
     expect(screen.getByText("26 insumos")).toBeInTheDocument();
     expect(pagination()).toHaveTextContent("Página 1 de 3");
   });
@@ -148,10 +182,7 @@ describe("Ingredients sorting and pagination", () => {
       route: "/insumos?orden=precio&dir=arriba&pagina=dos",
       state: seedIngredients(25),
     });
-    expect(screen.getByLabelText("Ordenar por")).toHaveValue("nombre");
-    expect(
-      screen.getByRole("button", { name: "Orden ascendente" }),
-    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Ordenar por")).toHaveValue("personalizado");
     expect(pagination()).toHaveTextContent("Página 1 de 3");
     expect(visibleNames()[0]).toBe("Insumo 1");
   });

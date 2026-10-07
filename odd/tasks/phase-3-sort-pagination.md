@@ -12,9 +12,10 @@ Let the user sort and page through ingredients and recipes, so the lists stay us
 - T3.2 Ingredients: sort control (Nombre, Categoría, Precio del pack, Costo por unidad; asc/desc) + pagination (10 per page) combined with the existing search.
 - T3.3 Recipes library: sort control (Nombre, Última actualización, Costo total, Precio sugerido; asc/desc) + pagination (8 per page). The open recipe stays selected regardless of the page.
 - Sort, direction and page live in the URL query string (`?orden=…&dir=…&pagina=…`), so they survive reload and navigation back.
+- T3.4 (added 2026-10-06 at the user's request) Custom order for both lists: a "Personalizado" sort option, which becomes the default for both lists. The stored array order IS the custom order (no new field, no migration; backups keep it). Reordering by drag and drop with `@dnd-kit` (pointer + keyboard) through a drag handle, plus "Subir"/"Bajar" buttons that move an item one position in the full list (so items can cross page boundaries). Reordering is only available with "Personalizado" selected and no active search.
 
 ## Constraints
-- Defaults keep today's feel: ingredients by name A→Z; recipes by last update, newest first.
+- Defaults (T3.2/T3.3): ingredients by name A→Z; recipes by last update, newest first. Superseded by T3.4: "Personalizado" is the default for both lists; the other options keep their direction defaults.
 - Changing search or sort resets to page 1; deleting items never leaves the user on an empty page beyond the last.
 - Counts (sidebar badges, "N insumos", "N recetas") keep showing totals, not page sizes; search shows "N de M" where relevant.
 - Ingredients with no unit price (invalid pack size, Phase 1) sort last for "Costo por unidad".
@@ -27,6 +28,8 @@ Let the user sort and page through ingredients and recipes, so the lists stay us
 - [x] T3.1 Pure `sortBy` + `paginate` helpers — route: delegated
 - [x] T3.2 Ingredients sort + pagination — route: delegated
 - [x] T3.3 Recipes library sort + pagination — route: delegated
+- [x] T3.4a Store reorder actions + pure `moveItem` + "Personalizado" sort option as default — route: delegated
+- [ ] T3.4b Drag and drop (`@dnd-kit`) + "Subir"/"Bajar" buttons in both lists — route: delegated
 
 Route evidence: shared helpers + a shared pagination component + two feature views/containers + tests → writer trigger; one bounded writer, sequential.
 
@@ -70,5 +73,11 @@ Route evidence: shared helpers + a shared pagination component + two feature vie
   - No DOM churn on an idle page (0 mutations in 1.5 s, no history growth); stored data unchanged by navigation.
   - Not verified in the browser: the mobile layout (the window resize did not apply; viewport stayed 1366 px wide).
 
+- T3.4a done (previous commit 3e0dd0d). Pure `moveItem` (clamped target, same array on a no-op) and `sortListing` (no value reader → keep order) plus `CUSTOM_SORT` in `src/lib/listing.js`. Store actions `reorderIngredients/reorderRecipes(activeId, overId)` and `moveIngredient/moveRecipe(id, delta)` share two private helpers (`reorderById`, `moveById`) over the full stored array; unknown ids and edge moves return the same array; recipe `updatedAt` is untouched; persist version unchanged. "Personalizado" (`personalizado`) is the first option and the default of both lists (omitted from the URL).
+  - Design: the custom order has no direction. Its option is `directional: false` and `SortControl` hides the asc/desc toggle for it; a `dir` in the URL is ignored while it is selected (and still applies when switching to another option). Rationale: "reversed custom order" adds a mode nobody asked for and would make Subir/Bajar read backwards.
+  - Tests adapted for the intended default change: ingredients "lists by name A→Z…" → "lists ten per page with the total count" (no default-sort assertion) + "falls back to the defaults" now expects `personalizado` and no toggle; recipes "lists the newest first…" → custom order by default, "pages through" (page 2 starts at Receta 9), "keeps the open recipe open…" (now opens Receta 20, which is off page 1 in the custom order), "falls back to the defaults" (`personalizado`, Receta 1). New: custom order by default (ingredients, recipes), default sort kept out of the URL, recipes "sorts by last update, newest first".
+  - RED: `pnpm test src/lib/listing.test.js src/stores/useRecipeStore.test.js` → 7 failed, 18 passed (moveItem/store actions missing); `pnpm test src/features` → 8 failed, 12 passed.
+  - GREEN: full suite 177/177 passed; `pnpm build` passed.
+
 ## Next step
-Open the PR (single-pr).
+T3.4b: drag and drop + Subir/Bajar. Then open the PR (single-pr).

@@ -32,6 +32,12 @@ export function sortBy(items, getValue, direction = "asc") {
     .map(({ item }) => item);
 }
 
+// sortBy, or `items` as they are when there is no value reader (custom
+// order).
+export function sortListing(items, getValue, direction) {
+  return getValue ? sortBy(items, getValue, direction) : items;
+}
+
 // One page of `items`. The page is clamped to [1, pageCount] and there is
 // always at least one (possibly empty) page.
 export function paginate(items, page, pageSize) {
@@ -47,6 +53,24 @@ export function paginate(items, page, pageSize) {
     total,
   };
 }
+
+// Returns a new array with the item at `fromIndex` moved to `toIndex` (clamped
+// to the list bounds). An out-of-range source or a move onto the same index
+// returns `items` itself, so callers can skip the update.
+export function moveItem(items, fromIndex, toIndex) {
+  if (!Number.isInteger(fromIndex) || fromIndex < 0 || fromIndex >= items.length) {
+    return items;
+  }
+  const target = Math.min(Math.max(Math.trunc(toIndex), 0), items.length - 1);
+  if (target === fromIndex) return items;
+  const next = [...items];
+  const [moved] = next.splice(fromIndex, 1);
+  next.splice(target, 0, moved);
+  return next;
+}
+
+// The user's own order: the stored array order, with no direction.
+export const CUSTOM_SORT = "personalizado";
 
 export const SORT_PARAM = "orden";
 export const DIRECTION_PARAM = "dir";

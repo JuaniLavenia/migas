@@ -40,17 +40,17 @@ function IngredientsPage() {
   const [editing, setEditing] = useState(null);
   const [pendingDelete, setPendingDelete] = useState(null);
 
-  // Search, then sort (name breaks ties), then paginate.
+  // Search, then sort (name breaks ties; the custom order keeps the stored
+  // order), then paginate.
   const filteredIngredients = ingredients.filter((item) =>
     `${item.name} ${item.category}`
       .toLowerCase()
       .includes(search.toLowerCase()),
   );
-  const sortedIngredients = sortBy(
-    sortBy(filteredIngredients, byName),
-    ingredientSortValue(listing.sort),
-    listing.direction,
-  );
+  const sortValue = ingredientSortValue(listing.sort);
+  const sortedIngredients = sortValue
+    ? sortBy(sortBy(filteredIngredients, byName), sortValue, listing.direction)
+    : filteredIngredients;
   const pageInfo = paginate(
     sortedIngredients,
     listing.page,

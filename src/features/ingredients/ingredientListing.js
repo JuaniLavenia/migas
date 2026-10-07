@@ -1,9 +1,12 @@
+import { CUSTOM_SORT } from "../../lib/listing";
 import { unitPrice } from "../../lib/recipeMath";
 
 export const INGREDIENTS_PER_PAGE = 10;
 
-// URL sort keys (`?orden=`), their labels and how to read each value.
+// URL sort keys (`?orden=`), their labels and how to read each value. The
+// custom order keeps the stored order and has no direction.
 export const ingredientSortOptions = [
+  { value: CUSTOM_SORT, label: "Personalizado", directional: false },
   { value: "nombre", label: "Nombre", getValue: (item) => item.name },
   { value: "categoria", label: "Categoría", getValue: (item) => item.category },
   {
@@ -21,10 +24,14 @@ export const ingredientSortOptions = [
 
 export const ingredientListingDefaults = {
   sortKeys: ingredientSortOptions.map((option) => option.value),
-  defaultSort: "nombre",
+  defaultSort: CUSTOM_SORT,
   defaultDirection: "asc",
 };
 
+// null for the custom order (nothing to sort by).
 export function ingredientSortValue(sort) {
-  return ingredientSortOptions.find((option) => option.value === sort).getValue;
+  return (
+    ingredientSortOptions.find((option) => option.value === sort).getValue ??
+    null
+  );
 }

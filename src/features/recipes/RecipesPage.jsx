@@ -5,7 +5,7 @@ import useRecipeSelectionStore from "../../stores/useRecipeSelectionStore";
 import useToastStore from "../../stores/useToastStore";
 import { recipeTotals } from "../../lib/recipeMath";
 import { resolveSelectedRecipe } from "../../lib/recipeSelection";
-import { paginate, sortBy } from "../../lib/listing";
+import { paginate, sortListing } from "../../lib/listing";
 import useListingParams from "../../shared/useListingParams";
 import { recipePath, viewPath } from "../../app/navigation";
 import ConfirmDialog from "../../shared/ConfirmDialog";
@@ -61,7 +61,7 @@ function RecipesPage() {
     redirectPath = recipePath(fallbackRecipe.id);
   }
 
-  const sortedRecipes = sortBy(
+  const sortedRecipes = sortListing(
     recipes,
     recipeSortValue(listing.sort, ingredients),
     listing.direction,

@@ -41,21 +41,27 @@ function pagination() {
 }
 
 describe("Recipes library sorting and pagination", () => {
-  it("lists the newest first, eight per page, with the total count", () => {
-    renderApp({ route: "/recetas/receta-20", state: seedRecipes(20) });
+  it("lists in the custom (stored) order by default, eight per page", () => {
+    renderApp({ route: "/recetas/receta-20?dir=asc", state: seedRecipes(20) });
     expect(libraryNames()).toEqual([
-      "Receta 20",
-      "Receta 19",
-      "Receta 18",
-      "Receta 17",
-      "Receta 16",
-      "Receta 15",
-      "Receta 14",
-      "Receta 13",
+      "Receta 1",
+      "Receta 2",
+      "Receta 3",
+      "Receta 4",
+      "Receta 5",
+      "Receta 6",
+      "Receta 7",
+      "Receta 8",
     ]);
     expect(within(library()).getByLabelText("Ordenar por")).toHaveValue(
-      "actualizacion",
+      "personalizado",
     );
+    // The custom order has no direction.
+    expect(
+      within(library()).queryByRole("button", {
+        name: /^Orden (a|de)scendente$/,
+      }),
+    ).not.toBeInTheDocument();
     expect(within(library()).getByText("20 recetas")).toBeInTheDocument();
     expect(pagination()).toHaveTextContent("Página 1 de 3");
   });
@@ -65,6 +71,19 @@ describe("Recipes library sorting and pagination", () => {
     expect(
       within(library()).queryByRole("navigation", { name: "Paginación" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("sorts by last update, newest first", async () => {
+    const { user } = renderApp({
+      route: "/recetas/receta-20",
+      state: seedRecipes(20),
+    });
+    await user.selectOptions(
+      within(library()).getByLabelText("Ordenar por"),
+      "Última actualización",
+    );
+    expect(currentSearchParams().get("orden")).toBe("actualizacion");
+    expect(libraryNames().slice(0, 2)).toEqual(["Receta 20", "Receta 19"]);
   });
 
   it("sorts by name, cost and suggested price", async () => {
@@ -107,7 +126,7 @@ describe("Recipes library sorting and pagination", () => {
       within(pagination()).getByRole("button", { name: "Siguiente" }),
     );
     expect(pagination()).toHaveTextContent("Página 2 de 3");
-    expect(libraryNames()[0]).toBe("Receta 12");
+    expect(libraryNames()[0]).toBe("Receta 9");
     expect(currentPath()).toBe("/recetas/receta-20");
     expect(currentSearchParams().get("pagina")).toBe("2");
     expect(
@@ -140,9 +159,9 @@ describe("Recipes library sorting and pagination", () => {
   });
 
   it("keeps the open recipe open when it is not on the visible page", () => {
-    renderApp({ route: "/recetas/receta-1", state: seedRecipes(20) });
-    expect(screen.getByDisplayValue("Receta 1")).toBeInTheDocument();
-    expect(libraryNames()).not.toContain("Receta 1");
+    renderApp({ route: "/recetas/receta-20", state: seedRecipes(20) });
+    expect(screen.getByDisplayValue("Receta 20")).toBeInTheDocument();
+    expect(libraryNames()).not.toContain("Receta 20");
     expect(pagination()).toHaveTextContent("Página 1 de 3");
   });
 
@@ -152,9 +171,9 @@ describe("Recipes library sorting and pagination", () => {
       state: seedRecipes(20),
     });
     expect(within(library()).getByLabelText("Ordenar por")).toHaveValue(
-      "actualizacion",
+      "personalizado",
     );
-    expect(libraryNames()[0]).toBe("Receta 20");
+    expect(libraryNames()[0]).toBe("Receta 1");
     expect(pagination()).toHaveTextContent("Página 1 de 3");
   });
 });

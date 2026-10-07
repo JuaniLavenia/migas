@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { paginate, parseListingParams, sortBy } from "./listing";
+import {
+  moveItem,
+  paginate,
+  parseListingParams,
+  sortBy,
+  sortListing,
+} from "./listing";
 
 const byName = (item) => item.name;
 const byValue = (item) => item.value;
@@ -153,5 +159,37 @@ describe("parseListingParams", () => {
 
   it("does not accept inherited object keys as sort keys", () => {
     expect(parse("orden=constructor").sort).toBe("nombre");
+  });
+});
+
+describe("moveItem", () => {
+  const items = ["a", "b", "c", "d"];
+
+  it("moves an item forward and backward, returning a new array", () => {
+    const moved = moveItem(items, 0, 2);
+    expect(moved).toEqual(["b", "c", "a", "d"]);
+    expect(moved).not.toBe(items);
+    expect(items).toEqual(["a", "b", "c", "d"]);
+    expect(moveItem(items, 3, 1)).toEqual(["a", "d", "b", "c"]);
+  });
+
+  it("clamps the target index to the list bounds", () => {
+    expect(moveItem(items, 1, 99)).toEqual(["a", "c", "d", "b"]);
+    expect(moveItem(items, 2, -5)).toEqual(["c", "a", "b", "d"]);
+  });
+
+  it("returns the same array for the same index or an unknown source", () => {
+    expect(moveItem(items, 1, 1)).toBe(items);
+    expect(moveItem(items, -1, 2)).toBe(items);
+    expect(moveItem(items, 4, 0)).toBe(items);
+    expect(moveItem(items, 0, -1)).toBe(items);
+  });
+});
+
+describe("sortListing", () => {
+  it("keeps the given order when there is no value reader", () => {
+    const items = [{ name: "b" }, { name: "a" }];
+    expect(sortListing(items, null, "desc")).toBe(items);
+    expect(sortListing(items, byName, "asc").map(byName)).toEqual(["a", "b"]);
   });
 });
