@@ -4,6 +4,8 @@ import useToastStore from "../stores/useToastStore";
 
 const TOAST_DURATION_MS = 2500;
 
+// The live region stays mounted (empty between toasts) so screen readers
+// announce each message when it is inserted into it.
 function ToastRegion() {
   const toast = useToastStore((state) => state.toast);
   const clearToast = useToastStore((state) => state.clearToast);
@@ -14,10 +16,13 @@ function ToastRegion() {
     return () => clearTimeout(timer);
   }, [toast, clearToast]);
 
-  if (!toast) return null;
   return (
-    <div className="toast" role="status">
-      <CircleDollarSign size={17} /> {toast.message}
+    <div role="status" aria-live="polite" aria-label="Notificaciones">
+      {toast && (
+        <div className="toast">
+          <CircleDollarSign size={17} aria-hidden="true" /> {toast.message}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,7 +1,8 @@
 import { ChevronRight, Menu } from "lucide-react";
 import useSaveStatusStore from "../stores/useSaveStatusStore";
 
-function Topbar({ title, onOpenMenu }) {
+// The menu button only shows on mobile, where it opens the sidebar drawer.
+function Topbar({ title, menuButtonRef, menuOpen, sidebarId, onOpenMenu }) {
   const saveFailed = useSaveStatusStore((state) => state.status === "error");
   return (
     <header className="topbar">
@@ -9,6 +10,9 @@ function Topbar({ title, onOpenMenu }) {
         type="button"
         className="icon-button menu-button"
         aria-label="Abrir menú"
+        aria-expanded={menuOpen}
+        aria-controls={sidebarId}
+        ref={menuButtonRef}
         onClick={onOpenMenu}
       >
         <Menu size={21} />
