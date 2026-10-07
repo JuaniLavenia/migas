@@ -81,6 +81,13 @@ Route evidence: 6 tasks across ~8 non-trivial files (App, store, recipeMath, vie
 ## Progress
 - T1.1–T1.6 done, one work-unit commit each (each hash is recorded on the following task's line; T1.6 is the branch head).
 - UI wiring has no runnable test (no jsdom/RTL in this phase); verified by build and reading.
+- Manual smoke test in Chrome (2026-10-06, dev server, fresh localStorage, cleaned up afterwards):
+  - T1.3: Overview spotlight shows "Receta seleccionada" with matching name and totals.
+  - T1.4: clearing margin leaves the field empty (no 0); typing 40 commits 40; typing -5 is not committed and reverts to the last valid value on blur.
+  - T1.6: deleting an ingredient used by 2 recipes shows "se usa en 2 recetas"; the recipe then shows the missing-cost warning and the line select shows disabled "Insumo eliminado".
+  - T1.1: after deleting the selected recipe and reloading, editing yield persisted to the recipe shown; deleting the last recipe shows "Todavía no hay recetas." with no console errors.
+  - T1.2: a recipe with `name: null` injected directly into storage renders the recovery screen instead of a white page. "Restablecer datos" was not clicked (it uses `window.confirm`).
+  - Not exercised in the browser: importing a malformed backup file (covered by `sanitizeBackup` unit tests).
 
 ## Next step
-Manual smoke test in the browser (clear numeric inputs, delete the last recipe, import a malformed backup, delete an ingredient in use), then open the PR (human decision).
+Open the PR (human decision). Phase 0 PR should merge first; this branch is stacked on it.
