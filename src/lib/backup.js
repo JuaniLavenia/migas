@@ -65,6 +65,11 @@ function sanitizeRecipe(source, now) {
   // One broken line would silently change the recipe's cost, so the whole
   // recipe is skipped instead of importing it partially.
   if (items.some((item) => item === null)) return null;
+  // The photo itself is stored apart from the recipe, which only points
+  // to it.
+  const image = nonEmptyString(source.imageId)
+    ? { imageId: source.imageId }
+    : {};
   return withId(
     {
       name: source.name,
@@ -78,6 +83,7 @@ function sanitizeRecipe(source, now) {
           ? source.updatedAt
           : now,
       items,
+      ...image,
     },
     source,
   );

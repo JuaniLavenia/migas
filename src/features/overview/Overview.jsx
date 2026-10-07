@@ -14,6 +14,7 @@ import StatCard from "../../shared/StatCard";
 import { currency } from "../../lib/format";
 import { recipeTotals } from "../../lib/recipeMath";
 import { formatMonthYear, formatRelativeDate } from "../../lib/dates";
+import RecipeThumb from "../recipes/RecipeThumb";
 
 function Overview({
   recipes,
@@ -177,11 +178,17 @@ function Overview({
                 key={recipe.id}
                 onClick={() => onSelect(recipe.id)}
               >
-                <span
-                  className={`recipe-number ${index === 0 ? "featured" : ""}`}
-                >
-                  {String(index + 1).padStart(2, "0")}
-                </span>
+                <RecipeThumb
+                  recipe={recipe}
+                  className="recipe-number recipe-thumb"
+                  fallback={
+                    <span
+                      className={`recipe-number ${index === 0 ? "featured" : ""}`}
+                    >
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                  }
+                />
                 <span className="recipe-info">
                   <strong>{recipe.name}</strong>
                   <small>

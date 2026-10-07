@@ -149,6 +149,19 @@ describe("sanitizeBackup", () => {
     expect(result.recipes[0].updatedAt).toBe(NOW);
   });
 
+  it("keeps a recipe imageId and drops one that is not a non-empty string", () => {
+    const result = sanitizeBackup({
+      recipes: [
+        { ...validRecipe, id: "a", imageId: "img-1" },
+        { ...validRecipe, id: "b", imageId: 42 },
+        { ...validRecipe, id: "c", imageId: "" },
+      ],
+    });
+    expect(result.recipes[0].imageId).toBe("img-1");
+    expect(result.recipes[1]).not.toHaveProperty("imageId");
+    expect(result.recipes[2]).not.toHaveProperty("imageId");
+  });
+
   it("counts skipped records across both collections", () => {
     const result = sanitizeBackup({
       ingredients: [validIngredient, { name: "" }],

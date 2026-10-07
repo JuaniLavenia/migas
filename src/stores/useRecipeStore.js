@@ -146,6 +146,18 @@ const useRecipeStore = create()(
               : recipe,
           ),
         })),
+      // Changing the photo is an edit: it refreshes updatedAt. null removes
+      // the reference; deleting the image itself is up to the caller.
+      setRecipeImage: (id, imageId) =>
+        set((state) => ({
+          recipes: state.recipes.map((recipe) => {
+            if (recipe.id !== id) return recipe;
+            const { imageId: _previous, ...rest } = recipe;
+            return imageId
+              ? { ...rest, imageId, updatedAt: Date.now() }
+              : { ...rest, updatedAt: Date.now() };
+          }),
+        })),
       deleteRecipe: (id) =>
         set((state) => ({
           recipes: state.recipes.filter((recipe) => recipe.id !== id),

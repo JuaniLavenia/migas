@@ -1,37 +1,14 @@
 import { useRef } from "react";
 import { ChevronRight, Download, Upload } from "lucide-react";
 import PageHeader from "../../shared/PageHeader";
-import { sanitizeBackup } from "../../lib/backup";
+import StoragePanel from "./StoragePanel";
 
-function buildBackup(ingredients, recipes) {
-  return JSON.stringify({ ingredients, recipes }, null, 2);
-}
-
-function importSummary({ ingredients, recipes, skipped }) {
-  const omitted = skipped
-    ? ` · ${skipped} ${skipped === 1 ? "registro omitido" : "registros omitidos"} por datos inválidos`
-    : "";
-  if (!ingredients.length && !recipes.length) {
-    return `No encontramos registros válidos${omitted}`;
-  }
-  return `Importamos ${ingredients.length} insumos y ${recipes.length} recetas${omitted}`;
-}
-
-function SettingsView({ ingredients, recipes, onImport, onToast }) {
+// Backup export/import. Reading the picked file happens here; parsing,
+// validation and storing are up to the container (onImport receives the
+// file text). `busy` disables both actions while one is in progress.
+// `storage` holds the props of the StoragePanel.
+function SettingsView({ onExport, onImport, busy = false, storage }) {
   const fileInputRef = useRef(null);
-
-  function handleExport() {
-    const blob = new Blob([buildBackup(ingredients, recipes)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `miga-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
-    onToast("Backup descargado");
-  }
 
   function handleImportClick() {
     fileInputRef.current?.click();
@@ -42,19 +19,7 @@ function SettingsView({ ingredients, recipes, onImport, onToast }) {
     event.target.value = "";
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => {
-      let backup;
-      try {
-        backup = sanitizeBackup(JSON.parse(reader.result));
-      } catch {
-        onToast("No pudimos leer ese archivo: no es un backup válido");
-        return;
-      }
-      onToast(importSummary(backup));
-      if (backup.ingredients.length || backup.recipes.length) {
-        onImport(backup);
-      }
-    };
+    reader.onload = () => onImport(reader.result);
     reader.readAsText(file);
   }
 
@@ -73,17 +38,28 @@ function SettingsView({ ingredients, recipes, onImport, onToast }) {
               <h2>Exportar e importar</h2>
             </div>
           </div>
-          <button className="quick-action" onClick={handleExport}>
+          <button
+            className="quick-action"
+            onClick={onExport}
+            disabled={busy}
+            aria-busy={busy}
+          >
             <span className="quick-icon mint">
               <Download size={19} />
             </span>
             <span>
               <strong>Descargar backup</strong>
-              <small>Guarda insumos y recetas en un archivo .json</small>
+              <small>
+                Guarda insumos, recetas y sus fotos en un archivo .json
+              </small>
             </span>
             <ChevronRight size={17} />
           </button>
-          <button className="quick-action" onClick={handleImportClick}>
+          <button
+            className="quick-action"
+            onClick={handleImportClick}
+            disabled={busy}
+          >
             <span className="quick-icon peach">
               <Upload size={19} />
             </span>
@@ -99,10 +75,12 @@ function SettingsView({ ingredients, recipes, onImport, onToast }) {
             ref={fileInputRef}
             type="file"
             accept="application/json"
+            aria-label="Archivo de backup"
             onChange={handleFileChange}
             style={{ display: "none" }}
           />
         </section>
+        <StoragePanel {...storage} />
       </div>
     </>
   );

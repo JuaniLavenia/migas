@@ -153,3 +153,31 @@ describe("useRecipeStore custom order", () => {
     expect(recipes.map((entry) => entry.updatedAt)).toEqual([3, 2, 1]);
   });
 });
+
+describe("useRecipeStore recipe images", () => {
+  const NOW = new Date(2026, 9, 6, 12, 0, 0).getTime();
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
+  });
+  afterEach(() => vi.useRealTimers());
+
+  it("sets and clears a recipe image as an edit (updatedAt changes)", () => {
+    const id = useRecipeStore
+      .getState()
+      .addRecipe({ name: "Tarta", yield: 8, margin: 50, extras: 0, items: [] });
+    vi.setSystemTime(NOW + 1000);
+    useRecipeStore.getState().setRecipeImage(id, "img-1");
+    let recipe = useRecipeStore.getState().getRecipe(id);
+    expect(recipe.imageId).toBe("img-1");
+    expect(recipe.updatedAt).toBe(NOW + 1000);
+    expect(stored().state.recipes.at(-1).imageId).toBe("img-1");
+
+    vi.setSystemTime(NOW + 2000);
+    useRecipeStore.getState().setRecipeImage(id, null);
+    recipe = useRecipeStore.getState().getRecipe(id);
+    expect(recipe).not.toHaveProperty("imageId");
+    expect(recipe.updatedAt).toBe(NOW + 2000);
+  });
+});

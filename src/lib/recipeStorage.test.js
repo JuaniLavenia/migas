@@ -90,6 +90,13 @@ describe("migrateRecipeState", () => {
       expect(migrateRecipeState(persisted, 0)).toEqual({});
     },
   );
+
+  it("keeps a recipe imageId from the current version", () => {
+    const recipe = { ...legacyRecipe, updatedAt: NOW, imageId: "img-1" };
+    delete recipe.updated;
+    const result = migrateRecipeState({ recipes: [recipe] }, 1, NOW);
+    expect(result.recipes[0].imageId).toBe("img-1");
+  });
 });
 
 describe("createSafeStorage", () => {
