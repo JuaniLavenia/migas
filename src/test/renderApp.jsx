@@ -12,13 +12,23 @@ import useToastStore from "../stores/useToastStore";
 const initialState = useRecipeStore.getState();
 
 function LocationProbe() {
-  const { pathname } = useLocation();
-  return <div data-testid="current-path">{pathname}</div>;
+  const { pathname, search } = useLocation();
+  return (
+    <>
+      <div data-testid="current-path">{pathname}</div>
+      <div data-testid="current-search">{search}</div>
+    </>
+  );
 }
 
 // Current router path of the app rendered by renderApp.
 export function currentPath() {
   return screen.getByTestId("current-path").textContent;
+}
+
+// Current router query string ("?a=1", or "" when empty), parsed.
+export function currentSearchParams() {
+  return new URLSearchParams(screen.getByTestId("current-search").textContent);
 }
 
 // Renders the whole app at `route` from a clean slate: demo data (optionally

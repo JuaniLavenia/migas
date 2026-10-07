@@ -7,6 +7,7 @@ import {
   createSafeStorage,
   migrateRecipeState,
 } from "../lib/recipeStorage";
+import { moveItem } from "../lib/listing";
 import { reportSaveResult } from "./useSaveStatusStore";
 
 const demoIngredients = [
@@ -97,6 +98,22 @@ function mergeById(current, incoming) {
   return merged;
 }
 
+// The stored array order is the user's custom order. These return the same
+// array when nothing moves (unknown ids, edges), so no update is persisted.
+function reorderById(list, activeId, overId) {
+  const fromIndex = list.findIndex((item) => item.id === activeId);
+  const toIndex = list.findIndex((item) => item.id === overId);
+  if (toIndex === -1) return list;
+  return moveItem(list, fromIndex, toIndex);
+}
+
+function moveById(list, id, delta) {
+  const fromIndex = list.findIndex((item) => item.id === id);
+  const toIndex = fromIndex + delta;
+  if (fromIndex === -1 || toIndex < 0 || toIndex >= list.length) return list;
+  return moveItem(list, fromIndex, toIndex);
+}
+
 const useRecipeStore = create()(
   persist(
     (set, get) => ({
@@ -133,6 +150,21 @@ const useRecipeStore = create()(
         set((state) => ({
           recipes: state.recipes.filter((recipe) => recipe.id !== id),
         })),
+      // Reordering is not an edit: recipes keep their updatedAt.
+      reorderIngredients: (activeId, overId) =>
+        set((state) => ({
+          ingredients: reorderById(state.ingredients, activeId, overId),
+        })),
+      moveIngredient: (id, delta) =>
+        set((state) => ({
+          ingredients: moveById(state.ingredients, id, delta),
+        })),
+      reorderRecipes: (activeId, overId) =>
+        set((state) => ({
+          recipes: reorderById(state.recipes, activeId, overId),
+        })),
+      moveRecipe: (id, delta) =>
+        set((state) => ({ recipes: moveById(state.recipes, id, delta) })),
       getRecipe: (id) => get().recipes.find((recipe) => recipe.id === id),
       importData: ({ ingredients = [], recipes = [] }) =>
         set((state) => ({

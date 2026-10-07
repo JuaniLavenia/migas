@@ -614,6 +614,97 @@ h3 {
   color: #9aa6a0;
   font-size: 11px;
 }
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.sort-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #9aa6a0;
+  font-size: 11px;
+}
+.sort-control select {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 7px 9px;
+  font-size: 12px;
+  color: var(--ink);
+}
+.sort-direction {
+  border: 1px solid var(--line);
+  background: #fff;
+}
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+.pagination-step,
+.pagination-page {
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.pagination-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 7px 11px;
+}
+.pagination-step:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.pagination-pages {
+  display: flex;
+  gap: 4px;
+}
+.pagination-page {
+  min-width: 30px;
+  padding: 7px 6px;
+}
+.pagination-page[aria-current="page"] {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+.pagination-status {
+  color: #9aa6a0;
+  font-size: 11px;
+}
+/* Narrow variant (recipe library): icon-only steps, status on its own line. */
+.pagination-compact {
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 0 8px;
+}
+.pagination-compact .pagination-step {
+  padding: 7px;
+}
+.pagination-compact .pagination-step-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.pagination-compact .pagination-status {
+  order: 1;
+  width: 100%;
+  text-align: center;
+}
 .table-panel {
   overflow: hidden;
 }
@@ -710,6 +801,13 @@ h3 {
   color: #9aa6a0;
   font-weight: 500;
 }
+.recipe-selector .sort-control {
+  padding: 0 8px 10px;
+}
+.recipe-selector .sort-control select {
+  flex: 1;
+  min-width: 0;
+}
 .selector-item {
   width: 100%;
   display: flex;
@@ -754,6 +852,60 @@ h3 {
   border-radius: 7px;
   font-family: "Playfair Display", serif;
   font-size: 16px;
+}
+/* Custom order: drag handle + "Subir"/"Bajar" (shared by both lists). */
+.reorder-controls {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+}
+.reorder-controls .icon-button {
+  padding: 4px;
+}
+.reorder-controls.stacked {
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-template-rows: auto auto;
+  gap: 0;
+}
+.reorder-controls.stacked .drag-handle {
+  grid-row: span 2;
+}
+.reorder-controls.stacked .icon-button:not(.drag-handle) {
+  padding: 1px 3px;
+}
+.reorder-controls .icon-button:disabled {
+  opacity: 0.35;
+  cursor: default;
+  background: transparent;
+}
+.drag-handle {
+  cursor: grab;
+  touch-action: none;
+}
+.dragging {
+  position: relative;
+  z-index: 2;
+  opacity: 0.85;
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+.dragging .drag-handle {
+  cursor: grabbing;
+}
+.table-panel.reorderable .table-header,
+.table-panel.reorderable .table-row {
+  grid-template-columns: 76px 2fr 1fr 1fr 1.3fr 70px;
+}
+.selector-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  border-radius: 7px;
+}
+.selector-row .selector-item {
+  flex: 1;
+  min-width: 0;
 }
 .recipe-editor {
   background: #fff;
@@ -1126,10 +1278,29 @@ h3 {
     grid-template-columns: 1fr;
   }
   .recipe-selector {
+    padding: 10px;
+  }
+  /* The library becomes a horizontal scroller; sort and pagination stay
+     outside it, above and below. */
+  .selector-list {
     display: flex;
     gap: 7px;
     overflow-x: auto;
-    padding: 10px;
+  }
+  .recipe-selector .sort-control {
+    padding: 0 0 10px;
+  }
+  .table-panel.reorderable .table-header,
+  .table-panel.reorderable .table-row {
+    min-width: 750px;
+  }
+  /* Each library card keeps its controls; the row, not the item, is the
+     scroller's child. */
+  .selector-row {
+    flex: 0 0 auto;
+  }
+  .selector-row .selector-item {
+    min-width: 150px;
   }
   .selector-heading {
     display: none;
@@ -1157,6 +1328,12 @@ h3 {
   }
   .search-field {
     width: 100%;
+  }
+  .toolbar-actions {
+    justify-content: space-between;
+  }
+  .pagination {
+    justify-content: center;
   }
   .form-grid {
     grid-template-columns: 1fr;

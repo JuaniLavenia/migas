@@ -1,13 +1,46 @@
-import { AlertTriangle, ChevronRight, Plus, Trash2 } from "lucide-react";
+import { AlertTriangle, Plus, Trash2 } from "lucide-react";
 import PageHeader from "../../shared/PageHeader";
 import NumericInput from "../../shared/NumericInput";
+import Pagination from "../../shared/Pagination";
+import SortControl from "../../shared/SortControl";
+import ReorderControls from "../../shared/ReorderControls";
+import { SortableItem, SortableList } from "../../shared/SortableList";
+import { rectSortingStrategy } from "@dnd-kit/sortable";
 import { currency, unitLabels } from "../../lib/format";
 import { ingredientCost } from "../../lib/recipeMath";
 import { formatRelativeDate } from "../../lib/dates";
 
+function LibraryItem({ recipe, selected, onSelect }) {
+  return (
+    <button
+      onClick={() => onSelect(recipe.id)}
+      className={`selector-item ${selected ? "selected" : ""}`}
+    >
+      <span className="selector-avatar">{recipe.name.charAt(0)}</span>
+      <span>
+        <strong>{recipe.name}</strong>
+        <small>Rinde {recipe.yield} unidades</small>
+      </span>
+    </button>
+  );
+}
+
+// `recipes` is the current library page, already sorted; `recipeCount` is the
+// total. `selectedRecipe` may be on another page. `reorder` ({ onReorder,
+// onMove, firstId, lastId }) enables the custom order controls; null hides
+// them. First/last refer to the full library, not the page.
 function RecipesView({
   recipes,
+  recipeCount,
   ingredients,
+  sortOptions,
+  sort,
+  direction,
+  onSortChange,
+  onDirectionChange,
+  page,
+  pageCount,
+  onPageChange,
   selectedId,
   onSelect,
   onNew,
@@ -15,6 +48,7 @@ function RecipesView({
   selectedRecipe,
   updateRecipe,
   onDelete,
+  reorder = null,
 }) {
   function updateItem(index, field, value) {
     updateRecipe(
@@ -58,26 +92,80 @@ function RecipesView({
         }
       />
       <div className="recipe-workspace">
-        <div className="recipe-selector panel">
+        <section
+          className="recipe-selector panel"
+          aria-label="Biblioteca de recetas"
+        >
           <div className="selector-heading">
             <span className="eyebrow">Biblioteca</span>
-            <strong>{recipes.length} recetas</strong>
+            <strong>{recipeCount} recetas</strong>
           </div>
-          {recipes.map((recipe) => (
-            <button
-              key={recipe.id}
-              onClick={() => onSelect(recipe.id)}
-              className={`selector-item ${selectedId === recipe.id ? "selected" : ""}`}
-            >
-              <span className="selector-avatar">{recipe.name.charAt(0)}</span>
-              <span>
-                <strong>{recipe.name}</strong>
-                <small>Rinde {recipe.yield} unidades</small>
-              </span>
-              <ChevronRight size={15} />
-            </button>
-          ))}
-        </div>
+          {recipeCount > 1 && (
+            <SortControl
+              options={sortOptions}
+              sort={sort}
+              direction={direction}
+              onSortChange={onSortChange}
+              onDirectionChange={onDirectionChange}
+            />
+          )}
+          <div className="selector-list">
+            {reorder ? (
+              // The rect strategy works both for the desktop column and the
+              // horizontal scroller on mobile.
+              <SortableList
+                ids={recipes.map((recipe) => recipe.id)}
+                getLabel={(id) =>
+                  recipes.find((recipe) => recipe.id === id)?.name
+                }
+                onReorder={reorder.onReorder}
+                strategy={rectSortingStrategy}
+              >
+                {recipes.map((recipe) => (
+                  <SortableItem
+                    key={recipe.id}
+                    id={recipe.id}
+                    className="selector-row"
+                  >
+                    {(handleProps) => (
+                      <>
+                        <LibraryItem
+                          recipe={recipe}
+                          selected={selectedId === recipe.id}
+                          onSelect={onSelect}
+                        />
+                        <ReorderControls
+                          id={recipe.id}
+                          name={recipe.name}
+                          handleProps={handleProps}
+                          stacked
+                          canMoveUp={recipe.id !== reorder.firstId}
+                          canMoveDown={recipe.id !== reorder.lastId}
+                          onMove={(delta) => reorder.onMove(recipe.id, delta)}
+                        />
+                      </>
+                    )}
+                  </SortableItem>
+                ))}
+              </SortableList>
+            ) : (
+              recipes.map((recipe) => (
+                <LibraryItem
+                  key={recipe.id}
+                  recipe={recipe}
+                  selected={selectedId === recipe.id}
+                  onSelect={onSelect}
+                />
+              ))
+            )}
+          </div>
+          <Pagination
+            className="pagination-compact"
+            page={page}
+            pageCount={pageCount}
+            onPageChange={onPageChange}
+          />
+        </section>
         {!selectedRecipe && (
           <div className="panel empty-state">
             <p>Todavía no hay recetas.</p>
