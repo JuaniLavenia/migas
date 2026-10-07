@@ -58,7 +58,7 @@ function numberAtLeast(value, min, fallback) {
   return parsed >= min ? parsed : fallback;
 }
 
-function sanitizeRecipe(source) {
+function sanitizeRecipe(source, now) {
   if (!isObject(source) || !nonEmptyString(source.name)) return null;
   if (!Array.isArray(source.items)) return null;
   const items = source.items.map(sanitizeItem);
@@ -71,7 +71,12 @@ function sanitizeRecipe(source) {
       yield: numberAtLeast(source.yield, 1, 1),
       margin: numberAtLeast(source.margin, 0, 0),
       extras: numberAtLeast(source.extras, 0, 0),
-      updated: nonEmptyString(source.updated) ? source.updated : "Importada",
+      // Old backups carry an `updated` label ("Hoy"), not a date: like any
+      // record without a valid timestamp, they take the import time.
+      updatedAt:
+        Number.isFinite(source.updatedAt) && source.updatedAt > 0
+          ? source.updatedAt
+          : now,
       items,
     },
     source,
@@ -89,9 +94,10 @@ function sanitizeList(list, sanitize) {
   return { kept, skipped };
 }
 
-// Returns { ingredients, recipes, skipped }. Throws when the data is not a
+// Returns { ingredients, recipes, skipped }. Accepts recipes with `updatedAt`
+// (current) or the legacy `updated` label. Throws when the data is not a
 // backup at all (not an object, or without ingredients/recipes arrays).
-export function sanitizeBackup(data) {
+export function sanitizeBackup(data, now = Date.now()) {
   if (
     !isObject(data) ||
     (!Array.isArray(data.ingredients) && !Array.isArray(data.recipes))
@@ -99,7 +105,9 @@ export function sanitizeBackup(data) {
     throw new Error("invalid backup shape");
   }
   const ingredients = sanitizeList(data.ingredients, sanitizeIngredient);
-  const recipes = sanitizeList(data.recipes, sanitizeRecipe);
+  const recipes = sanitizeList(data.recipes, (recipe) =>
+    sanitizeRecipe(recipe, now),
+  );
   return {
     ingredients: ingredients.kept,
     recipes: recipes.kept,

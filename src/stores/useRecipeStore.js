@@ -1,6 +1,13 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
 import { v4 as uuidv4 } from "uuid";
+import {
+  RECIPE_STORAGE_KEY,
+  RECIPE_STORAGE_VERSION,
+  createSafeStorage,
+  migrateRecipeState,
+} from "../lib/recipeStorage";
+import { reportSaveResult } from "./useSaveStatusStore";
 
 const demoIngredients = [
   {
@@ -45,6 +52,8 @@ const demoIngredients = [
   },
 ];
 
+const DAY = 24 * 60 * 60 * 1000;
+
 const demoRecipes = [
   {
     id: "cookies",
@@ -52,7 +61,7 @@ const demoRecipes = [
     yield: 18,
     margin: 65,
     extras: 180,
-    updated: "Hoy",
+    updatedAt: Date.now(),
     items: [
       { ingredientId: "harina", quantity: 280 },
       { ingredientId: "manteca", quantity: 120 },
@@ -67,7 +76,7 @@ const demoRecipes = [
     yield: 12,
     margin: 55,
     extras: 250,
-    updated: "Ayer",
+    updatedAt: Date.now() - DAY,
     items: [
       { ingredientId: "harina", quantity: 180 },
       { ingredientId: "manteca", quantity: 150 },
@@ -108,7 +117,7 @@ const useRecipeStore = create()(
           ingredients: state.ingredients.filter((item) => item.id !== id),
         })),
       addRecipe: (recipe) => {
-        const nextRecipe = { ...recipe, id: uuidv4() };
+        const nextRecipe = { ...recipe, id: uuidv4(), updatedAt: Date.now() };
         set((state) => ({ recipes: [...state.recipes, nextRecipe] }));
         return nextRecipe.id;
       },
@@ -116,7 +125,7 @@ const useRecipeStore = create()(
         set((state) => ({
           recipes: state.recipes.map((recipe) =>
             recipe.id === id
-              ? { ...recipe, ...changes, updated: "Ahora" }
+              ? { ...recipe, ...changes, updatedAt: Date.now() }
               : recipe,
           ),
         })),
@@ -137,7 +146,16 @@ const useRecipeStore = create()(
           ),
         })),
     }),
-    { name: "miga-recipe-storage" },
+    {
+      name: RECIPE_STORAGE_KEY,
+      version: RECIPE_STORAGE_VERSION,
+      migrate: migrateRecipeState,
+      // Only the data is persisted; actions and derived state are rebuilt.
+      partialize: ({ ingredients, recipes }) => ({ ingredients, recipes }),
+      storage: createJSONStorage(() =>
+        createSafeStorage(() => window.localStorage, reportSaveResult),
+      ),
+    },
   ),
 );
 

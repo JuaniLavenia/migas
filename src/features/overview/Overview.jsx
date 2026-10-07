@@ -13,6 +13,7 @@ import PageHeader from "../../shared/PageHeader";
 import StatCard from "../../shared/StatCard";
 import { currency } from "../../lib/format";
 import { recipeTotals } from "../../lib/recipeMath";
+import { formatMonthYear, formatRelativeDate } from "../../lib/dates";
 
 function Overview({
   recipes,
@@ -23,10 +24,11 @@ function Overview({
   onSelect,
   onNewRecipe,
 }) {
+  const now = Date.now();
   return (
     <>
       <PageHeader
-        eyebrow="Mi cocina / Agosto 2026"
+        eyebrow={`Mi cocina / ${formatMonthYear(new Date(now))}`}
         title="Un precio justo empieza acá."
         description="Costeá tus recetas con claridad y decidí cuánto cobrar, sin hacer cuentas a mano."
         action={
@@ -183,7 +185,8 @@ function Overview({
                 <span className="recipe-info">
                   <strong>{recipe.name}</strong>
                   <small>
-                    <Clock3 size={13} /> Actualizada {recipe.updated} · rinde{" "}
+                    <Clock3 size={13} /> Actualizada{" "}
+                    {formatRelativeDate(recipe.updatedAt, now)} · rinde{" "}
                     {recipe.yield} unidades
                   </small>
                 </span>
