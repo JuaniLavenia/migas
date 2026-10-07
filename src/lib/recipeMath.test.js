@@ -1,0 +1,116 @@
+// Characterization tests: they pin the CURRENT behavior of recipeMath,
+// including its fallbacks, so later refactors cannot change costs silently.
+import { describe, expect, it } from "vitest";
+import { ingredientCost, recipeTotals } from "./recipeMath";
+
+// Shapes mirror the demo data in src/stores/useRecipeStore.js.
+const ingredients = [
+  { id: "harina", name: "Harina 0000", unit: "g", packSize: 1000, packCost: 1250 },
+  { id: "manteca", name: "Manteca", unit: "g", packSize: 200, packCost: 2100 },
+  { id: "azucar", name: "Azúcar", unit: "g", packSize: 1000, packCost: 980 },
+  { id: "huevos", name: "Huevos", unit: "un", packSize: 12, packCost: 2400 },
+  { id: "chocolate", name: "Chocolate cobertura", unit: "g", packSize: 500, packCost: 4600 },
+];
+
+const cookies = {
+  id: "cookies",
+  yield: 18,
+  margin: 65,
+  extras: 180,
+  items: [
+    { ingredientId: "harina", quantity: 280 },
+    { ingredientId: "manteca", quantity: 120 },
+    { ingredientId: "azucar", quantity: 160 },
+    { ingredientId: "huevos", quantity: 2 },
+    { ingredientId: "chocolate", quantity: 180 },
+  ],
+};
+
+describe("ingredientCost", () => {
+  it("prorates the pack cost by quantity", () => {
+    expect(ingredientCost(ingredients[0], 280)).toBeCloseTo(350);
+    expect(ingredientCost(ingredients[3], 2)).toBeCloseTo(400);
+  });
+
+  it("treats packSize 0 as 1", () => {
+    expect(ingredientCost({ packSize: 0, packCost: 100 }, 3)).toBeCloseTo(300);
+  });
+
+  it("treats a missing packSize as 1", () => {
+    expect(ingredientCost({ packCost: 100 }, 3)).toBeCloseTo(300);
+  });
+
+  it("treats a missing packCost as 0", () => {
+    expect(ingredientCost({ packSize: 1000 }, 500)).toBe(0);
+  });
+
+  it("coerces numeric strings", () => {
+    expect(ingredientCost({ packSize: "200", packCost: "2100" }, "120")).toBeCloseTo(1260);
+  });
+});
+
+describe("recipeTotals", () => {
+  it("computes cost, unit cost and price for the demo cookies recipe", () => {
+    // 350 + 1260 + 156.8 + 400 + 1656 = 3822.8, plus 180 extras.
+    const totals = recipeTotals(cookies, ingredients);
+    expect(totals.cost).toBeCloseTo(4002.8);
+    expect(totals.unitCost).toBeCloseTo(4002.8 / 18);
+    expect(totals.price).toBeCloseTo((4002.8 / 18) * 1.65);
+  });
+
+  it("ignores items whose ingredient does not exist", () => {
+    const recipe = {
+      yield: 1,
+      items: [
+        { ingredientId: "harina", quantity: 1000 },
+        { ingredientId: "missing", quantity: 999 },
+      ],
+    };
+    expect(recipeTotals(recipe, ingredients).cost).toBeCloseTo(1250);
+  });
+
+  it("adds extras to the cost", () => {
+    const recipe = { yield: 1, extras: 50, items: [] };
+    expect(recipeTotals(recipe, ingredients).cost).toBeCloseTo(50);
+  });
+
+  it("treats missing extras as 0", () => {
+    const recipe = { yield: 1, items: [{ ingredientId: "harina", quantity: 1000 }] };
+    expect(recipeTotals(recipe, ingredients).cost).toBeCloseTo(1250);
+  });
+
+  it.each([
+    ["0", 0],
+    ["missing", undefined],
+    ["negative", -5],
+    ["fractional below 1", 0.5],
+  ])("clamps a %s yield to 1", (_label, yieldValue) => {
+    const recipe = { yield: yieldValue, extras: 100, items: [] };
+    expect(recipeTotals(recipe, ingredients).unitCost).toBeCloseTo(100);
+  });
+
+  it("applies the margin as a percentage over unit cost", () => {
+    const recipe = { yield: 4, margin: 50, extras: 400, items: [] };
+    const totals = recipeTotals(recipe, ingredients);
+    expect(totals.unitCost).toBeCloseTo(100);
+    expect(totals.price).toBeCloseTo(150);
+  });
+
+  it("treats a missing margin as 0", () => {
+    const recipe = { yield: 2, extras: 100, items: [] };
+    expect(recipeTotals(recipe, ingredients).price).toBeCloseTo(50);
+  });
+
+  it("coerces numeric strings in yield, margin, extras and quantity", () => {
+    const recipe = {
+      yield: "2",
+      margin: "10",
+      extras: "100",
+      items: [{ ingredientId: "harina", quantity: "1000" }],
+    };
+    const totals = recipeTotals(recipe, ingredients);
+    expect(totals.cost).toBeCloseTo(1350);
+    expect(totals.unitCost).toBeCloseTo(675);
+    expect(totals.price).toBeCloseTo(742.5);
+  });
+});
