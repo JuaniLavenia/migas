@@ -85,6 +85,12 @@ Route evidence: 5 tasks touching App, store, every feature view, main.jsx and ne
 ## Progress
 - Branch created.
 - T2.0–T2.4 implemented, one work-unit commit each (see task notes for hashes of the previous commit).
+- Parent re-ran: `corepack pnpm test` 135 passed (8 files); `corepack pnpm build` OK.
+- Manual smoke in Chrome (2026-10-06, dev server, user's real unversioned data; a copy was kept in a separate key during the test and removed afterwards):
+  - T2.1/T2.2: loading the app migrated the real data to `version: 1` with 36 ingredients and 16 recipes, every item list intact, every recipe with `updatedAt` (migration time) and no legacy `updated`.
+  - T2.4: deep link `/recetas/<id>` opens that recipe with "Recetas" `aria-current`; unknown id redirects to `/recetas/<first>`; unknown path redirects to `/`; no console errors; stored data unchanged by navigation.
+  - T2.2: the editor shows the relative date ("ahora"); the topbar shows "Guardado localmente".
+  - Not exercised in the browser: save-failure banner and mobile menu (covered by UI tests).
 
 ## Next step
-Manual smoke in Chrome (deep link reload, mobile menu, save-failure banner), then open the single PR.
+Open the single PR (human decision).
