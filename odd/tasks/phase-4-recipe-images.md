@@ -73,5 +73,13 @@ Route evidence: new storage adapter, image processing, store, three feature view
   - GREEN: 22 files / 279 tests passed. Exception: jsdom has no StorageManager; the tests install a fake `navigator.storage`.
   - Verification: `corepack pnpm test`: 279 passed; `corepack pnpm build`: built OK.
 
+- Parent re-ran: `corepack pnpm test` 279 passed (22 files); `corepack pnpm build` OK (JS 344 kB).
+- Manual smoke in Chrome (2026-10-06, user's real data backed up to a separate key, restored byte-identical, backup key removed; image DB left empty):
+  - A generated 4000×3000 JPEG of 5.12 MB attached through the "Agregar foto" input was stored as `image/webp`, 1200×900, 285 KB; the recipe got an `imageId` and a fresh `updatedAt`; the editor and the library thumbnail show it with `alt` = recipe name.
+  - After navigating away and back, the photo still shows (persisted in IndexedDB).
+  - Configuración → Almacenamiento: "1 foto · 285 KB", meter "287 KB de 10 GB (0%)", not-persisted notice with "Proteger almacenamiento", backup hint.
+  - "Quitar foto" → ConfirmDialog → removed: recipe `imageId` cleared, 0 blobs left in IndexedDB, no `<img>` left.
+  - Not exercised in the browser: "Cambiar foto", "Proteger almacenamiento" (changes a browser permission), export/import with photos (downloads a file; covered by the round-trip tests), private window, > 80% warning (covered by tests).
+
 ## Next step
-Manual smoke in Chrome (back up the real data first): add/replace/remove a photo, reload, check a 4 MB photo is stored at ≤ 300 KB in the storage panel, export → import in a clean profile, private window (images unavailable message). Then PR (`single-pr`).
+Open the PR (`single-pr`).
