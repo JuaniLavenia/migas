@@ -10,15 +10,26 @@ import {
 import { downloadFile } from "../../shared/downloadFile";
 import { importSummary } from "./importSummary";
 import SettingsView from "./SettingsView";
+import useStorageInfo from "./useStorageInfo";
 
 // Container of the settings view: backup export/import against the store,
-// including the recipe photos.
+// including the recipe photos, and the storage panel.
 function SettingsPage() {
   const ingredients = useRecipeStore((state) => state.ingredients);
   const recipes = useRecipeStore((state) => state.recipes);
   const importData = useRecipeStore((state) => state.importData);
   const showToast = useToastStore((state) => state.showToast);
   const [busy, setBusy] = useState(false);
+  const storage = useStorageInfo();
+
+  async function handlePersist() {
+    const granted = await storage.persist();
+    showToast(
+      granted
+        ? "Almacenamiento protegido"
+        : "El navegador no aceptó protegerlo por ahora",
+    );
+  }
 
   async function handleExport() {
     setBusy(true);
@@ -68,11 +79,24 @@ function SettingsPage() {
       showToast(importSummary({ ...backup, images }));
     } finally {
       setBusy(false);
+      storage.refresh();
     }
   }
 
   return (
-    <SettingsView onExport={handleExport} onImport={handleImport} busy={busy} />
+    <SettingsView
+      onExport={handleExport}
+      onImport={handleImport}
+      busy={busy}
+      storage={{
+        images: storage.images,
+        estimate: storage.estimate,
+        persisted: storage.persisted,
+        canPersist: storage.canPersist,
+        onRefresh: storage.refresh,
+        onPersist: handlePersist,
+      }}
+    />
   );
 }
 

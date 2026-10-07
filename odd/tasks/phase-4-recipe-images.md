@@ -31,7 +31,7 @@ Let the user attach a photo to each recipe, stored locally in the browser withou
 - [x] T4.1 `imageStore` port + IndexedDB adapter + image preparation — route: delegated
 - [x] T4.2 Recipe image UI + cleanup — route: delegated
 - [x] T4.3 Backup with images — route: delegated
-- [ ] T4.4 Storage panel + alerts — route: delegated
+- [x] T4.4 Storage panel + alerts — route: delegated
 
 Route evidence: new storage adapter, image processing, store, three feature views, settings and tests → writer trigger; one bounded writer, sequential.
 
@@ -68,6 +68,10 @@ Route evidence: new storage adapter, image processing, store, three feature view
   - RED: `backupImages.test.js` and `importSummary.test.js` failed to load (modules missing) and the 3 UI backup tests failed; 234 existing tests passed.
   - GREEN: 20 files / 260 tests passed (export → import round trip on a fresh in-memory image store, invalid photo, old backup).
   - Verification: `corepack pnpm test`: 260 passed; `corepack pnpm build`: built OK.
+- T4.4 (previous commit cb4fd8e): "Almacenamiento" panel in Configuración (`StoragePanel` + `useStorageInfo`): photo count and size from the image store port, site usage vs quota from `navigator.storage.estimate()` as a `<meter>` (explicit `role="meter"`, `aria-valuenow/min/max`, `aria-valuetext`) plus "X MB de Y GB", alert above 80% of the quota, persistence status from `persisted()` with "Proteger almacenamiento" calling `persist()` (result shown in the panel and a toast), backup hint. Read on mount, after an import and with "Actualizar". Without `navigator.storage` or IndexedDB it says so instead. Pure helpers in `lib/storageUsage.js` (`formatBytes`, `usagePercent`, `isNearQuota`).
+  - RED: `storageUsage.test.js` failed to load (module missing) and the 5 panel UI tests failed; 260 existing tests passed.
+  - GREEN: 22 files / 279 tests passed. Exception: jsdom has no StorageManager; the tests install a fake `navigator.storage`.
+  - Verification: `corepack pnpm test`: 279 passed; `corepack pnpm build`: built OK.
 
 ## Next step
-Delegate T4.1–T4.4 to one writer.
+Manual smoke in Chrome (back up the real data first): add/replace/remove a photo, reload, check a 4 MB photo is stored at ≤ 300 KB in the storage panel, export → import in a clean profile, private window (images unavailable message). Then PR (`single-pr`).
