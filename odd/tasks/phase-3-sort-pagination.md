@@ -89,5 +89,14 @@ Route evidence: shared helpers + a shared pagination component + two feature vie
   - GREEN: full suite 188/188 passed; `pnpm build` passed (JS 328 kB, +51 kB from dnd-kit).
   - Not verified: manual smoke of drag and drop and the mobile layout in a real browser.
 
+- Parent re-ran after T3.4: `corepack pnpm test` 188 passed (11 files); `corepack pnpm build` OK.
+- Manual smoke of T3.4 in Chrome (2026-10-06, user's real data backed up to a separate key, restored byte-identical afterwards, backup key removed):
+  - `/insumos` defaults to "Personalizado" and shows the stored order with handle + Subir/Bajar per row.
+  - "Bajar Leche" moved Leche from 2nd to 3rd in the stored array.
+  - Pointer drag with intermediate pointer moves (dispatched step by step) moved Huevos from 4th to 1st. The browser tool's single-jump drag did not trigger dnd-kit (no intermediate moves) — tool limitation, not an app bug.
+  - `/recetas` library shows Personalizado with handle + Subir/Bajar.
+  - Observation (not fixed): in the desktop recipe library column the extra controls squeeze long names onto 3 lines.
+  - Not verified in the browser: keyboard drag (covered by tests), crossing pages with Subir/Bajar (covered by tests), mobile width (window resize does not apply).
+
 ## Next step
-Manual smoke in Chrome (drag with mouse and keyboard, Subir/Bajar across pages, mobile width), then open the PR (single-pr).
+Decide on the narrow recipe library layout, then open the PR (single-pr).
