@@ -62,5 +62,13 @@ Route evidence: shared helpers + a shared pagination component + two feature vie
   - RED: `pnpm test src/features/recipes` → 8/8 failed.
   - GREEN: full suite 166/166 passed; `pnpm build` passed.
 
+- Parent re-ran: `corepack pnpm test` 166 passed (11 files); `corepack pnpm build` OK.
+- Manual smoke in Chrome (2026-10-06, read-only on the user's real data: 36 ingredients, 16 recipes):
+  - `/insumos?orden=costoUnidad&dir=desc&pagina=2` restores the sort select, shows "Página 2 de 4" and rows ordered by unit cost descending; "36 insumos" shows the total.
+  - `/recetas` opens the first recipe; the library shows the sort control and "16 recetas".
+  - `/recetas/cookies?orden=nombre&dir=asc&pagina=2` shows page 2 of 2 sorted by name while the open recipe (not on that page) stays in the editor.
+  - No DOM churn on an idle page (0 mutations in 1.5 s, no history growth); stored data unchanged by navigation.
+  - Not verified in the browser: the mobile layout (the window resize did not apply; viewport stayed 1366 px wide).
+
 ## Next step
-Manual smoke in Chrome (read-only), then PR (single-pr).
+Open the PR (single-pr).
