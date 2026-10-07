@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { act, screen, within } from "@testing-library/react";
-import { renderApp } from "./test/renderApp";
+import { currentPath, renderApp } from "./test/renderApp";
 import useRecipeStore from "./stores/useRecipeStore";
 import { formatMonthYear } from "./lib/dates";
 
@@ -8,8 +8,9 @@ import { formatMonthYear } from "./lib/dates";
 // sees and does (roles, labels, text), so they keep passing while the app is
 // restructured underneath.
 
+// Sidebar items are links since views got their own URLs.
 function navItem(name) {
-  return screen.getByRole("button", { name });
+  return screen.getByRole("link", { name });
 }
 
 function pageTitle(name) {
@@ -23,15 +24,77 @@ describe("App", () => {
 
     await user.click(navItem(/^Insumos/));
     expect(pageTitle("Tus insumos.")).toBeInTheDocument();
+    expect(currentPath()).toBe("/insumos");
+    expect(navItem(/^Insumos/)).toHaveAttribute("aria-current", "page");
 
     await user.click(navItem(/^Recetas/));
     expect(pageTitle("Tus recetas.")).toBeInTheDocument();
+    expect(currentPath()).toBe("/recetas/cookies");
 
     await user.click(navItem(/^Configuración/));
     expect(pageTitle("Tu backup.")).toBeInTheDocument();
+    expect(currentPath()).toBe("/configuracion");
 
     await user.click(navItem(/^Resumen/));
     expect(pageTitle("Un precio justo empieza acá.")).toBeInTheDocument();
+    expect(currentPath()).toBe("/");
+  });
+
+  it("opens a recipe from a deep link", () => {
+    renderApp({ route: "/recetas/brownie" });
+    expect(pageTitle("Tus recetas.")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Brownie clásico")).toBeInTheDocument();
+  });
+
+  it("falls back to the recipes list for an unknown recipe id", () => {
+    renderApp({ route: "/recetas/no-existe" });
+    expect(screen.getByDisplayValue("Cookies de chocolate")).toBeInTheDocument();
+    expect(currentPath()).toBe("/recetas/cookies");
+  });
+
+  it("redirects unknown paths to the overview", () => {
+    renderApp({ route: "/cualquier-cosa" });
+    expect(pageTitle("Un precio justo empieza acá.")).toBeInTheDocument();
+    expect(currentPath()).toBe("/");
+  });
+
+  it("opens a recipe from the overview and the recipe selector", async () => {
+    const { user } = renderApp();
+    await user.click(screen.getByRole("button", { name: /Brownie clásico/ }));
+    expect(currentPath()).toBe("/recetas/brownie");
+    expect(screen.getByDisplayValue("Brownie clásico")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /Cookies de chocolate/ }));
+    expect(currentPath()).toBe("/recetas/cookies");
+
+    // The overview keeps showing the last recipe opened.
+    await user.click(navItem(/^Resumen/));
+    expect(
+      screen.getByRole("heading", { level: 2, name: "Cookies de chocolate" }),
+    ).toBeInTheDocument();
+  });
+
+  it("navigates to a recipe after creating it", async () => {
+    const { user } = renderApp();
+    await user.click(screen.getAllByRole("button", { name: /Nueva receta/ })[0]);
+    await user.type(screen.getByPlaceholderText("Ej. Budín de limón"), "Tarta");
+    await user.click(screen.getByRole("button", { name: "Crear receta" }));
+
+    const created = useRecipeStore
+      .getState()
+      .recipes.find((recipe) => recipe.name === "Tarta");
+    expect(currentPath()).toBe(`/recetas/${created.id}`);
+    expect(screen.getByDisplayValue("Tarta")).toBeInTheDocument();
+  });
+
+  it("moves to another recipe after deleting the open one", async () => {
+    const { user } = renderApp({ route: "/recetas/cookies" });
+    await user.click(screen.getByRole("button", { name: "Eliminar receta" }));
+    const dialog = screen.getByRole("alertdialog");
+    await user.click(within(dialog).getByRole("button", { name: "Eliminar" }));
+
+    expect(currentPath()).toBe("/recetas/brownie");
+    expect(screen.getByDisplayValue("Brownie clásico")).toBeInTheDocument();
   });
 
   it("lets a recipe numeric field be cleared and retyped", async () => {

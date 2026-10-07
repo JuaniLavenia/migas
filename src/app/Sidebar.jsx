@@ -1,25 +1,28 @@
+import { NavLink } from "react-router-dom";
 import { ChevronRight, Utensils, X } from "lucide-react";
 import { views } from "./navigation";
 
-function NavItem({ view, active, count, onNavigate }) {
+function NavItem({ view, count, onNavigate }) {
   const Icon = view.icon;
   return (
-    <button
-      className={active ? "nav-item active" : "nav-item"}
-      onClick={() => onNavigate(view.id)}
+    <NavLink
+      to={view.path}
+      end={view.path === "/"}
+      className={({ isActive }) => (isActive ? "nav-item active" : "nav-item")}
+      onClick={onNavigate}
     >
       <Icon size={18} /> {view.label} {count !== undefined && <span>{count}</span>}
-    </button>
+    </NavLink>
   );
 }
 
-// `counts` maps a view id to the badge shown next to it.
-function Sidebar({ activeView, counts, open, onNavigate, onClose }) {
+// `counts` maps a view id to the badge shown next to it. NavLink marks the
+// current view (class + aria-current).
+function Sidebar({ counts, open, onNavigate, onClose }) {
   const renderItem = (view) => (
     <NavItem
       key={view.id}
       view={view}
-      active={activeView === view.id}
       count={counts[view.id]}
       onNavigate={onNavigate}
     />

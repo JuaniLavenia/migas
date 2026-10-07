@@ -59,6 +59,7 @@
 }
 .nav-item {
   border: 0;
+  text-decoration: none;
   background: transparent;
   color: #a6c1b8;
   display: flex;

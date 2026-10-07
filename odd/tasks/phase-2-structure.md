@@ -51,7 +51,15 @@ Restructure the app so Phase 3 (sorting + pagination) and Phase 4 (recipe images
   - `App.jsx` (315 → 42 lines) keeps only the active view and selected recipe id (replaced by the URL in T2.4).
   - RED exception: pure refactor; the T2.0/T2.1/T2.2 UI tests are the safety net and passed unmodified. Only `src/test/renderApp.jsx` changed: it also resets the new toast store so a toast cannot leak between tests.
   - Verification: `corepack pnpm test` 129 passed (8 files); `corepack pnpm build` OK. Previous commit: f082749.
-- [ ] T2.4 Routes — route: delegated
+- [x] T2.4 Routes — route: delegated
+  - react-router-dom 7.18 declarative API: `BrowserRouter` in `main.jsx` (inside the ErrorBoundary), `<Routes>` in `App.jsx` with `AppLayout` as the layout route (`<Outlet/>`). Routes: `/`, `/insumos`, `/recetas`, `/recetas/:recipeId`, `/configuracion`, `*` → `<Navigate to="/" replace/>`. Declarative routes keep `App` renderable inside a `MemoryRouter` in tests.
+  - Sidebar items are `NavLink`s (active class + `aria-current="page"`); the mobile menu closes on every pathname change and on tapping an item. The topbar title derives from the pathname (`viewForPath`).
+  - `RecipesPage` reads `:recipeId`; an unknown id redirects to `/recetas`, and `/recetas` redirects to the last opened recipe (via `resolveSelectedRecipe`, so the first one when none/stale) or shows the empty state. Selecting, "Ver detalle" and creating a recipe (from Overview or Recipes) navigate to `/recetas/:id`; deleting the open recipe navigates (replace) to the first remaining one or `/recetas`.
+  - `src/stores/useRecipeSelectionStore.js` (in memory) remembers the last opened recipe so the Overview spotlight and the sidebar "Recetas" link keep the pre-router behavior (they showed the current selection).
+  - Tests adapted for the intended change: `navItem` queries `link` instead of `button`; `renderApp` wraps the app in `MemoryRouter` (`route` option) and exposes `currentPath()`. New tests: URLs + `aria-current`, deep link, unknown id fallback, unknown path redirect, open from overview/selector (+ spotlight keeps last), create → navigates, delete open recipe → next.
+  - RED: after adapting the tests, all 13 App tests failed (no links/routes; `renderApp` first failed on the missing selection store, then on behavior). GREEN after implementation.
+  - README: routes table, SPA fallback rewrite note for hosting, updated structure.
+  - Verification: `corepack pnpm test` 135 passed (8 files); `corepack pnpm build` OK. Previous commit: b9a6bfa.
 
 Route evidence: 5 tasks touching App, store, every feature view, main.jsx and new layout/container files → writer trigger; one bounded writer, sequential.
 
@@ -76,6 +84,7 @@ Route evidence: 5 tasks touching App, store, every feature view, main.jsx and ne
 
 ## Progress
 - Branch created.
+- T2.0–T2.4 implemented, one work-unit commit each (see task notes for hashes of the previous commit).
 
 ## Next step
-Confirm delivery strategy, then delegate T2.0–T2.4 to one writer.
+Manual smoke in Chrome (deep link reload, mobile menu, save-failure banner), then open the single PR.

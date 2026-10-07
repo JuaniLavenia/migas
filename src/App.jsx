@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Navigate, Route, Routes } from "react-router-dom";
 import "./App.css";
 import AppLayout from "./app/AppLayout";
 import OverviewPage from "./features/overview/OverviewPage";
@@ -6,36 +6,20 @@ import IngredientsPage from "./features/ingredients/IngredientsPage";
 import RecipesPage from "./features/recipes/RecipesPage";
 import SettingsPage from "./features/settings/SettingsPage";
 
-// Composition only: which view is shown and which recipe is selected.
-// Every feature handler lives in its page container.
+// Composition only: the layout and one route per view. The router itself is
+// provided by main.jsx (BrowserRouter) or by the tests (MemoryRouter).
 function App() {
-  const [activeView, setActiveView] = useState("overview");
-  const [selectedRecipeId, setSelectedRecipeId] = useState(null);
-
-  function openRecipe(id) {
-    setSelectedRecipeId(id);
-    setActiveView("recipes");
-  }
-
   return (
-    <AppLayout activeView={activeView} onNavigate={setActiveView}>
-      {activeView === "overview" && (
-        <OverviewPage
-          selectedRecipeId={selectedRecipeId}
-          onSelectRecipe={setSelectedRecipeId}
-          onOpenRecipe={openRecipe}
-          onNavigate={setActiveView}
-        />
-      )}
-      {activeView === "ingredients" && <IngredientsPage />}
-      {activeView === "recipes" && (
-        <RecipesPage
-          selectedRecipeId={selectedRecipeId}
-          onSelectRecipe={setSelectedRecipeId}
-        />
-      )}
-      {activeView === "settings" && <SettingsPage />}
-    </AppLayout>
+    <Routes>
+      <Route path="/" element={<AppLayout />}>
+        <Route index element={<OverviewPage />} />
+        <Route path="insumos" element={<IngredientsPage />} />
+        <Route path="recetas" element={<RecipesPage />} />
+        <Route path="recetas/:recipeId" element={<RecipesPage />} />
+        <Route path="configuracion" element={<SettingsPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Route>
+    </Routes>
   );
 }
 
