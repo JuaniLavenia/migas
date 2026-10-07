@@ -1,13 +1,26 @@
 import { AlertTriangle, ChevronRight, Plus, Trash2 } from "lucide-react";
 import PageHeader from "../../shared/PageHeader";
 import NumericInput from "../../shared/NumericInput";
+import Pagination from "../../shared/Pagination";
+import SortControl from "../../shared/SortControl";
 import { currency, unitLabels } from "../../lib/format";
 import { ingredientCost } from "../../lib/recipeMath";
 import { formatRelativeDate } from "../../lib/dates";
 
+// `recipes` is the current library page, already sorted; `recipeCount` is the
+// total. `selectedRecipe` may be on another page.
 function RecipesView({
   recipes,
+  recipeCount,
   ingredients,
+  sortOptions,
+  sort,
+  direction,
+  onSortChange,
+  onDirectionChange,
+  page,
+  pageCount,
+  onPageChange,
   selectedId,
   onSelect,
   onNew,
@@ -58,26 +71,46 @@ function RecipesView({
         }
       />
       <div className="recipe-workspace">
-        <div className="recipe-selector panel">
+        <section
+          className="recipe-selector panel"
+          aria-label="Biblioteca de recetas"
+        >
           <div className="selector-heading">
             <span className="eyebrow">Biblioteca</span>
-            <strong>{recipes.length} recetas</strong>
+            <strong>{recipeCount} recetas</strong>
           </div>
-          {recipes.map((recipe) => (
-            <button
-              key={recipe.id}
-              onClick={() => onSelect(recipe.id)}
-              className={`selector-item ${selectedId === recipe.id ? "selected" : ""}`}
-            >
-              <span className="selector-avatar">{recipe.name.charAt(0)}</span>
-              <span>
-                <strong>{recipe.name}</strong>
-                <small>Rinde {recipe.yield} unidades</small>
-              </span>
-              <ChevronRight size={15} />
-            </button>
-          ))}
-        </div>
+          {recipeCount > 1 && (
+            <SortControl
+              options={sortOptions}
+              sort={sort}
+              direction={direction}
+              onSortChange={onSortChange}
+              onDirectionChange={onDirectionChange}
+            />
+          )}
+          <div className="selector-list">
+            {recipes.map((recipe) => (
+              <button
+                key={recipe.id}
+                onClick={() => onSelect(recipe.id)}
+                className={`selector-item ${selectedId === recipe.id ? "selected" : ""}`}
+              >
+                <span className="selector-avatar">{recipe.name.charAt(0)}</span>
+                <span>
+                  <strong>{recipe.name}</strong>
+                  <small>Rinde {recipe.yield} unidades</small>
+                </span>
+                <ChevronRight size={15} />
+              </button>
+            ))}
+          </div>
+          <Pagination
+            className="pagination-compact"
+            page={page}
+            pageCount={pageCount}
+            onPageChange={onPageChange}
+          />
+        </section>
         {!selectedRecipe && (
           <div className="panel empty-state">
             <p>Todavía no hay recetas.</p>

@@ -26,7 +26,7 @@ Let the user sort and page through ingredients and recipes, so the lists stay us
 ## Tasks
 - [x] T3.1 Pure `sortBy` + `paginate` helpers — route: delegated
 - [x] T3.2 Ingredients sort + pagination — route: delegated
-- [ ] T3.3 Recipes library sort + pagination — route: delegated
+- [x] T3.3 Recipes library sort + pagination — route: delegated
 
 Route evidence: shared helpers + a shared pagination component + two feature views/containers + tests → writer trigger; one bounded writer, sequential.
 
@@ -58,5 +58,9 @@ Route evidence: shared helpers + a shared pagination component + two feature vie
   - RED: `pnpm test src/features/ingredients` → 8 failed, 1 passed (the "pagination hidden on one page" case passes vacuously before the feature).
   - GREEN: full suite 158/158 passed; `pnpm build` passed.
 
+- T3.3 done (previous commit 01a8923). Sort options in `features/recipes/recipeListing.js` (cost/price via `recipeTotals`); `RecipesPage` sorts + paginates the library with the shared hook, keeps the query string when selecting, creating, deleting and on its own redirects (`/recetas?orden=…` → `/recetas/:id?orden=…`); the clamp effect is skipped while a redirect is pending. The library is now a `<section aria-label="Biblioteca de recetas">` with the sort control (shown when there are 2+ recipes), a `.selector-list` and a compact pagination (icon-only steps, status on its own line). Mobile: only `.selector-list` scrolls horizontally; sort and pagination sit above/below it. The open recipe is not forced onto the visible page.
+  - RED: `pnpm test src/features/recipes` → 8/8 failed.
+  - GREEN: full suite 166/166 passed; `pnpm build` passed.
+
 ## Next step
-T3.3 recipes library sort + pagination.
+Manual smoke in Chrome (read-only), then PR (single-pr).

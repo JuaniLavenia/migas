@@ -20,7 +20,8 @@ function Pagination({ page, pageCount, onPageChange, className = "" }) {
         onClick={() => onPageChange(page - 1)}
         disabled={page <= 1}
       >
-        <ChevronLeft size={15} /> Anterior
+        <ChevronLeft size={15} />
+        <span className="pagination-step-label">Anterior</span>
       </button>
       {pages.length > 0 && (
         <span className="pagination-pages">
@@ -47,7 +48,8 @@ function Pagination({ page, pageCount, onPageChange, className = "" }) {
         onClick={() => onPageChange(page + 1)}
         disabled={page >= pageCount}
       >
-        Siguiente <ChevronRight size={15} />
+        <span className="pagination-step-label">Siguiente</span>
+        <ChevronRight size={15} />
       </button>
     </nav>
   );
