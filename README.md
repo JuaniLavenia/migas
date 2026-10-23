@@ -24,10 +24,11 @@ La aplicación queda disponible en `http://localhost:5173`.
 ## Funcionalidades
 
 - Registrar, editar y eliminar insumos.
-- Definir categoría, unidad base, contenido del packaging y costo de compra.
-- Crear recetas con rendimiento, margen, gastos extra e ingredientes utilizados.
-- Calcular costo total, costo unitario y precio sugerido.
-- Persistir recetas e insumos en el navegador mediante Zustand Persist.
+- Definir categoría (Secos, Lácteos, Frescos, Chocolates, Decoración u Otros), unidad base, presentación de compra y su costo.
+- Crear recetas con categoría, rendimiento, ganancia sobre el costo, precio de venta, gastos extra e ingredientes utilizados.
+- Ver la biblioteca de recetas agrupada por categoría, con secciones plegables y filtro. Las categorías se crean desde la receta y se renombran o eliminan en Configuración.
+- Calcular lo que cuesta la tanda y cada unidad, el precio sugerido, la ganancia por unidad y avisar si el precio de venta quedó por debajo del sugerido.
+- Persistir recetas, categorías e insumos en el navegador mediante Zustand Persist.
 - Usar la interfaz desde desktop o mobile.
 
 ## Stack
