@@ -1,7 +1,6 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   RECIPE_STORAGE_VERSION,
-  createSafeStorage,
   migrateRecipeState,
 } from "./recipeStorage";
 
@@ -111,7 +110,7 @@ describe("migrateRecipeState", () => {
     },
   );
 
-  it("keeps a recipe imageId from the current version", () => {
+  it("keeps the recipe fields of the current version", () => {
     const recipe = { ...legacyRecipe, updatedAt: NOW, imageId: "img-1" };
     delete recipe.updated;
     const result = migrateRecipeState({ recipes: [recipe] }, 1, NOW);
@@ -119,46 +118,3 @@ describe("migrateRecipeState", () => {
   });
 });
 
-describe("createSafeStorage", () => {
-  function fakeStorage() {
-    const data = new Map();
-    return {
-      getItem: vi.fn((key) => (data.has(key) ? data.get(key) : null)),
-      setItem: vi.fn((key, value) => data.set(key, value)),
-      removeItem: vi.fn((key) => data.delete(key)),
-    };
-  }
-
-  it("reads and writes through the given storage and reports success", () => {
-    const storage = fakeStorage();
-    const onWrite = vi.fn();
-    const safe = createSafeStorage(() => storage, onWrite);
-    safe.setItem("key", "value");
-    expect(safe.getItem("key")).toBe("value");
-    expect(onWrite).toHaveBeenCalledWith(true);
-    safe.removeItem("key");
-    expect(safe.getItem("key")).toBeNull();
-  });
-
-  it("reports a failed write instead of throwing", () => {
-    const storage = fakeStorage();
-    storage.setItem.mockImplementation(() => {
-      throw new DOMException("full", "QuotaExceededError");
-    });
-    const onWrite = vi.fn();
-    const safe = createSafeStorage(() => storage, onWrite);
-    expect(() => safe.setItem("key", "value")).not.toThrow();
-    expect(onWrite).toHaveBeenCalledWith(false);
-  });
-
-  it("treats an unavailable storage as empty and unwritable", () => {
-    const onWrite = vi.fn();
-    const safe = createSafeStorage(() => {
-      throw new Error("blocked");
-    }, onWrite);
-    expect(safe.getItem("key")).toBeNull();
-    expect(() => safe.setItem("key", "value")).not.toThrow();
-    expect(() => safe.removeItem("key")).not.toThrow();
-    expect(onWrite).toHaveBeenCalledWith(false);
-  });
-});

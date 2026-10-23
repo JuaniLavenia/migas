@@ -10,51 +10,29 @@ describe("importSummary", () => {
     ).toBe("Importamos 3 insumos y 2 recetas");
   });
 
-  it("mentions imported photos", () => {
+  it("counts skipped records", () => {
     expect(
-      importSummary({
-        ingredients: list(3),
-        recipes: list(2),
-        skipped: 0,
-        images: { imported: 1, skipped: 0 },
-      }),
-    ).toBe("Importamos 3 insumos y 2 recetas con 1 foto");
+      importSummary({ ingredients: list(1), recipes: list(1), skipped: 1 }),
+    ).toBe("Importamos 1 insumos y 1 recetas · 1 registro omitido por datos inválidos");
     expect(
-      importSummary({
-        ingredients: list(0),
-        recipes: list(2),
-        skipped: 0,
-        images: { imported: 2, skipped: 0 },
-      }),
-    ).toBe("Importamos 0 insumos y 2 recetas con 2 fotos");
-  });
-
-  it("counts skipped records and photos", () => {
-    expect(
-      importSummary({
-        ingredients: list(1),
-        recipes: list(1),
-        skipped: 1,
-        images: { imported: 0, skipped: 2 },
-      }),
-    ).toBe(
-      "Importamos 1 insumos y 1 recetas · 1 registro omitido por datos inválidos · 2 fotos omitidas",
-    );
-    expect(
-      importSummary({
-        ingredients: list(1),
-        recipes: list(1),
-        skipped: 2,
-        images: { imported: 1, skipped: 1 },
-      }),
-    ).toBe(
-      "Importamos 1 insumos y 1 recetas con 1 foto · 2 registros omitidos por datos inválidos · 1 foto omitida",
-    );
+      importSummary({ ingredients: list(1), recipes: list(1), skipped: 2 }),
+    ).toBe("Importamos 1 insumos y 1 recetas · 2 registros omitidos por datos inválidos");
   });
 
   it("says when nothing valid was found", () => {
     expect(
       importSummary({ ingredients: [], recipes: [], skipped: 2 }),
     ).toBe("No encontramos registros válidos · 2 registros omitidos por datos inválidos");
+  });
+
+  it("reports a backup that only brings categories", () => {
+    expect(
+      importSummary({
+        ingredients: [],
+        recipes: [],
+        recipeCategories: list(2),
+        skipped: 0,
+      }),
+    ).toBe("Importamos 2 categorías");
   });
 });

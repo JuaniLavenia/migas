@@ -10,10 +10,8 @@ import { UNCATEGORIZED, groupRecipes } from "../../lib/recipeGroups";
 import useListingParams from "../../shared/useListingParams";
 import { recipePath, viewPath } from "../../app/navigation";
 import ConfirmDialog from "../../shared/ConfirmDialog";
-import { discardImage } from "../../lib/images/imageStore";
 import RecipesView from "./RecipesView";
 import useNewRecipeModal from "./useNewRecipeModal";
-import useRecipeImageEditor from "./useRecipeImageEditor";
 import {
   recipeListingDefaults,
   recipeSortOptions,
@@ -27,7 +25,7 @@ const emptyTotals = { cost: 0, unitCost: 0, price: 0, missingCount: 0 };
 // /recetas redirects to the last opened (or first) recipe, and an unknown id
 // falls back to /recetas. Owns the create/delete flows, the library's sort
 // (whose query string, `?orden=…`, is kept when moving between recipes here)
-// and category filter, and the open recipe's photo. The library is grouped by
+// and category filter. The library is grouped by
 // category; the open recipe may be in a filtered-out or collapsed group.
 function RecipesPage() {
   const { recipeId } = useParams();
@@ -60,8 +58,6 @@ function RecipesPage() {
     recipeId === undefined
       ? null
       : recipes.find((recipe) => recipe.id === recipeId) ?? null;
-  const { imageField, removeImageDialog } =
-    useRecipeImageEditor(selectedRecipe);
   const fallbackRecipe = resolveSelectedRecipe(recipes, lastRecipeId);
 
   let redirectPath = null;
@@ -108,6 +104,7 @@ function RecipesPage() {
     if (!selectedRecipe) return;
     let change;
     if (field === "categoryId") change = { categoryId: value || undefined };
+    else if (field === "imageUrl") change = { imageUrl: value || undefined };
     else if (field === "salePrice")
       change = { salePrice: value === null ? undefined : Number(value) };
     else if (numericRecipeFields.has(field)) change = { [field]: Number(value) };
@@ -124,13 +121,12 @@ function RecipesPage() {
 
   function requestDelete(id) {
     const recipe = recipes.find((entry) => entry.id === id);
-    setPendingDelete({ id, name: recipe?.name, imageId: recipe?.imageId });
+    setPendingDelete({ id, name: recipe?.name });
   }
 
   function confirmDelete() {
     if (!pendingDelete) return;
     deleteRecipe(pendingDelete.id);
-    discardImage(pendingDelete.imageId);
     if (pendingDelete.id === selectedRecipe?.id) {
       const next = recipes.find((recipe) => recipe.id !== pendingDelete.id);
       // replace: the deleted recipe's URL should not stay in the history.
@@ -167,11 +163,9 @@ function RecipesPage() {
         selectedRecipe={selectedRecipe}
         updateRecipe={updateRecipe}
         onDelete={requestDelete}
-        imageField={imageField}
         reorder={reorder}
       />
       {newRecipeModal}
-      {removeImageDialog}
       <ConfirmDialog
         open={pendingDelete !== null}
         title="Eliminar receta"

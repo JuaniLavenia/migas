@@ -1,13 +1,12 @@
 import { useRef } from "react";
 import { ChevronRight, Download, Upload } from "lucide-react";
 import PageHeader from "../../shared/PageHeader";
-import StoragePanel from "./StoragePanel";
 
 // Backup export/import. Reading the picked file happens here; parsing,
 // validation and storing are up to the container (onImport receives the
 // file text). `busy` disables both actions while one is in progress.
-// `storage` holds the props of the StoragePanel; `children` are extra panels.
-function SettingsView({ onExport, onImport, busy = false, storage, children }) {
+// `children` are extra panels.
+function SettingsView({ onExport, onImport, busy = false, children }) {
   const fileInputRef = useRef(null);
 
   function handleImportClick() {
@@ -80,7 +79,6 @@ function SettingsView({ onExport, onImport, busy = false, storage, children }) {
             style={{ display: "none" }}
           />
         </section>
-        <StoragePanel {...storage} />
         {children}
       </div>
     </>

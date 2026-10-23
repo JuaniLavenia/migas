@@ -1,32 +1,27 @@
-import { Camera, ImageIcon, Trash2 } from "lucide-react";
+import { useId, useState } from "react";
+import { ImageIcon, Trash2 } from "lucide-react";
+import { normalizePhotoUrl } from "../../lib/photoUrl";
 
-const statusText = {
-  none: "Sin foto",
-  loading: "Cargando foto…",
-  missing: "No encontramos la foto",
-  error: "No pudimos cargar la foto",
-};
+// Photo of the recipe in the editor: a link (e.g. from Cloudinary) pasted
+// and saved on Enter or when leaving the field. `onChange(url)` receives the
+// link, or null to remove the photo.
+function RecipeImageField({ url, onChange }) {
+  const fieldId = useId();
+  const [draft, setDraft] = useState(url ?? "");
+  const [invalid, setInvalid] = useState(false);
 
-// Photo of the recipe in the editor. `available` is null while checking
-// whether images can be stored, then true or false.
-function RecipeImageField({
-  hasImage,
-  url,
-  status,
-  available,
-  busy,
-  onPick,
-  onRemove,
-}) {
-  if (available === false) {
-    return (
-      <section className="recipe-image-field" aria-label="Foto de la receta">
-        <p className="recipe-image-note">
-          Las fotos no están disponibles en este navegador (por ejemplo, en
-          modo privado). Tus recetas se guardan igual.
-        </p>
-      </section>
-    );
+  function commit() {
+    if (draft.trim() === "") {
+      setInvalid(false);
+      if (url) onChange(null);
+      return;
+    }
+    const next = normalizePhotoUrl(draft);
+    setInvalid(next === null);
+    if (next !== null) {
+      setDraft(next);
+      if (next !== url) onChange(next);
+    }
   }
 
   return (
@@ -37,47 +32,45 @@ function RecipeImageField({
         ) : (
           <span className="recipe-image-placeholder">
             <ImageIcon size={20} />
-            {statusText[status] ?? statusText.none}
+            Sin foto
           </span>
         )}
       </div>
-      {available && (
-        <div className="recipe-image-actions">
-          <label
-            className={`secondary-button file-button ${busy ? "busy" : ""}`}
+      <div className="recipe-image-url">
+        <label htmlFor={`${fieldId}-url`}>Link de la foto</label>
+        <input
+          id={`${fieldId}-url`}
+          type="url"
+          inputMode="url"
+          value={draft}
+          placeholder="https://res.cloudinary.com/…"
+          aria-invalid={invalid}
+          aria-describedby={invalid ? `${fieldId}-error` : undefined}
+          onChange={(event) => setDraft(event.target.value)}
+          onBlur={commit}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") commit();
+          }}
+        />
+        {invalid && (
+          <p className="field-error" id={`${fieldId}-error`}>
+            Pegá un link que empiece con https://
+          </p>
+        )}
+        {url && (
+          <button
+            type="button"
+            className="secondary-button danger"
+            onClick={() => {
+              setDraft("");
+              setInvalid(false);
+              onChange(null);
+            }}
           >
-            <Camera size={16} />
-            {hasImage ? "Cambiar foto" : "Agregar foto"}
-            <input
-              type="file"
-              accept="image/*"
-              className="visually-hidden"
-              disabled={busy}
-              onChange={(event) => {
-                const file = event.target.files?.[0];
-                // Picking the same file again must fire onChange too.
-                event.target.value = "";
-                if (file) onPick(file);
-              }}
-            />
-          </label>
-          {hasImage && (
-            <button
-              type="button"
-              className="secondary-button danger"
-              onClick={onRemove}
-              disabled={busy}
-            >
-              <Trash2 size={14} /> Quitar foto
-            </button>
-          )}
-          {busy && (
-            <span className="recipe-image-note" aria-live="polite">
-              Guardando foto…
-            </span>
-          )}
-        </div>
-      )}
+            <Trash2 size={14} /> Quitar foto
+          </button>
+        )}
+      </div>
     </section>
   );
 }

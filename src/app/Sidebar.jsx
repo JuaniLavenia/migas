@@ -1,6 +1,7 @@
 import { forwardRef } from "react";
 import { NavLink } from "react-router-dom";
-import { Utensils, X } from "lucide-react";
+import { LogOut, Utensils, X } from "lucide-react";
+import { useSession } from "./session/SessionContext";
 import { views } from "./navigation";
 
 function NavItem({ view, count, onNavigate }) {
@@ -14,6 +15,43 @@ function NavItem({ view, count, onNavigate }) {
     >
       <Icon size={18} /> {view.label} {count !== undefined && <span>{count}</span>}
     </NavLink>
+  );
+}
+
+function initials(name) {
+  return name
+    .split(/[\s@.]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0].toUpperCase())
+    .join("");
+}
+
+// Who is signed in, with the sign-out button. Hidden outside a session.
+function UserCard() {
+  const session = useSession();
+  if (!session) return null;
+  const { user, signOut } = session;
+  const name = user.user_metadata?.full_name || user.email || "Tu cuenta";
+  return (
+    <div className="user-card">
+      <div className="avatar" aria-hidden="true">
+        {initials(name)}
+      </div>
+      <div className="user-card-text">
+        <strong>{name}</strong>
+        {user.email && user.email !== name && <small>{user.email}</small>}
+      </div>
+      <button
+        type="button"
+        className="icon-button sidebar-icon-button"
+        aria-label="Cerrar sesión"
+        title="Cerrar sesión"
+        onClick={signOut}
+      >
+        <LogOut size={16} />
+      </button>
+    </div>
   );
 }
 
@@ -60,13 +98,7 @@ const Sidebar = forwardRef(function Sidebar(
       </nav>
       <div className="sidebar-bottom">
         {views.filter((view) => !view.main).map(renderItem)}
-        <div className="user-card">
-          <div className="avatar">MP</div>
-          <div>
-            <strong>Mi perfil</strong>
-            <small>Emprendimiento</small>
-          </div>
-        </div>
+        <UserCard />
       </div>
     </aside>
   );

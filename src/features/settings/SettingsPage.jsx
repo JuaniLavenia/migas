@@ -2,20 +2,20 @@ import { useMemo, useState } from "react";
 import useRecipeStore from "../../stores/useRecipeStore";
 import useToastStore from "../../stores/useToastStore";
 import { sanitizeBackup } from "../../lib/backup";
-import { discardImage, getImageStore } from "../../lib/images/imageStore";
-import {
-  collectBackupImages,
-  restoreBackupImages,
-} from "../../lib/images/backupImages";
 import { downloadFile } from "../../shared/downloadFile";
 import { importSummary } from "./importSummary";
 import SettingsView from "./SettingsView";
 import RecipeCategoriesPanel from "./RecipeCategoriesPanel";
-import useStorageInfo from "./useStorageInfo";
+import LocalUploadPanel from "./LocalUploadPanel";
+import { useSession } from "../../app/session/SessionContext";
+import { readLocalData } from "../../lib/localData";
 
-// Container of the settings view: backup export/import against the store,
-// including the recipe photos, the storage panel and the recipe categories.
+// Container of the settings view: backup export/import against the store
+// (cloudSync saves what an import changes), the recipe categories and, while
+// the business in the cloud is empty, the manual upload of what this browser
+// kept before the cloud.
 function SettingsPage() {
+  const session = useSession();
   const ingredients = useRecipeStore((state) => state.ingredients);
   const recipes = useRecipeStore((state) => state.recipes);
   const recipeCategories = useRecipeStore((state) => state.recipeCategories);
@@ -36,24 +36,34 @@ function SettingsPage() {
   }, [recipes]);
   const showToast = useToastStore((state) => state.showToast);
   const [busy, setBusy] = useState(false);
-  const storage = useStorageInfo();
+  const localData = useMemo(() => (session ? readLocalData() : null), [session]);
+  const cloudEmpty =
+    !ingredients.length && !recipes.length && !recipeCategories.length;
 
-  async function handlePersist() {
-    const granted = await storage.persist();
-    showToast(
-      granted
-        ? "Almacenamiento protegido"
-        : "El navegador no aceptó protegerlo por ahora",
-    );
-  }
-
-  async function handleExport() {
+  async function handleUpload() {
     setBusy(true);
     try {
-      const images = await collectBackupImages(recipes, getImageStore());
+      await session.repository.uploadLocalData(session.businessId, localData.data);
+      await session.reload();
+      showToast("Datos subidos a la nube");
+    } catch (error) {
+      if (error?.code === "business_not_empty") {
+        showToast("La nube ya tiene datos: no subimos nada para no pisarlos.");
+        await session.reload();
+      } else {
+        showToast("No pudimos subir los datos. Probá de nuevo.");
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function handleExport() {
+    setBusy(true);
+    try {
       downloadFile(
         `miga-backup-${new Date().toISOString().slice(0, 10)}.json`,
-        JSON.stringify({ ingredients, recipeCategories, recipes, images }, null, 2),
+        JSON.stringify({ ingredients, recipeCategories, recipes }, null, 2),
         "application/json",
       );
       showToast("Backup descargado");
@@ -62,65 +72,33 @@ function SettingsPage() {
     }
   }
 
-  async function handleImport(text) {
-    let data;
+  function handleImport(text) {
     let backup;
     try {
-      data = JSON.parse(text);
-      backup = sanitizeBackup(data);
+      backup = sanitizeBackup(JSON.parse(text));
     } catch {
       showToast("No pudimos leer ese archivo: no es un backup válido");
       return;
     }
     if (
-      !backup.ingredients.length &&
-      !backup.recipes.length &&
-      !backup.recipeCategories.length
+      backup.ingredients.length ||
+      backup.recipes.length ||
+      backup.recipeCategories.length
     ) {
-      showToast(importSummary(backup));
-      return;
+      importData(backup);
     }
-    setBusy(true);
-    try {
-      const images = await restoreBackupImages(
-        backup.recipes,
-        data.images,
-        getImageStore(),
-      );
-      // An imported recipe with a new photo replaces the photo of the
-      // stored recipe with the same id: that one is no longer referenced.
-      const current = useRecipeStore.getState().recipes;
-      const replaced = images.recipes
-        .filter((recipe) => recipe.imageId)
-        .map((recipe) => current.find((entry) => entry.id === recipe.id)?.imageId)
-        .filter(Boolean);
-      importData({
-        ingredients: backup.ingredients,
-        recipeCategories: backup.recipeCategories,
-        recipes: images.recipes,
-      });
-      replaced.forEach(discardImage);
-      showToast(importSummary({ ...backup, images }));
-    } finally {
-      setBusy(false);
-      storage.refresh();
-    }
+    showToast(importSummary(backup));
   }
 
   return (
-    <SettingsView
-      onExport={handleExport}
-      onImport={handleImport}
-      busy={busy}
-      storage={{
-        images: storage.images,
-        estimate: storage.estimate,
-        persisted: storage.persisted,
-        canPersist: storage.canPersist,
-        onRefresh: storage.refresh,
-        onPersist: handlePersist,
-      }}
-    >
+    <SettingsView onExport={handleExport} onImport={handleImport} busy={busy}>
+      {session && localData && cloudEmpty && (
+        <LocalUploadPanel
+          summary={localData.summary}
+          busy={busy}
+          onUpload={handleUpload}
+        />
+      )}
       <RecipeCategoriesPanel
         categories={recipeCategories}
         recipeCounts={recipeCounts}

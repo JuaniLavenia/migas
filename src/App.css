@@ -1458,94 +1458,47 @@ img.recipe-thumb {
   font-size: 11px;
   text-align: center;
 }
-.recipe-image-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
+.recipe-image-url {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+  flex: 1;
+  min-width: 0;
 }
-.recipe-image-note {
-  margin: 0;
+.recipe-image-url label {
   color: var(--muted);
   font-size: 11px;
-  line-height: 1.5;
+  font-weight: 700;
 }
-.file-button {
-  cursor: pointer;
+.recipe-image-url input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--field-border);
+  border-radius: 6px;
+  background: var(--surface-soft);
+  padding: 9px 10px;
+  color: var(--ink);
+  font-size: 12px;
 }
-.file-button:focus-within {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
+.recipe-image-url input:focus {
+  outline: 0;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--focus-ring);
 }
-.file-button.busy {
-  opacity: 0.6;
-  cursor: default;
+.recipe-image-url input[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+.recipe-image-url .secondary-button {
+  justify-self: start;
+}
+.field-error {
+  color: var(--danger);
+  font-size: 12px;
+  margin: 0;
 }
 .quick-action:disabled {
   opacity: 0.6;
   cursor: default;
-}
-/* Settings: storage panel. */
-.storage-panel {
-  display: grid;
-  gap: 14px;
-  align-content: start;
-}
-.storage-panel .panel-heading {
-  margin-bottom: 0;
-}
-.storage-facts {
-  margin: 0;
-}
-.storage-facts div {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  font-size: 12px;
-}
-.storage-facts dt {
-  color: var(--muted);
-}
-.storage-facts dd {
-  margin: 0;
-  font-weight: 600;
-}
-.storage-usage {
-  display: grid;
-  gap: 6px;
-}
-.storage-usage-label {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  font-size: 12px;
-  color: var(--muted);
-}
-.storage-usage-label strong {
-  color: var(--ink);
-}
-.storage-usage meter {
-  width: 100%;
-  height: 10px;
-}
-.storage-note {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: 0;
-  color: var(--muted);
-  font-size: 11px;
-  line-height: 1.5;
-}
-.storage-persist {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-.storage-panel .recipe-warning {
-  margin-top: 0;
 }
 
 /* Links styled as the buttons they replaced. */
@@ -1778,4 +1731,70 @@ textarea:focus-visible {
   .pricing-card {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+/* Sign-in, loading and setup screens (AuthGate). */
+.gate-screen {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: var(--bg);
+}
+.gate-card {
+  width: min(420px, 100%);
+  padding: 32px 28px;
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  text-align: center;
+}
+.gate-card p {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.gate-mark {
+  width: 44px;
+  height: 44px;
+}
+.user-card-text {
+  min-width: 0;
+  flex: 1;
+}
+.user-card-text strong,
+.user-card-text small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sidebar-icon-button {
+  color: var(--sidebar-ink);
+}
+.sidebar-icon-button:hover {
+  background: var(--sidebar-hover);
+  color: var(--sidebar-ink);
+}
+
+.upload-hint {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding: 14px 16px;
+  border-radius: 8px;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  text-decoration: none;
+}
+.upload-hint strong,
+.upload-hint small {
+  display: block;
+}
+.upload-hint small {
+  margin-top: 2px;
+  font-size: 12px;
+}
+.upload-hint:hover strong {
+  text-decoration: underline;
 }
