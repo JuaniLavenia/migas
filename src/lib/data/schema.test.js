@@ -67,6 +67,11 @@ beforeAll(async () => {
     create role anon nologin;
     create role authenticated nologin;
     grant usage on schema auth to anon, authenticated;
+    -- As on Supabase: every new table and function in public is open to both
+    -- roles, so only row level security protects the data.
+    grant usage on schema public to anon, authenticated;
+    alter default privileges in schema public grant all on tables to anon, authenticated;
+    alter default privileges in schema public grant all on functions to anon, authenticated;
     grant execute on function auth.uid() to anon, authenticated;
     insert into auth.users values ('${ANA}'), ('${BETO}');
   `);
@@ -89,7 +94,12 @@ describe("Supabase schema", () => {
   it("refuses signed-out callers", async () => {
     await as(null);
     await expect(db.query("select public.ensure_my_business()")).rejects.toThrow();
-    await expect(db.query("select * from public.recipes")).rejects.toThrow();
+    // anon may query (Supabase grants it), but no policy lets it see a row.
+    expect(await rows("select * from public.recipes")).toEqual([]);
+    expect(await rows("select * from public.business_members")).toEqual([]);
+    await expect(
+      db.query("insert into public.recipes (business_id, id) values (gen_random_uuid(), 'x')"),
+    ).rejects.toThrow();
   });
 
   it("uploads local data all at once into an empty business", async () => {

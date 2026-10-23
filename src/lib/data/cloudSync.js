@@ -30,6 +30,7 @@ export function createCloudSync({
   let pending = emptyPending();
   let timer = null;
   let applying = false;
+  let writing = false;
   let running = Promise.resolve();
 
   function track(collection, previous = [], next = []) {
@@ -100,6 +101,7 @@ export function createCloudSync({
       if (!hasPending()) return;
       const batch = pending;
       pending = emptyPending();
+      writing = true;
       onStatus("saving");
       try {
         await write(batch);
@@ -117,6 +119,8 @@ export function createCloudSync({
         });
         onStatus("error");
         schedule(retryDelay);
+      } finally {
+        writing = false;
       }
     });
     return running;
@@ -134,7 +138,11 @@ export function createCloudSync({
 
   return {
     flush,
+    // Changes not saved yet (failed ones included).
     hasPending,
+    // Pending changes or a write in progress: data loaded from the cloud now
+    // could be older than what is on screen.
+    isBusy: () => writing || hasPending(),
     // Puts data read from the cloud in the store without saving it back.
     replaceData(data) {
       applying = true;

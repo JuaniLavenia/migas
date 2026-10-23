@@ -120,6 +120,9 @@ create policy "members manage recipes" on public.recipes
   using (public.is_business_member(business_id))
   with check (public.is_business_member(business_id));
 
+-- Supabase already grants anon and authenticated every privilege on new
+-- tables in public: these grants only document what the app needs. The real
+-- guard is row level security above (anon matches no policy at all).
 grant select, update on public.businesses to authenticated;
 grant select on public.business_members to authenticated;
 grant select, insert, update, delete on public.recipe_categories to authenticated;

@@ -5,6 +5,7 @@ import AuthGate from "./AuthGate";
 import { useSession } from "./SessionContext";
 import useRecipeStore from "../../stores/useRecipeStore";
 import useSaveStatusStore from "../../stores/useSaveStatusStore";
+import useToastStore from "../../stores/useToastStore";
 import { createMemoryRepository } from "../../lib/data/memoryRepository";
 
 const recipe = (id, name = id) => ({
@@ -83,10 +84,10 @@ afterEach(() => {
   setVisibility("visible");
 });
 
-function renderGate(auth) {
+function renderGate(auth, syncOptions = { delay: 0 }) {
   const user = userEvent.setup();
   render(
-    <AuthGate auth={auth} repository={repository} syncOptions={{ delay: 0 }}>
+    <AuthGate auth={auth} repository={repository} syncOptions={syncOptions}>
       <Probe />
     </AuthGate>,
   );
@@ -140,6 +141,65 @@ describe("AuthGate", () => {
     await user.click(retry);
     expect(await screen.findByText("Alfajores")).toBeInTheDocument();
     expect(load).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps an edit typed while the data is reloading", async () => {
+    renderGate(createFakeAuth(ANA), { delay: 200 });
+    await screen.findByText("Alfajores");
+    let finishLoad;
+    const stale = repository.snapshot();
+    vi.spyOn(repository, "load").mockImplementationOnce(
+      () => new Promise((resolve) => (finishLoad = () => resolve(stale))),
+    );
+    act(() => setVisibility("hidden"));
+    act(() => setVisibility("visible"));
+    await waitFor(() => expect(finishLoad).toBeTypeOf("function"));
+    act(() =>
+      useRecipeStore.setState(({ recipes }) => ({
+        recipes: recipes.map((entry) => ({ ...entry, name: "Alfajores de nuez" })),
+      })),
+    );
+    await act(async () => finishLoad());
+    expect(screen.getByText("Alfajores de nuez")).toBeInTheDocument();
+    await waitFor(() =>
+      expect(repository.snapshot().recipes[0].name).toBe("Alfajores de nuez"),
+    );
+  });
+
+  it("does not sign out while changes could not be saved", async () => {
+    const auth = createFakeAuth(ANA);
+    const user = renderGate(auth, { delay: 200, retryDelay: 60000 });
+    await screen.findByText("Alfajores");
+    repository.failNext(10);
+    act(() =>
+      useRecipeStore.setState(({ recipes }) => ({
+        recipes: recipes.map((entry) => ({ ...entry, name: "Sin señal" })),
+      })),
+    );
+    await user.click(screen.getByRole("button", { name: "Salir" }));
+    expect(auth.signOut).not.toHaveBeenCalled();
+    expect(screen.getByText("Sin señal")).toBeInTheDocument();
+    expect(useToastStore.getState().toast?.message).toBe(
+      "No pudimos guardar tus últimos cambios. Revisá la conexión y probá de nuevo antes de cerrar sesión.",
+    );
+  });
+
+  it("drops a load that finishes after signing out", async () => {
+    const auth = createFakeAuth(ANA);
+    let finishLoad;
+    vi.spyOn(repository, "load").mockImplementationOnce(
+      () =>
+        new Promise((resolve) => (finishLoad = () => resolve(repository.snapshot()))),
+    );
+    renderGate(auth);
+    await waitFor(() => expect(finishLoad).toBeTypeOf("function"));
+    act(() => auth.emit(null));
+    await act(async () => finishLoad());
+    expect(await screen.findByRole("button", { name: /Entrar con Google/ })).toBeInTheDocument();
+    expect(useRecipeStore.getState().recipes).toEqual([]);
+    act(() => useRecipeStore.setState({ recipes: [recipe("x")] }));
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(repository.writes).toEqual([]);
   });
 
   it("signs out, clearing the data from memory", async () => {

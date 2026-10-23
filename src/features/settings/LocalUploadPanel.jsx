@@ -35,6 +35,13 @@ function LocalUploadPanel({ summary, busy, onUpload }) {
         </div>
       </div>
       <p className="field-hint">{text}</p>
+      {summary.skipped > 0 && (
+        <p className="field-hint">
+          {summary.skipped === 1
+            ? "1 registro tiene datos dañados y no se sube."
+            : `${summary.skipped} registros tienen datos dañados y no se suben.`}
+        </p>
+      )}
       {summary.photos > 0 && (
         <p className="field-hint">
           {summary.photos === 1

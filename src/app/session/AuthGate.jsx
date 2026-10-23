@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import useRecipeStore from "../../stores/useRecipeStore";
 import useSaveStatusStore from "../../stores/useSaveStatusStore";
+import useToastStore from "../../stores/useToastStore";
 import { createCloudSync } from "../../lib/data/cloudSync";
 import { SessionContext } from "./SessionContext";
 import LoginScreen from "./LoginScreen";
@@ -20,6 +21,9 @@ function AuthGate({ auth, repository, syncOptions, children }) {
   const [phase, setPhase] = useState("loading");
   const [businessId, setBusinessId] = useState(null);
   const syncRef = useRef(null);
+  // Bumped whenever a load is started or abandoned (sign-out, unmount): a
+  // load that finishes for an older run is dropped.
+  const runRef = useRef(0);
   const userId = user?.id;
 
   useEffect(() => {
@@ -30,16 +34,19 @@ function AuthGate({ auth, repository, syncOptions, children }) {
   }, [auth]);
 
   const stopSync = useCallback(() => {
+    runRef.current += 1;
     syncRef.current?.stop();
     syncRef.current = null;
   }, []);
 
   const start = useCallback(async () => {
+    const run = ++runRef.current;
     setPhase("loading");
     try {
       const id = await repository.ensureBusiness();
       const data = await repository.load(id);
-      stopSync();
+      if (run !== runRef.current) return;
+      syncRef.current?.stop();
       const sync = createCloudSync({
         store: useRecipeStore,
         repository,
@@ -52,12 +59,16 @@ function AuthGate({ auth, repository, syncOptions, children }) {
       setBusinessId(id);
       setPhase("ready");
     } catch {
-      setPhase("error");
+      if (run === runRef.current) setPhase("error");
     }
-  }, [repository, stopSync, syncOptions]);
+  }, [repository, syncOptions]);
 
   useEffect(() => {
-    if (!userId) return undefined;
+    if (!userId) {
+      stopSync();
+      useRecipeStore.setState(emptyData);
+      return undefined;
+    }
     start();
     return stopSync;
   }, [userId, start, stopSync]);
@@ -66,10 +77,13 @@ function AuthGate({ auth, repository, syncOptions, children }) {
     const sync = syncRef.current;
     if (!sync || !businessId) return;
     await sync.flush();
-    // Never replace data that changed while saving.
-    if (sync.hasPending()) return;
+    if (sync.isBusy()) return;
     try {
-      sync.replaceData(await repository.load(businessId));
+      const data = await repository.load(businessId);
+      // Never replace what changed (or started saving) during the load, nor
+      // load into a sync that was stopped meanwhile.
+      if (syncRef.current !== sync || sync.isBusy()) return;
+      sync.replaceData(data);
     } catch {
       // Kept as is; the next return to the tab tries again.
     }
@@ -93,7 +107,16 @@ function AuthGate({ auth, repository, syncOptions, children }) {
   }, [phase, reload]);
 
   const signOut = useCallback(async () => {
-    await syncRef.current?.flush();
+    const sync = syncRef.current;
+    await sync?.flush();
+    if (sync?.hasPending()) {
+      useToastStore
+        .getState()
+        .showToast(
+          "No pudimos guardar tus últimos cambios. Revisá la conexión y probá de nuevo antes de cerrar sesión.",
+        );
+      return;
+    }
     stopSync();
     useRecipeStore.setState(emptyData);
     setBusinessId(null);

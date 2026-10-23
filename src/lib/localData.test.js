@@ -44,6 +44,7 @@ describe("readLocalData", () => {
       ),
     );
     expect(local.summary).toEqual({
+      skipped: 0,
       recipes: 2,
       ingredients: 1,
       categories: 1,
@@ -54,6 +55,24 @@ describe("readLocalData", () => {
     expect(local.data.recipes[0]).not.toHaveProperty("imageId");
     expect(local.data.recipes[1].salePrice).toBe(900);
     expect(local.data.ingredients).toEqual([ingredient]);
+  });
+
+  it("keeps a record whose name was erased, and counts broken ones", () => {
+    const local = readLocalData(
+      storageWith(
+        JSON.stringify({
+          state: {
+            ingredients: [ingredient],
+            recipes: [recipe("a", 1000, { name: "  " }), { name: "Sin items" }],
+          },
+          version: 2,
+        }),
+      ),
+    );
+    expect(local.data.recipes.map((entry) => [entry.id, entry.name])).toEqual([
+      ["a", "Sin nombre"],
+    ]);
+    expect(local.summary.skipped).toBe(1);
   });
 
   it("upgrades data from version 1 (no categories)", () => {
