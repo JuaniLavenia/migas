@@ -27,6 +27,8 @@ VITE_SUPABASE_URL=https://<proyecto>.supabase.co
 VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 ```
 
+La URL es solo el dominio del proyecto, sin `/rest/v1/` (la página Data API muestra la URL de la API REST). Con esa ruta, el login responde "No API key found in request".
+
 Sin estas variables la app muestra "Falta configurar Supabase".
 
 ## Cómo se guardan los datos
