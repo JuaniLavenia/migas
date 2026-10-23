@@ -43,9 +43,17 @@ function sanitizeIngredient(source) {
       unit: nonEmptyString(source.unit) ? source.unit : "g",
       packSize,
       packCost,
+      ...stockOf(source),
     },
     source,
   );
+}
+
+// Optional: a backup without a valid stock (an older one) leaves it out, so
+// importing it keeps the stock already loaded.
+function stockOf(source) {
+  const stock = toFiniteNumber(source.stock);
+  return stock >= 0 ? { stock } : {};
 }
 
 function sanitizeItem(source) {

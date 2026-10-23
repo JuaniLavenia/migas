@@ -37,6 +37,9 @@ function IngredientRow({ item, onEdit, onDelete, reorderControls }) {
         {item.packSize} {item.unit}
       </span>
       <strong>{currency.format(item.packCost)}</strong>
+      <span>
+        {item.stock ?? 0} {item.unit}
+      </span>
       <span>{formatUnitPrice(item)}</span>
       <div className="row-actions">
         <button
@@ -161,6 +164,7 @@ function IngredientsView({
           <span>Insumo</span>
           <span>Presentación de compra</span>
           <span>Costo de compra</span>
+          <span>Tengo</span>
           <span>Costo por unidad</span>
           <span />
         </div>

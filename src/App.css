@@ -745,7 +745,7 @@ h3 {
 .table-header,
 .table-row {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1.3fr 70px;
+  grid-template-columns: 2fr 1fr 1fr 0.9fr 1.3fr 70px;
   align-items: center;
   gap: 18px;
   padding: 14px 22px;
@@ -934,7 +934,7 @@ h3 {
 }
 .table-panel.reorderable .table-header,
 .table-panel.reorderable .table-row {
-  grid-template-columns: 76px 2fr 1fr 1fr 1.3fr 70px;
+  grid-template-columns: 76px 2fr 1fr 1fr 0.9fr 1.3fr 70px;
 }
 .selector-row {
   display: flex;
@@ -1296,7 +1296,7 @@ h3 {
   }
   .table-header,
   .table-row {
-    min-width: 670px;
+    min-width: 760px;
   }
   .recipe-workspace {
     grid-template-columns: minmax(0, 1fr);
@@ -1316,7 +1316,7 @@ h3 {
   }
   .table-panel.reorderable .table-header,
   .table-panel.reorderable .table-row {
-    min-width: 750px;
+    min-width: 840px;
   }
   /* Each library card keeps its controls; the row, not the item, is the
      scroller's child. */

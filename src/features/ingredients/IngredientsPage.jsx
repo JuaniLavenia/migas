@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import useRecipeStore from "../../stores/useRecipeStore";
 import useToastStore from "../../stores/useToastStore";
 import { countRecipesUsingIngredient } from "../../lib/recipeMath";
+import { stockValue } from "../../lib/stock";
 import { CUSTOM_SORT, pageOfIndex, paginate, sortBy } from "../../lib/listing";
 import useListingParams from "../../shared/useListingParams";
 import ConfirmDialog from "../../shared/ConfirmDialog";
@@ -15,6 +16,7 @@ import {
 } from "./ingredientListing";
 
 const byName = (item) => item.name;
+
 
 function deleteDescription(target) {
   const question = `¿Eliminar "${target?.name}"? Esta acción no se puede deshacer.`;
@@ -99,6 +101,7 @@ function IngredientsPage() {
       ...form,
       packSize: Number(form.packSize),
       packCost: Number(form.packCost),
+      stock: stockValue(form.stock),
     };
     if (editing?.id) updateIngredient(editing.id, item);
     else addIngredient(item);
