@@ -44,13 +44,14 @@ describe("useRecipeStore persistence", () => {
     expect(state.recipes.map((recipe) => recipe.name)).toEqual(["Flan"]);
     expect(state.recipes[0]).not.toHaveProperty("updated");
     expect(Number.isFinite(state.recipes[0].updatedAt)).toBe(true);
-    expect(stored().version).toBe(1);
+    expect(stored().version).toBe(2);
   });
 
-  it("persists only ingredients and recipes", () => {
+  it("persists only the data collections", () => {
     useRecipeStore.getState().addIngredient({ ...ingredient, id: undefined });
     expect(Object.keys(stored().state).sort()).toEqual([
       "ingredients",
+      "recipeCategories",
       "recipes",
     ]);
   });

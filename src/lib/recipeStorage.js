@@ -4,7 +4,7 @@ export const RECIPE_STORAGE_KEY = "miga-recipe-storage";
 
 // Bump on every change to the persisted shape and teach migrateRecipeState
 // how to upgrade from the previous version.
-export const RECIPE_STORAGE_VERSION = 1;
+export const RECIPE_STORAGE_VERSION = 2;
 
 function isObject(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -18,11 +18,17 @@ function isObject(value) {
 // `updated` display label ("Hoy", "Ayer", "Ahora"). Those labels were
 // relative to when they were written, so they cannot become real dates:
 // every v0 recipe gets `updatedAt` = migration time and the label is dropped.
+//
+// v2 added `recipeCategories` and the optional recipe fields `categoryId` and
+// `salePrice`: v1 data is valid v2 data, and the categories start empty.
 export function migrateRecipeState(persisted, fromVersion, now = Date.now()) {
   if (!isObject(persisted)) return {};
   const state = {};
   if (Array.isArray(persisted.ingredients)) {
     state.ingredients = persisted.ingredients;
+  }
+  if (Array.isArray(persisted.recipeCategories)) {
+    state.recipeCategories = persisted.recipeCategories;
   }
   if (Array.isArray(persisted.recipes)) {
     state.recipes =

@@ -70,6 +70,13 @@ function sanitizeRecipe(source, now) {
   const image = nonEmptyString(source.imageId)
     ? { imageId: source.imageId }
     : {};
+  // Optional: without a category the recipe is "Sin categoría", without a
+  // sale price only the suggested price applies.
+  const category = nonEmptyString(source.categoryId)
+    ? { categoryId: source.categoryId }
+    : {};
+  const salePrice = numberAtLeast(source.salePrice, 0, null);
+  const price = salePrice === null ? {} : { salePrice };
   return withId(
     {
       name: source.name,
@@ -84,9 +91,16 @@ function sanitizeRecipe(source, now) {
           : now,
       items,
       ...image,
+      ...category,
+      ...price,
     },
     source,
   );
+}
+
+function sanitizeCategory(source) {
+  if (!isObject(source) || !nonEmptyString(source.name)) return null;
+  return withId({ name: source.name.trim() }, source);
 }
 
 function sanitizeList(list, sanitize) {
@@ -100,7 +114,7 @@ function sanitizeList(list, sanitize) {
   return { kept, skipped };
 }
 
-// Returns { ingredients, recipes, skipped }. Accepts recipes with `updatedAt`
+// Returns { ingredients, recipes, recipeCategories, skipped }. Accepts recipes with `updatedAt`
 // (current) or the legacy `updated` label. Throws when the data is not a
 // backup at all (not an object, or without ingredients/recipes arrays).
 export function sanitizeBackup(data, now = Date.now()) {
@@ -114,9 +128,11 @@ export function sanitizeBackup(data, now = Date.now()) {
   const recipes = sanitizeList(data.recipes, (recipe) =>
     sanitizeRecipe(recipe, now),
   );
+  const categories = sanitizeList(data.recipeCategories, sanitizeCategory);
   return {
     ingredients: ingredients.kept,
     recipes: recipes.kept,
-    skipped: ingredients.skipped + recipes.skipped,
+    recipeCategories: categories.kept,
+    skipped: ingredients.skipped + recipes.skipped + categories.skipped,
   };
 }

@@ -17,6 +17,7 @@ import useStorageInfo from "./useStorageInfo";
 function SettingsPage() {
   const ingredients = useRecipeStore((state) => state.ingredients);
   const recipes = useRecipeStore((state) => state.recipes);
+  const recipeCategories = useRecipeStore((state) => state.recipeCategories);
   const importData = useRecipeStore((state) => state.importData);
   const showToast = useToastStore((state) => state.showToast);
   const [busy, setBusy] = useState(false);
@@ -37,7 +38,7 @@ function SettingsPage() {
       const images = await collectBackupImages(recipes, getImageStore());
       downloadFile(
         `miga-backup-${new Date().toISOString().slice(0, 10)}.json`,
-        JSON.stringify({ ingredients, recipes, images }, null, 2),
+        JSON.stringify({ ingredients, recipeCategories, recipes, images }, null, 2),
         "application/json",
       );
       showToast("Backup descargado");
@@ -56,7 +57,11 @@ function SettingsPage() {
       showToast("No pudimos leer ese archivo: no es un backup válido");
       return;
     }
-    if (!backup.ingredients.length && !backup.recipes.length) {
+    if (
+      !backup.ingredients.length &&
+      !backup.recipes.length &&
+      !backup.recipeCategories.length
+    ) {
       showToast(importSummary(backup));
       return;
     }
@@ -74,7 +79,11 @@ function SettingsPage() {
         .filter((recipe) => recipe.imageId)
         .map((recipe) => current.find((entry) => entry.id === recipe.id)?.imageId)
         .filter(Boolean);
-      importData({ ingredients: backup.ingredients, recipes: images.recipes });
+      importData({
+        ingredients: backup.ingredients,
+        recipeCategories: backup.recipeCategories,
+        recipes: images.recipes,
+      });
       replaced.forEach(discardImage);
       showToast(importSummary({ ...backup, images }));
     } finally {

@@ -162,6 +162,38 @@ describe("sanitizeBackup", () => {
     expect(result.recipes[2]).not.toHaveProperty("imageId");
   });
 
+  it("keeps recipe categories and the new recipe fields", () => {
+    const result = sanitizeBackup({
+      recipeCategories: [
+        { id: "budines", name: " Budines " },
+        { id: "x", name: "" },
+        "cookies",
+      ],
+      recipes: [
+        { ...validRecipe, id: "a", categoryId: "budines", salePrice: "1500" },
+        { ...validRecipe, id: "b", categoryId: 7, salePrice: -1 },
+        { ...validRecipe, id: "c", salePrice: null },
+      ],
+    });
+    expect(result.recipeCategories).toEqual([
+      { id: "budines", name: "Budines" },
+    ]);
+    expect(result.recipes[0]).toMatchObject({
+      categoryId: "budines",
+      salePrice: 1500,
+    });
+    expect(result.recipes[1]).not.toHaveProperty("categoryId");
+    expect(result.recipes[1]).not.toHaveProperty("salePrice");
+    expect(result.recipes[2]).not.toHaveProperty("salePrice");
+    expect(result.skipped).toBe(2);
+  });
+
+  it("accepts an old backup without categories", () => {
+    const result = sanitizeBackup({ recipes: [validRecipe] });
+    expect(result.recipeCategories).toEqual([]);
+    expect(result.recipes).toEqual([validRecipe]);
+  });
+
   it("counts skipped records across both collections", () => {
     const result = sanitizeBackup({
       ingredients: [validIngredient, { name: "" }],

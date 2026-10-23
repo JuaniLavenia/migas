@@ -107,6 +107,46 @@ function reorderById(list, activeId, overId) {
   return moveItem(list, fromIndex, toIndex);
 }
 
+// Custom order of recipes lives inside each category: moves and drops only
+// swap places with recipes of the same group. A missing or unknown categoryId
+// is the "no category" group.
+function groupOf(recipe, categories) {
+  return categories.some((category) => category.id === recipe.categoryId)
+    ? recipe.categoryId
+    : "";
+}
+
+function reorderWithinGroup(recipes, categories, activeId, overId) {
+  const active = recipes.find((recipe) => recipe.id === activeId);
+  const over = recipes.find((recipe) => recipe.id === overId);
+  if (!active || !over) return recipes;
+  if (groupOf(active, categories) !== groupOf(over, categories)) return recipes;
+  return reorderById(recipes, activeId, overId);
+}
+
+function moveWithinGroup(recipes, categories, id, delta) {
+  const fromIndex = recipes.findIndex((recipe) => recipe.id === id);
+  if (fromIndex === -1) return recipes;
+  const group = groupOf(recipes[fromIndex], categories);
+  let toIndex = fromIndex + delta;
+  while (
+    toIndex >= 0 &&
+    toIndex < recipes.length &&
+    groupOf(recipes[toIndex], categories) !== group
+  ) {
+    toIndex += delta;
+  }
+  if (toIndex < 0 || toIndex >= recipes.length) return recipes;
+  // Swap, so recipes of other categories keep their positions.
+  const next = [...recipes];
+  [next[fromIndex], next[toIndex]] = [next[toIndex], next[fromIndex]];
+  return next;
+}
+
+function sameName(a, b) {
+  return a.localeCompare(b, "es", { sensitivity: "base" }) === 0;
+}
+
 function moveById(list, id, delta) {
   const fromIndex = list.findIndex((item) => item.id === id);
   const toIndex = fromIndex + delta;
@@ -119,6 +159,7 @@ const useRecipeStore = create()(
     (set, get) => ({
       ingredients: demoIngredients,
       recipes: demoRecipes,
+      recipeCategories: [],
       addIngredient: (ingredient) =>
         set((state) => ({
           ingredients: [...state.ingredients, { ...ingredient, id: uuidv4() }],
@@ -173,13 +214,65 @@ const useRecipeStore = create()(
         })),
       reorderRecipes: (activeId, overId) =>
         set((state) => ({
-          recipes: reorderById(state.recipes, activeId, overId),
+          recipes: reorderWithinGroup(
+            state.recipes,
+            state.recipeCategories,
+            activeId,
+            overId,
+          ),
         })),
       moveRecipe: (id, delta) =>
-        set((state) => ({ recipes: moveById(state.recipes, id, delta) })),
-      getRecipe: (id) => get().recipes.find((recipe) => recipe.id === id),
-      importData: ({ ingredients = [], recipes = [] }) =>
         set((state) => ({
+          recipes: moveWithinGroup(
+            state.recipes,
+            state.recipeCategories,
+            id,
+            delta,
+          ),
+        })),
+      // Returns the id of the category with that name (an existing one when
+      // the name repeats, ignoring case and accents), or null for a blank name.
+      addRecipeCategory: (name) => {
+        const clean = String(name ?? "").trim();
+        if (!clean) return null;
+        const existing = get().recipeCategories.find((category) =>
+          sameName(category.name, clean),
+        );
+        if (existing) return existing.id;
+        const id = uuidv4();
+        set((state) => ({
+          recipeCategories: [...state.recipeCategories, { id, name: clean }],
+        }));
+        return id;
+      },
+      renameRecipeCategory: (id, name) => {
+        const clean = String(name ?? "").trim();
+        if (!clean) return;
+        set((state) => ({
+          recipeCategories: state.recipeCategories.map((category) =>
+            category.id === id ? { ...category, name: clean } : category,
+          ),
+        }));
+      },
+      // Its recipes stay, without category. Not an edit: they keep updatedAt.
+      deleteRecipeCategory: (id) =>
+        set((state) => ({
+          recipeCategories: state.recipeCategories.filter(
+            (category) => category.id !== id,
+          ),
+          recipes: state.recipes.map((recipe) => {
+            if (recipe.categoryId !== id) return recipe;
+            const { categoryId: _removed, ...rest } = recipe;
+            return rest;
+          }),
+        })),
+      getRecipe: (id) => get().recipes.find((recipe) => recipe.id === id),
+      importData: ({ ingredients = [], recipes = [], recipeCategories = [] }) =>
+        set((state) => ({
+          recipeCategories: mergeById(
+            state.recipeCategories,
+            recipeCategories.map((item) => ({ ...item, id: item.id || uuidv4() })),
+          ),
           ingredients: mergeById(
             state.ingredients,
             ingredients.map((item) => ({ ...item, id: item.id || uuidv4() })),
@@ -195,7 +288,11 @@ const useRecipeStore = create()(
       version: RECIPE_STORAGE_VERSION,
       migrate: migrateRecipeState,
       // Only the data is persisted; actions and derived state are rebuilt.
-      partialize: ({ ingredients, recipes }) => ({ ingredients, recipes }),
+      partialize: ({ ingredients, recipes, recipeCategories }) => ({
+        ingredients,
+        recipes,
+        recipeCategories,
+      }),
       storage: createJSONStorage(() =>
         createSafeStorage(() => window.localStorage, reportSaveResult),
       ),
