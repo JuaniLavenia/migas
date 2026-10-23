@@ -5,7 +5,11 @@ Miga guarda los datos en Supabase y se entra con Google. Cada fila pertenece a u
 ## 1. Proyecto
 
 1. Crear un proyecto en https://supabase.com/dashboard.
-2. En **SQL Editor**, pegar y correr `supabase/migrations/20261023000000_init.sql`. Crea las tablas, las reglas de acceso y las funciones `ensure_my_business` y `upload_local_data`.
+2. En **SQL Editor**, pegar y correr cada archivo de `supabase/migrations/`, en orden y una sola vez:
+   - `20261023000000_init.sql`: las tablas, las reglas de acceso y las funciones `ensure_my_business` y `upload_local_data`.
+   - `20261024000000_packaging_stock.sql`: la tabla `packaging` y la columna `stock` de los insumos. Solo agrega: los datos que ya están quedan igual, con stock 0.
+
+   Una migración nueva se corre **antes** de publicar la versión que la usa. Si no, la app no puede cargar los datos ("No pudimos cargar tus datos"). La versión anterior sigue funcionando con la base ya migrada.
 3. En **Project Settings → API Keys**, copiar la **Project URL** y la **publishable key** (`sb_publishable_...`). Esa clave es pública: lo que protege los datos son las reglas del paso 2.
 
 ## 2. Login con Google

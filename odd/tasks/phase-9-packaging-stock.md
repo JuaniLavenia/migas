@@ -14,10 +14,10 @@ Branch: `feat/phase-9-packaging-stock` from main@2d3b0a8. Delivery: single-pr (t
 
 | ID | Specs | Route | Status | Commit |
 |---|---|---|---|---|
-| T9.1 | S3, S4 (SQL) | inline | pending | |
-| T9.2 | S2, S4 | inline | pending | |
-| T9.3 | S1, S4 | inline | pending | |
-| T9.4 | docs | inline | pending | |
+| T9.1 | S3, S4 (SQL) | inline | done (schema +3, rows +1; RLS mutation caught) | d8740a4 |
+| T9.2 | S2, S4 | inline | done (stock UI 4 RED→GREEN, backup 1 RED→GREEN, store 2 pins) | 50ad575 |
+| T9.3 | S1, S4 | inline | done (packaging 8, backup/settings/summary 5 RED→GREEN, sign-out clear 1 RED→GREEN, upload 1 mutation) | 6442df2 |
+| T9.4 | docs | inline | done | (this commit) |
 
 Route evidence: one sequential feature in one repo; no parallel independent units of several minutes each, so no writer trigger. T9.1 touches a migration (high-risk item 1): own commit, independent verifier at the feature's end.
 
@@ -25,3 +25,8 @@ Route evidence: one sequential feature in one repo; no parallel independent unit
 
 - L1 (2026-10-23, user): "ahh bien, si ahi ya lo vi, aparece "Subir los datos de este dispositivo". No hace falta agregar el boton. Sigamos!" (start of phase 9 per the approved roadmap: "F9 Packaging + stock de insumos ("tengo")").
 - L2 Original requests quoted in S1 and S2 come from the planning conversation (2026-10-23).
+- L3 Progress: T9.1–T9.4 done. Suite 358 tests / 37 files green; build OK. The full suite hit 5 s timeouts on cold first renders under load (7, then 1, then 0 failures across reruns, no code change): environmental, recorded as advisory.
+- L4 Found while wiring packaging: AuthGate cleared only ingredients/recipes/categories on sign-out, so packaging would have stayed in memory; emptyData now derives from COLLECTIONS (test RED→GREEN).
+- L5 Packaging view tests were written before the code but first run after it; RED was then confirmed by removing the route (8/8 failed).
+- L6 Visual check pending: the local preview needs a Google sign-in, so the layout (new Tengo column, 760/840 px table min-width on mobile) is to be checked on the Vercel preview.
+- L7 Deploy order: run 20261024000000_packaging_stock.sql in the SQL Editor before merging (the new code fails to load without the table/column; the old code ignores them).
