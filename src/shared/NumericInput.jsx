@@ -15,8 +15,16 @@ function toNumber(value) {
 // and calls onChange(number) only when the draft is a finite number >= min.
 // An empty or invalid draft commits nothing; on blur it falls back to the last
 // committed value. `step="any"` keeps fractional values valid for HTML5
-// validation.
-function NumericInput({ value, onChange, min = 0, onBlur, ...props }) {
+// validation. With `allowEmpty`, clearing the field commits null (a value
+// that can be left unset).
+function NumericInput({
+  value,
+  onChange,
+  min = 0,
+  onBlur,
+  allowEmpty = false,
+  ...props
+}) {
   const numericValue = toNumber(value);
   const [draft, setDraft] = useState(() => formatNumber(numericValue));
 
@@ -27,6 +35,10 @@ function NumericInput({ value, onChange, min = 0, onBlur, ...props }) {
   function handleChange(event) {
     const nextDraft = event.target.value;
     setDraft(nextDraft);
+    if (allowEmpty && nextDraft.trim() === "") {
+      if (!Number.isNaN(numericValue)) onChange(null);
+      return;
+    }
     const parsed = parseDraft(nextDraft, min);
     if (parsed !== null && parsed !== numericValue) onChange(parsed);
   }

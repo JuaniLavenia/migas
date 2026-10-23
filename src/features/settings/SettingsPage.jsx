@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import useRecipeStore from "../../stores/useRecipeStore";
 import useToastStore from "../../stores/useToastStore";
 import { sanitizeBackup } from "../../lib/backup";
@@ -10,14 +10,30 @@ import {
 import { downloadFile } from "../../shared/downloadFile";
 import { importSummary } from "./importSummary";
 import SettingsView from "./SettingsView";
+import RecipeCategoriesPanel from "./RecipeCategoriesPanel";
 import useStorageInfo from "./useStorageInfo";
 
 // Container of the settings view: backup export/import against the store,
-// including the recipe photos, and the storage panel.
+// including the recipe photos, the storage panel and the recipe categories.
 function SettingsPage() {
   const ingredients = useRecipeStore((state) => state.ingredients);
   const recipes = useRecipeStore((state) => state.recipes);
+  const recipeCategories = useRecipeStore((state) => state.recipeCategories);
   const importData = useRecipeStore((state) => state.importData);
+  const renameRecipeCategory = useRecipeStore(
+    (state) => state.renameRecipeCategory,
+  );
+  const deleteRecipeCategory = useRecipeStore(
+    (state) => state.deleteRecipeCategory,
+  );
+  const recipeCounts = useMemo(() => {
+    const counts = {};
+    recipes.forEach((recipe) => {
+      if (recipe.categoryId)
+        counts[recipe.categoryId] = (counts[recipe.categoryId] ?? 0) + 1;
+    });
+    return counts;
+  }, [recipes]);
   const showToast = useToastStore((state) => state.showToast);
   const [busy, setBusy] = useState(false);
   const storage = useStorageInfo();
@@ -37,7 +53,7 @@ function SettingsPage() {
       const images = await collectBackupImages(recipes, getImageStore());
       downloadFile(
         `miga-backup-${new Date().toISOString().slice(0, 10)}.json`,
-        JSON.stringify({ ingredients, recipes, images }, null, 2),
+        JSON.stringify({ ingredients, recipeCategories, recipes, images }, null, 2),
         "application/json",
       );
       showToast("Backup descargado");
@@ -56,7 +72,11 @@ function SettingsPage() {
       showToast("No pudimos leer ese archivo: no es un backup válido");
       return;
     }
-    if (!backup.ingredients.length && !backup.recipes.length) {
+    if (
+      !backup.ingredients.length &&
+      !backup.recipes.length &&
+      !backup.recipeCategories.length
+    ) {
       showToast(importSummary(backup));
       return;
     }
@@ -74,7 +94,11 @@ function SettingsPage() {
         .filter((recipe) => recipe.imageId)
         .map((recipe) => current.find((entry) => entry.id === recipe.id)?.imageId)
         .filter(Boolean);
-      importData({ ingredients: backup.ingredients, recipes: images.recipes });
+      importData({
+        ingredients: backup.ingredients,
+        recipeCategories: backup.recipeCategories,
+        recipes: images.recipes,
+      });
       replaced.forEach(discardImage);
       showToast(importSummary({ ...backup, images }));
     } finally {
@@ -96,7 +120,14 @@ function SettingsPage() {
         onRefresh: storage.refresh,
         onPersist: handlePersist,
       }}
-    />
+    >
+      <RecipeCategoriesPanel
+        categories={recipeCategories}
+        recipeCounts={recipeCounts}
+        onRename={renameRecipeCategory}
+        onDelete={deleteRecipeCategory}
+      />
+    </SettingsView>
   );
 }
 

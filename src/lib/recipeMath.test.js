@@ -8,6 +8,7 @@ import {
   countRecipesUsingIngredient,
   indexIngredients,
   ingredientCost,
+  recipePricing,
   recipeTotals,
   unitPrice,
 } from "./recipeMath";
@@ -231,5 +232,40 @@ describe("countRecipesUsingIngredient", () => {
 
   it("tolerates recipes without items", () => {
     expect(countRecipesUsingIngredient(recipes, "huevos")).toBe(2);
+  });
+});
+
+describe("recipePricing", () => {
+  const totals = { cost: 8400, unitCost: 400, price: 800, missingCount: 0 };
+
+  it("uses the suggested price while there is no sale price", () => {
+    expect(recipePricing(totals, undefined)).toEqual({
+      suggested: 800,
+      salePrice: null,
+      unitProfit: 400,
+      belowSuggestedPercent: null,
+    });
+  });
+
+  it("uses the sale price and says how far below the suggested one it is", () => {
+    expect(recipePricing(totals, 750)).toEqual({
+      suggested: 800,
+      salePrice: 750,
+      unitProfit: 350,
+      belowSuggestedPercent: 6,
+    });
+  });
+
+  it("does not warn at or above the suggested price, or without a suggestion", () => {
+    expect(recipePricing(totals, 800).belowSuggestedPercent).toBeNull();
+    expect(recipePricing(totals, 900).belowSuggestedPercent).toBeNull();
+    expect(
+      recipePricing({ ...totals, unitCost: 0, price: 0 }, 100)
+        .belowSuggestedPercent,
+    ).toBeNull();
+  });
+
+  it("can report a loss when the sale price is below the cost", () => {
+    expect(recipePricing(totals, 300).unitProfit).toBe(-100);
   });
 });

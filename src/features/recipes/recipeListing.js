@@ -1,8 +1,6 @@
 import { CUSTOM_SORT } from "../../lib/listing";
 import { indexIngredients, recipeTotals } from "../../lib/recipeMath";
 
-export const RECIPES_PER_PAGE = 8;
-
 // URL sort keys (`?orden=`) and their labels. Cost and price need the
 // ingredients, so the value readers are built per render. The custom order
 // keeps the stored order and has no direction.

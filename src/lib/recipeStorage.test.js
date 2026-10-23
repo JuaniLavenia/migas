@@ -27,8 +27,28 @@ const legacyRecipe = {
 const NOW = 1790000000000;
 
 describe("migrateRecipeState", () => {
-  it("targets version 1", () => {
-    expect(RECIPE_STORAGE_VERSION).toBe(1);
+  it("targets version 2", () => {
+    expect(RECIPE_STORAGE_VERSION).toBe(2);
+  });
+
+  it("keeps v1 data as is: v2 only adds optional fields and categories", () => {
+    const current = { ingredients: [ingredient], recipes: [legacyRecipe] };
+    expect(migrateRecipeState(current, 1, NOW)).toEqual(current);
+  });
+
+  it("keeps the recipe categories and the new recipe fields at version 2", () => {
+    const recipe = { ...legacyRecipe, categoryId: "budines", salePrice: 900 };
+    const categories = [{ id: "budines", name: "Budines" }];
+    expect(
+      migrateRecipeState(
+        { recipeCategories: categories, recipes: [recipe] },
+        2,
+        NOW,
+      ),
+    ).toEqual({ recipeCategories: categories, recipes: [recipe] });
+    expect(
+      migrateRecipeState({ recipeCategories: "broken" }, 2, NOW),
+    ).toEqual({});
   });
 
   it("keeps every unversioned (v0) ingredient and recipe", () => {

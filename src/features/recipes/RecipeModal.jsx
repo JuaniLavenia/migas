@@ -5,11 +5,19 @@ import NumericInput from "../../shared/NumericInput";
 import { addNextItem, removeItemAt, updateItemAt } from "../../lib/recipeItems";
 import { indexIngredients } from "../../lib/recipeMath";
 import RecipeItemRow from "./RecipeItemRow";
+import CategorySelect from "./CategorySelect";
 
-function RecipeModal({ ingredients, onClose, onSave }) {
+function RecipeModal({
+  ingredients,
+  categories,
+  onCreateCategory,
+  onClose,
+  onSave,
+}) {
   const fieldId = useId();
   const [form, setForm] = useState({
     name: "",
+    categoryId: "",
     yield: 12,
     margin: 60,
     extras: 0,
@@ -52,6 +60,18 @@ function RecipeModal({ ingredients, onClose, onSave }) {
               placeholder="Ej. Budín de limón"
             />
           </div>
+          <div className="field-group full">
+            <label htmlFor={`${fieldId}-category`}>Categoría</label>
+            <CategorySelect
+              id={`${fieldId}-category`}
+              value={form.categoryId}
+              categories={categories}
+              onChange={(categoryId) =>
+                setForm((current) => ({ ...current, categoryId }))
+              }
+              onCreate={onCreateCategory}
+            />
+          </div>
           <div className="field-group">
             <label htmlFor={`${fieldId}-yield`}>Rinde</label>
             <NumericInput
@@ -62,16 +82,22 @@ function RecipeModal({ ingredients, onClose, onSave }) {
             />
           </div>
           <div className="field-group">
-            <label htmlFor={`${fieldId}-margin`}>Margen</label>
+            <label htmlFor={`${fieldId}-margin`}>
+              Ganancia sobre el costo (%)
+            </label>
             <div className="input-with-suffix">
               <NumericInput
                 id={`${fieldId}-margin`}
                 min={0}
                 value={form.margin}
                 onChange={(value) => setForm({ ...form, margin: value })}
+                aria-describedby={`${fieldId}-margin-hint`}
               />
               <span>%</span>
             </div>
+            <p className="field-hint" id={`${fieldId}-margin-hint`}>
+              100% = vendés al doble de lo que te cuesta
+            </p>
           </div>
           <div className="field-group full">
             <label htmlFor={`${fieldId}-extras`}>Gastos extra</label>

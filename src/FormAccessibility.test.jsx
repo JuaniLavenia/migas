@@ -11,7 +11,8 @@ describe("Form accessibility", () => {
     const editor = screen.getByRole("textbox", { name: "Nombre de la receta" });
     expect(editor).toHaveValue("Cookies de chocolate");
     expect(screen.getByLabelText("Rendimiento")).toHaveValue(18);
-    expect(screen.getByLabelText("Margen de ganancia")).toHaveValue(65);
+    expect(screen.getByLabelText("Ganancia sobre el costo (%)")).toHaveValue(65);
+    expect(screen.getByLabelText("Precio de venta")).toHaveValue(null);
     expect(screen.getByLabelText("Gastos extra")).toHaveValue(180);
 
     const ingredientSelects = screen.getAllByRole("combobox", {
@@ -42,7 +43,7 @@ describe("Form accessibility", () => {
       modal.getByRole("textbox", { name: "Nombre de la receta" }),
     ).toBeInTheDocument();
     expect(modal.getByLabelText("Rinde")).toHaveValue(12);
-    expect(modal.getByLabelText("Margen")).toHaveValue(60);
+    expect(modal.getByLabelText("Ganancia sobre el costo (%)")).toHaveValue(60);
     expect(modal.getByLabelText("Gastos extra")).toHaveValue(0);
     expect(modal.getAllByRole("combobox", { name: "Insumo" })).toHaveLength(3);
     expect(modal.getAllByRole("spinbutton", { name: "Cantidad" })).toHaveLength(
@@ -61,17 +62,17 @@ describe("Form accessibility", () => {
     expect(
       screen.getByRole("textbox", { name: "Nombre del insumo" }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("textbox", { name: "Categoría" })).toHaveValue(
-      "Secos",
+    expect(screen.getByRole("combobox", { name: "Categoría" })).toHaveValue(
+      "Otros",
     );
     expect(screen.getByRole("combobox", { name: "Unidad base" })).toHaveValue(
       "g",
     );
     expect(
-      screen.getByRole("spinbutton", { name: "Contenido del pack" }),
+      screen.getByRole("spinbutton", { name: "Presentación de compra" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("spinbutton", { name: "Costo del pack" }),
+      screen.getByRole("spinbutton", { name: "Costo de la presentación" }),
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Cerrar" })).toBeInTheDocument();
   });

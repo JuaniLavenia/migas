@@ -1,16 +1,21 @@
 import { useId, useState } from "react";
 import ModalShell from "../../shared/ModalShell";
+import { INGREDIENT_CATEGORIES } from "./ingredientCategories";
 
 function IngredientModal({ initial, onClose, onSave }) {
   const fieldId = useId();
   const [form, setForm] = useState({
     name: initial.name || "",
-    category: initial.category || "Secos",
+    category: initial.category || "Otros",
     unit: initial.unit || "g",
     // ?? keeps a stored 0 visible (|| blanked a free ingredient's cost).
     packSize: initial.packSize ?? "",
     packCost: initial.packCost ?? "",
   });
+  // A category from before the fixed list stays selectable until changed.
+  const categories = INGREDIENT_CATEGORIES.includes(form.category)
+    ? INGREDIENT_CATEGORIES
+    : [...INGREDIENT_CATEGORIES, form.category];
   const change = (field, value) =>
     setForm((current) => ({ ...current, [field]: value }));
   return (
@@ -37,12 +42,17 @@ function IngredientModal({ initial, onClose, onSave }) {
           </div>
           <div className="field-group">
             <label htmlFor={`${fieldId}-category`}>Categoría</label>
-            <input
+            <select
               id={`${fieldId}-category`}
               value={form.category}
               onChange={(event) => change("category", event.target.value)}
-              placeholder="Ej. Secos"
-            />
+            >
+              {categories.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
           </div>
           <div className="field-group">
             <label htmlFor={`${fieldId}-unit`}>Unidad base</label>
@@ -57,7 +67,7 @@ function IngredientModal({ initial, onClose, onSave }) {
             </select>
           </div>
           <div className="field-group">
-            <label htmlFor={`${fieldId}-pack-size`}>Contenido del pack</label>
+            <label htmlFor={`${fieldId}-pack-size`}>Presentación de compra</label>
             <input
               id={`${fieldId}-pack-size`}
               required
@@ -70,7 +80,7 @@ function IngredientModal({ initial, onClose, onSave }) {
             />
           </div>
           <div className="field-group">
-            <label htmlFor={`${fieldId}-pack-cost`}>Costo del pack</label>
+            <label htmlFor={`${fieldId}-pack-cost`}>Costo de la presentación</label>
             <div className="input-with-suffix">
               <input
                 id={`${fieldId}-pack-cost`}

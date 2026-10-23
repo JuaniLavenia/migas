@@ -159,7 +159,7 @@ function IngredientsView({
         <div className="table-header">
           {reorder && <span>Orden</span>}
           <span>Insumo</span>
-          <span>Presentación</span>
+          <span>Presentación de compra</span>
           <span>Costo de compra</span>
           <span>Costo por unidad</span>
           <span />

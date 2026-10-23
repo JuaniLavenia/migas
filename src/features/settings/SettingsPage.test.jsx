@@ -130,3 +130,41 @@ describe("backup with photos", () => {
     );
   });
 });
+
+describe("backup with recipe categories", () => {
+  it("exports and restores categories, recipe categories and sale prices", async () => {
+    setImageStore(createMemoryImageStore());
+    const first = renderApp({
+      route: "/configuracion",
+      state: {
+        recipeCategories: [{ id: "budines", name: "Budines" }],
+        recipes: demo.recipes.map((recipe) =>
+          recipe.id === "brownie"
+            ? { ...recipe, categoryId: "budines", salePrice: 1500 }
+            : recipe,
+        ),
+      },
+    });
+    const text = await exportBackup(first.user);
+    expect(JSON.parse(text).recipeCategories).toEqual([
+      { id: "budines", name: "Budines" },
+    ]);
+
+    first.unmount();
+    const second = renderApp({
+      route: "/configuracion",
+      state: { ingredients: [], recipes: [], recipeCategories: [] },
+    });
+    await second.user.upload(
+      screen.getByLabelText("Archivo de backup"),
+      new File([text], "miga-backup.json", { type: "application/json" }),
+    );
+    await screen.findByText(/^Importamos/);
+    const state = useRecipeStore.getState();
+    expect(state.recipeCategories).toEqual([{ id: "budines", name: "Budines" }]);
+    expect(state.getRecipe("brownie")).toMatchObject({
+      categoryId: "budines",
+      salePrice: 1500,
+    });
+  });
+});
