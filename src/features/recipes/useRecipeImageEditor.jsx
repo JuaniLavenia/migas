@@ -77,7 +77,6 @@ function useRecipeImageEditor(recipe) {
 
   const field = recipe
     ? {
-        recipeName: recipe.name,
         hasImage: Boolean(recipe.imageId),
         url: image.url,
         status: image.status,

@@ -1,6 +1,6 @@
 import { forwardRef } from "react";
 import { NavLink } from "react-router-dom";
-import { ChevronRight, Utensils, X } from "lucide-react";
+import { Utensils, X } from "lucide-react";
 import { views } from "./navigation";
 
 function NavItem({ view, count, onNavigate }) {
@@ -54,9 +54,7 @@ const Sidebar = forwardRef(function Sidebar(
           <X size={18} />
         </button>
       </div>
-      <div className="workspace-label">
-        Mi emprendimiento <ChevronRight size={13} />
-      </div>
+      <div className="workspace-label">Mi emprendimiento</div>
       <nav className="nav-list">
         {views.filter((view) => view.main).map(renderItem)}
       </nav>
@@ -68,7 +66,6 @@ const Sidebar = forwardRef(function Sidebar(
             <strong>Mi perfil</strong>
             <small>Emprendimiento</small>
           </div>
-          <ChevronRight size={15} />
         </div>
       </div>
     </aside>

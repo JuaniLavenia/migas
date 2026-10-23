@@ -60,7 +60,7 @@ describe("App", () => {
 
   it("opens a recipe from the overview and the recipe selector", async () => {
     const { user } = renderApp();
-    await user.click(screen.getByRole("button", { name: /Brownie clásico/ }));
+    await user.click(screen.getByRole("link", { name: /Brownie clásico/ }));
     expect(currentPath()).toBe("/recetas/brownie");
     expect(screen.getByDisplayValue("Brownie clásico")).toBeInTheDocument();
 

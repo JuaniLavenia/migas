@@ -165,11 +165,19 @@ function IngredientsView({
           <span />
         </div>
         {rows}
-        {!ingredients.length && (
-          <div className="empty-state">
-            No encontramos insumos con ese nombre.
-          </div>
-        )}
+        {!ingredients.length &&
+          (totalCount === 0 ? (
+            <div className="empty-state">
+              <p>Todavía no cargaste insumos.</p>
+              <button type="button" className="primary-button" onClick={onAdd}>
+                <Plus size={16} /> Cargar el primer insumo
+              </button>
+            </div>
+          ) : (
+            <div className="empty-state">
+              No encontramos insumos con ese nombre.
+            </div>
+          ))}
       </section>
       <Pagination
         page={page}

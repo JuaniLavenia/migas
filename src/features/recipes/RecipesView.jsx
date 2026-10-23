@@ -18,8 +18,10 @@ import RecipeThumb from "./RecipeThumb";
 function LibraryItem({ recipe, selected, onSelect }) {
   return (
     <button
+      type="button"
       onClick={() => onSelect(recipe.id)}
       className={`selector-item ${selected ? "selected" : ""}`}
+      aria-current={selected ? "page" : undefined}
     >
       <RecipeThumb
         recipe={recipe}
@@ -275,7 +277,7 @@ function RecipesView({
               <div className="section-heading">
                 <div>
                   <span className="eyebrow">Composición</span>
-                  <h3>Insumos utilizados</h3>
+                  <h2 className="subsection-title">Insumos utilizados</h2>
                 </div>
                 <span className="mini-label">Costo proporcional</span>
               </div>
@@ -294,9 +296,17 @@ function RecipesView({
                 className="secondary-button"
                 onClick={addItem}
                 disabled={!ingredients.length}
+                aria-describedby={
+                  ingredients.length ? undefined : `${fieldId}-no-ingredients`
+                }
               >
                 <Plus size={16} /> Agregar insumo
               </button>
+              {!ingredients.length && (
+                <p className="field-hint" id={`${fieldId}-no-ingredients`}>
+                  Primero cargá insumos en la sección Insumos.
+                </p>
+              )}
             </div>
           </div>
         )}

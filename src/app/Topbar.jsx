@@ -18,7 +18,7 @@ function Topbar({ title, menuButtonRef, menuOpen, sidebarId, onOpenMenu }) {
         <Menu size={21} />
       </button>
       <div className="breadcrumbs">
-        <span>Workspace</span>
+        <span>Miga</span>
         <ChevronRight size={14} />
         <strong>{title}</strong>
       </div>
@@ -35,9 +35,6 @@ function Topbar({ title, menuButtonRef, menuOpen, sidebarId, onOpenMenu }) {
           <span className="status-dot" />{" "}
           {saveFailed ? "No se pudo guardar" : "Guardado localmente"}
         </span>
-        <button type="button" className="avatar small" aria-label="Mi perfil">
-          MP
-        </button>
       </div>
     </header>
   );
