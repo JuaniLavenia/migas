@@ -108,6 +108,8 @@ function RecipesPage() {
     if (!selectedRecipe) return;
     let change;
     if (field === "categoryId") change = { categoryId: value || undefined };
+    else if (field === "salePrice")
+      change = { salePrice: value === null ? undefined : Number(value) };
     else if (numericRecipeFields.has(field)) change = { [field]: Number(value) };
     else change = { [field]: value };
     updateRecipeInStore(selectedRecipe.id, change);

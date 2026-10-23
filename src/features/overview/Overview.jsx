@@ -59,7 +59,7 @@ function Overview({
           icon={<Calculator size={20} />}
           label="Precio sugerido"
           value={currency.format(totals.price)}
-          note="con margen configurado"
+          note="por unidad, con tu ganancia"
           tone="yellow"
         />
         <StatCard
@@ -126,7 +126,7 @@ function Overview({
                   <strong>{currency.format(selectedRecipe.extras || 0)}</strong>
                 </div>
                 <div>
-                  <span>Margen</span>
+                  <span>Ganancia s/ costo</span>
                   <strong>{selectedRecipe.margin || 0}%</strong>
                 </div>
               </div>

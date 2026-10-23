@@ -82,16 +82,22 @@ function RecipeModal({
             />
           </div>
           <div className="field-group">
-            <label htmlFor={`${fieldId}-margin`}>Margen</label>
+            <label htmlFor={`${fieldId}-margin`}>
+              Ganancia sobre el costo (%)
+            </label>
             <div className="input-with-suffix">
               <NumericInput
                 id={`${fieldId}-margin`}
                 min={0}
                 value={form.margin}
                 onChange={(value) => setForm({ ...form, margin: value })}
+                aria-describedby={`${fieldId}-margin-hint`}
               />
               <span>%</span>
             </div>
+            <p className="field-hint" id={`${fieldId}-margin-hint`}>
+              100% = vendés al doble de lo que te cuesta
+            </p>
           </div>
           <div className="field-group full">
             <label htmlFor={`${fieldId}-extras`}>Gastos extra</label>

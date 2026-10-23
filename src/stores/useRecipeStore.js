@@ -179,13 +179,17 @@ const useRecipeStore = create()(
         set((state) => ({ recipes: [...state.recipes, nextRecipe] }));
         return nextRecipe.id;
       },
+      // A change to undefined removes that field (e.g. an unset sale price).
       updateRecipe: (id, changes) =>
         set((state) => ({
-          recipes: state.recipes.map((recipe) =>
-            recipe.id === id
-              ? { ...recipe, ...changes, updatedAt: Date.now() }
-              : recipe,
-          ),
+          recipes: state.recipes.map((recipe) => {
+            if (recipe.id !== id) return recipe;
+            const next = { ...recipe, ...changes, updatedAt: Date.now() };
+            Object.keys(changes).forEach((key) => {
+              if (changes[key] === undefined) delete next[key];
+            });
+            return next;
+          }),
         })),
       // Changing the photo is an edit: it refreshes updatedAt. null removes
       // the reference; deleting the image itself is up to the caller.

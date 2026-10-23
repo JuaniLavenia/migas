@@ -54,6 +54,24 @@ export function recipeTotals(
   };
 }
 
+// Per-unit selling view of recipeTotals. `salePrice` is the price she sells
+// at (null or missing: not set, the suggested price applies). The warning
+// percentage is rounded and only given when her price is below the suggested
+// one.
+export function recipePricing(totals, salePrice) {
+  const price = Number.isFinite(salePrice) ? salePrice : null;
+  const selling = price ?? totals.price;
+  return {
+    suggested: totals.price,
+    salePrice: price,
+    unitProfit: selling - totals.unitCost,
+    belowSuggestedPercent:
+      price !== null && totals.price > 0 && price < totals.price
+        ? Math.round(((totals.price - price) / totals.price) * 100)
+        : null,
+  };
+}
+
 export function countRecipesUsingIngredient(recipes, ingredientId) {
   return recipes.filter((recipe) =>
     recipeItems(recipe).some((item) => item.ingredientId === ingredientId),

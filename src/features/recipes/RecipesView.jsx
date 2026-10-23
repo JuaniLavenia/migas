@@ -13,7 +13,7 @@ import ReorderControls from "../../shared/ReorderControls";
 import { SortableItem, SortableList } from "../../shared/SortableList";
 import { rectSortingStrategy } from "@dnd-kit/sortable";
 import { currency } from "../../lib/format";
-import { indexIngredients } from "../../lib/recipeMath";
+import { indexIngredients, recipePricing } from "../../lib/recipeMath";
 import { addNextItem, removeItemAt, updateItemAt } from "../../lib/recipeItems";
 import { formatRelativeDate } from "../../lib/dates";
 import { UNCATEGORIZED } from "../../lib/recipeGroups";
@@ -111,6 +111,70 @@ function LibraryGroup({ group, collapsed, onToggle, children }) {
       </button>
       <div className="library-group-body" id={bodyId} hidden={collapsed}>
         {children}
+      </div>
+    </div>
+  );
+}
+
+const MARGIN_HINT = "100% = vendés al doble de lo que te cuesta";
+
+// What the batch and each unit cost, next to what to sell each unit for:
+// suggested (cost + her percentage), her own price and what she earns.
+function PricingCard({ id, recipe, totals }) {
+  const pricing = recipePricing(totals, recipe.salePrice);
+  return (
+    <div className="pricing-card">
+      <div
+        className="pricing-block"
+        role="group"
+        aria-labelledby={`${id}-cost-title`}
+      >
+        <span className="eyebrow" id={`${id}-cost-title`}>
+          Lo que te cuesta
+        </span>
+        <dl>
+          <div>
+            <dt>Toda la tanda ({recipe.yield} u.)</dt>
+            <dd>{currency.format(totals.cost)}</dd>
+          </div>
+          <div>
+            <dt>Cada unidad</dt>
+            <dd>{currency.format(totals.unitCost)}</dd>
+          </div>
+        </dl>
+      </div>
+      <div
+        className="pricing-block selling"
+        role="group"
+        aria-labelledby={`${id}-price-title`}
+      >
+        <span className="eyebrow" id={`${id}-price-title`}>
+          A cuánto venderlo (por unidad)
+        </span>
+        <dl>
+          <div>
+            <dt>Sugerido</dt>
+            <dd>{currency.format(pricing.suggested)}</dd>
+          </div>
+          <div>
+            <dt>Tu precio</dt>
+            <dd>
+              {pricing.salePrice === null
+                ? "Sin cargar"
+                : currency.format(pricing.salePrice)}
+              {pricing.belowSuggestedPercent !== null && (
+                <span className="price-warning">
+                  <AlertTriangle size={13} aria-hidden="true" />
+                  {`${pricing.belowSuggestedPercent}% debajo del sugerido`}
+                </span>
+              )}
+            </dd>
+          </div>
+          <div className="pricing-profit">
+            <dt>Ganás por unidad</dt>
+            <dd>{currency.format(pricing.unitProfit)}</dd>
+          </div>
+        </dl>
       </div>
     </div>
   );
@@ -338,16 +402,37 @@ function RecipesView({
                 </div>
               </div>
               <div className="field-group">
-                <label htmlFor={`${fieldId}-margin`}>Margen de ganancia</label>
+                <label htmlFor={`${fieldId}-margin`}>
+                  Ganancia sobre el costo (%)
+                </label>
                 <div className="input-with-suffix">
                   <NumericInput
                     id={`${fieldId}-margin`}
                     min={0}
                     value={selectedRecipe.margin}
                     onChange={(value) => updateRecipe("margin", value)}
+                    aria-describedby={`${fieldId}-margin-hint`}
                   />
                   <span>%</span>
                 </div>
+                <p className="field-hint" id={`${fieldId}-margin-hint`}>
+                  {MARGIN_HINT}
+                </p>
+              </div>
+              <div className="field-group">
+                <label htmlFor={`${fieldId}-sale-price`}>Precio de venta</label>
+                <div className="input-with-suffix">
+                  <NumericInput
+                    id={`${fieldId}-sale-price`}
+                    min={0}
+                    allowEmpty
+                    value={selectedRecipe.salePrice}
+                    onChange={(value) => updateRecipe("salePrice", value)}
+                    placeholder="Sin cargar"
+                  />
+                  <span>ARS</span>
+                </div>
+                <p className="field-hint">Por unidad, el de tu catálogo.</p>
               </div>
               <div className="field-group">
                 <label htmlFor={`${fieldId}-extras`}>Gastos extra</label>
@@ -374,24 +459,11 @@ function RecipesView({
                 </span>
               </div>
             )}
-            <div className="editor-cost-card">
-              <div>
-                <span>Costo total</span>
-                <strong>{currency.format(totals.cost)}</strong>
-                <small>{selectedRecipe.items.length} insumos + extras</small>
-              </div>
-              <div className="cost-divider" />
-              <div>
-                <span>Costo unitario</span>
-                <strong>{currency.format(totals.unitCost)}</strong>
-                <small>por unidad producida</small>
-              </div>
-              <div className="suggested-price">
-                <span>Precio sugerido</span>
-                <strong>{currency.format(totals.price)}</strong>
-                <small>margen del {selectedRecipe.margin}%</small>
-              </div>
-            </div>
+            <PricingCard
+              id={fieldId}
+              recipe={selectedRecipe}
+              totals={totals}
+            />
             <div className="ingredients-used">
               <div className="section-heading">
                 <div>
