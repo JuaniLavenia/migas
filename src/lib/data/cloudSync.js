@@ -31,6 +31,9 @@ export function createCloudSync({
   let timer = null;
   let applying = false;
   let writing = false;
+  // Counts local changes, so a caller can tell whether anything changed
+  // while it was waiting (e.g. for a reload).
+  let version = 0;
   let running = Promise.resolve();
 
   function track(collection, previous = [], next = []) {
@@ -133,7 +136,10 @@ export function createCloudSync({
       track(collection, baseline[collection], next[collection]),
     );
     baseline = next;
-    if (hasPending()) schedule(delay);
+    if (hasPending()) {
+      version += 1;
+      schedule(delay);
+    }
   });
 
   return {
@@ -143,6 +149,7 @@ export function createCloudSync({
     // Pending changes or a write in progress: data loaded from the cloud now
     // could be older than what is on screen.
     isBusy: () => writing || hasPending(),
+    version: () => version,
     // Puts data read from the cloud in the store without saving it back.
     replaceData(data) {
       applying = true;

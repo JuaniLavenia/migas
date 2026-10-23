@@ -166,6 +166,31 @@ describe("AuthGate", () => {
     );
   });
 
+  it("keeps an edit already saved while an older reload was running", async () => {
+    // delay 0: the edit is saved before the (slow) reload answers with data
+    // read before the edit.
+    renderGate(createFakeAuth(ANA));
+    await screen.findByText("Alfajores");
+    let finishLoad;
+    const stale = repository.snapshot();
+    vi.spyOn(repository, "load").mockImplementationOnce(
+      () => new Promise((resolve) => (finishLoad = () => resolve(stale))),
+    );
+    act(() => setVisibility("hidden"));
+    act(() => setVisibility("visible"));
+    await waitFor(() => expect(finishLoad).toBeTypeOf("function"));
+    act(() =>
+      useRecipeStore.setState(({ recipes }) => ({
+        recipes: recipes.map((entry) => ({ ...entry, name: "Alfajores santafesinos" })),
+      })),
+    );
+    await waitFor(() =>
+      expect(repository.snapshot().recipes[0].name).toBe("Alfajores santafesinos"),
+    );
+    await act(async () => finishLoad());
+    expect(screen.getByText("Alfajores santafesinos")).toBeInTheDocument();
+  });
+
   it("does not sign out while changes could not be saved", async () => {
     const auth = createFakeAuth(ANA);
     const user = renderGate(auth, { delay: 200, retryDelay: 60000 });

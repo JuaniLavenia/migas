@@ -78,11 +78,15 @@ function AuthGate({ auth, repository, syncOptions, children }) {
     if (!sync || !businessId) return;
     await sync.flush();
     if (sync.isBusy()) return;
+    const before = sync.version();
     try {
       const data = await repository.load(businessId);
-      // Never replace what changed (or started saving) during the load, nor
+      // The data may have been read before a change made during the load
+      // (even one already saved): keep what is on screen then, and never
       // load into a sync that was stopped meanwhile.
-      if (syncRef.current !== sync || sync.isBusy()) return;
+      if (syncRef.current !== sync || sync.isBusy() || sync.version() !== before) {
+        return;
+      }
       sync.replaceData(data);
     } catch {
       // Kept as is; the next return to the tab tries again.
