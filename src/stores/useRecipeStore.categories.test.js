@@ -80,6 +80,25 @@ describe("recipe categories", () => {
   });
 });
 
+describe("importing categories", () => {
+  it("reuses a category with the same name instead of duplicating it", () => {
+    store().importData({
+      recipeCategories: [
+        { id: "otro-id", name: "budines" },
+        { id: "trufas", name: "Trufas" },
+      ],
+      recipes: [recipe("b9", "otro-id"), recipe("t1", "trufas")],
+    });
+    expect(store().recipeCategories).toEqual([
+      { id: "budines", name: "Budines" },
+      { id: "cookies", name: "Cookies" },
+      { id: "trufas", name: "Trufas" },
+    ]);
+    expect(store().getRecipe("b9").categoryId).toBe("budines");
+    expect(store().getRecipe("t1").categoryId).toBe("trufas");
+  });
+});
+
 describe("custom order inside a category", () => {
   it("moves a recipe past the next one of its own category", () => {
     store().moveRecipe("b1", 1);

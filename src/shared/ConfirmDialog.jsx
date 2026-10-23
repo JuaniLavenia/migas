@@ -5,6 +5,7 @@ function ConfirmDialog({
   title,
   description,
   confirmLabel = "Eliminar",
+  danger = true,
   onConfirm,
   onCancel,
 }) {
@@ -33,7 +34,7 @@ function ConfirmDialog({
             <AlertDialog.Action asChild>
               <button
                 type="button"
-                className="primary-button danger"
+                className={`primary-button ${danger ? "danger" : ""}`}
                 onClick={onConfirm}
               >
                 {confirmLabel}

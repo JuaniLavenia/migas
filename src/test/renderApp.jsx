@@ -4,6 +4,7 @@ import { MemoryRouter, useLocation } from "react-router-dom";
 import App from "../App";
 import useRecipeStore from "../stores/useRecipeStore";
 import { demoIngredients, demoRecipes } from "../stores/demoData";
+import { SessionContext } from "../app/session/SessionContext";
 import useRecipeSelectionStore from "../stores/useRecipeSelectionStore";
 import useSaveStatusStore from "../stores/useSaveStatusStore";
 import useToastStore from "../stores/useToastStore";
@@ -34,8 +35,10 @@ export function currentSearchParams() {
 
 // Renders the whole app at `route` from a clean slate: demo data (optionally
 // overridden), empty localStorage and no transient UI state, so tests never
-// leak state into each other.
-export function renderApp({ state, route = "/" } = {}) {
+// leak state into each other. `session` (see app/session/SessionContext)
+// renders it as signed in; `localStorage` ({ key: value }) is written after
+// clearing it.
+export function renderApp({ state, route = "/", session = null, localStorage } = {}) {
   useRecipeStore.setState(
     {
       ...initialState,
@@ -47,15 +50,20 @@ export function renderApp({ state, route = "/" } = {}) {
     true,
   );
   window.localStorage.clear();
+  Object.entries(localStorage ?? {}).forEach(([key, value]) =>
+    window.localStorage.setItem(key, value),
+  );
   useSaveStatusStore.setState({ status: "saved" });
   useToastStore.setState({ toast: null });
   useRecipeSelectionStore.setState({ lastRecipeId: null });
   const user = userEvent.setup();
   const view = render(
-    <MemoryRouter initialEntries={[route]}>
-      <App />
-      <LocationProbe />
-    </MemoryRouter>,
+    <SessionContext.Provider value={session}>
+      <MemoryRouter initialEntries={[route]}>
+        <App />
+        <LocationProbe />
+      </MemoryRouter>
+    </SessionContext.Provider>,
   );
   return { user, ...view };
 }

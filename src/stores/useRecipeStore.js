@@ -175,21 +175,39 @@ const useRecipeStore = create()((set, get) => ({
       }),
     })),
   getRecipe: (id) => get().recipes.find((recipe) => recipe.id === id),
+  // Merges by id. A category whose name already exists (from another device,
+  // with another id) is not duplicated: its recipes move to the existing one.
   importData: ({ ingredients = [], recipes = [], recipeCategories = [] }) =>
-    set((state) => ({
-      recipeCategories: mergeById(
-        state.recipeCategories,
-        recipeCategories.map((item) => ({ ...item, id: item.id || uuidv4() })),
-      ),
-      ingredients: mergeById(
-        state.ingredients,
-        ingredients.map((item) => ({ ...item, id: item.id || uuidv4() })),
-      ),
-      recipes: mergeById(
-        state.recipes,
-        recipes.map((recipe) => ({ ...recipe, id: recipe.id || uuidv4() })),
-      ),
-    })),
+    set((state) => {
+      const renamed = new Map();
+      const newCategories = [];
+      recipeCategories.forEach((item) => {
+        const id = item.id || uuidv4();
+        const sameId = state.recipeCategories.some((category) => category.id === id);
+        const sameNamed = state.recipeCategories.find((category) =>
+          sameName(category.name, item.name),
+        );
+        if (!sameId && sameNamed) renamed.set(id, sameNamed.id);
+        else newCategories.push({ ...item, id });
+      });
+      return {
+        recipeCategories: mergeById(state.recipeCategories, newCategories),
+        ingredients: mergeById(
+          state.ingredients,
+          ingredients.map((item) => ({ ...item, id: item.id || uuidv4() })),
+        ),
+        recipes: mergeById(
+          state.recipes,
+          recipes.map((recipe) => ({
+            ...recipe,
+            id: recipe.id || uuidv4(),
+            ...(renamed.has(recipe.categoryId)
+              ? { categoryId: renamed.get(recipe.categoryId) }
+              : {}),
+          })),
+        ),
+      };
+    }),
 }));
 
 export default useRecipeStore;

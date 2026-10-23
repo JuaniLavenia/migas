@@ -6,11 +6,16 @@ import { downloadFile } from "../../shared/downloadFile";
 import { importSummary } from "./importSummary";
 import SettingsView from "./SettingsView";
 import RecipeCategoriesPanel from "./RecipeCategoriesPanel";
+import LocalUploadPanel from "./LocalUploadPanel";
+import { useSession } from "../../app/session/SessionContext";
+import { readLocalData } from "../../lib/localData";
 
 // Container of the settings view: backup export/import against the store
-// (cloudSync saves what an import changes) and the recipe categories.
-// `children` are extra panels (the first upload of a device's data).
-function SettingsPage({ children }) {
+// (cloudSync saves what an import changes), the recipe categories and, while
+// the business in the cloud is empty, the manual upload of what this browser
+// kept before the cloud.
+function SettingsPage() {
+  const session = useSession();
   const ingredients = useRecipeStore((state) => state.ingredients);
   const recipes = useRecipeStore((state) => state.recipes);
   const recipeCategories = useRecipeStore((state) => state.recipeCategories);
@@ -31,6 +36,27 @@ function SettingsPage({ children }) {
   }, [recipes]);
   const showToast = useToastStore((state) => state.showToast);
   const [busy, setBusy] = useState(false);
+  const localData = useMemo(() => (session ? readLocalData() : null), [session]);
+  const cloudEmpty =
+    !ingredients.length && !recipes.length && !recipeCategories.length;
+
+  async function handleUpload() {
+    setBusy(true);
+    try {
+      await session.repository.uploadLocalData(session.businessId, localData.data);
+      await session.reload();
+      showToast("Datos subidos a la nube");
+    } catch (error) {
+      if (error?.code === "business_not_empty") {
+        showToast("La nube ya tiene datos: no subimos nada para no pisarlos.");
+        await session.reload();
+      } else {
+        showToast("No pudimos subir los datos. Probá de nuevo.");
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
 
   function handleExport() {
     setBusy(true);
@@ -66,7 +92,13 @@ function SettingsPage({ children }) {
 
   return (
     <SettingsView onExport={handleExport} onImport={handleImport} busy={busy}>
-      {children}
+      {session && localData && cloudEmpty && (
+        <LocalUploadPanel
+          summary={localData.summary}
+          busy={busy}
+          onUpload={handleUpload}
+        />
+      )}
       <RecipeCategoriesPanel
         categories={recipeCategories}
         recipeCounts={recipeCounts}
