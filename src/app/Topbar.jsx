@@ -1,9 +1,16 @@
 import { ChevronRight, Menu } from "lucide-react";
 import useSaveStatusStore from "../stores/useSaveStatusStore";
 
+const statusLabels = {
+  saved: "Guardado en la nube",
+  saving: "Guardando…",
+  error: "No se pudo guardar",
+};
+
 // The menu button only shows on mobile, where it opens the sidebar drawer.
 function Topbar({ title, menuButtonRef, menuOpen, sidebarId, onOpenMenu }) {
-  const saveFailed = useSaveStatusStore((state) => state.status === "error");
+  const status = useSaveStatusStore((state) => state.status);
+  const saveFailed = status === "error";
   return (
     <header className="topbar">
       <button
@@ -28,12 +35,12 @@ function Topbar({ title, menuButtonRef, menuOpen, sidebarId, onOpenMenu }) {
           role="status"
           title={
             saveFailed
-              ? "El navegador no dejó guardar los cambios. Descargá un backup desde Configuración para no perderlos."
+              ? "No pudimos guardar los últimos cambios. Revisá la conexión: la app vuelve a intentarlo sola."
               : undefined
           }
         >
           <span className="status-dot" />{" "}
-          {saveFailed ? "No se pudo guardar" : "Guardado localmente"}
+          {statusLabels[status] ?? statusLabels.saved}
         </span>
       </div>
     </header>

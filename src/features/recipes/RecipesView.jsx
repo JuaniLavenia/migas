@@ -213,8 +213,7 @@ function useCollapsedGroups() {
 // and filtered; `grouped` shows the category headers and filter (there are
 // categories). `recipeCount` is the total. `selectedRecipe` may be in a hidden
 // group. `reorder` ({ onReorder, onMove }) enables the custom order controls;
-// null hides them. `imageField` holds the props of the open recipe's
-// RecipeImageField.
+// null hides them.
 function RecipesView({
   groups,
   grouped,
@@ -237,7 +236,6 @@ function RecipesView({
   selectedRecipe,
   updateRecipe,
   onDelete,
-  imageField,
   reorder = null,
 }) {
   const fieldId = useId();
@@ -377,7 +375,10 @@ function RecipesView({
                 </button>
               </div>
             </div>
-            {imageField && <RecipeImageField {...imageField} />}
+            <RecipeImageField
+              url={selectedRecipe.imageUrl}
+              onChange={(url) => updateRecipe("imageUrl", url)}
+            />
             <div className="editor-grid">
               <div className="field-group">
                 <label htmlFor={`${fieldId}-category`}>Categoría</label>

@@ -1,3 +1,5 @@
+import { normalizePhotoUrl } from "./photoUrl";
+
 // Validation for imported backups. Anything persisted by the store is read on
 // every reload, so a malformed record would crash the app permanently. Only
 // records with a valid shape are kept, rebuilt from known fields.
@@ -65,11 +67,10 @@ function sanitizeRecipe(source, now) {
   // One broken line would silently change the recipe's cost, so the whole
   // recipe is skipped instead of importing it partially.
   if (items.some((item) => item === null)) return null;
-  // The photo itself is stored apart from the recipe, which only points
-  // to it.
-  const image = nonEmptyString(source.imageId)
-    ? { imageId: source.imageId }
-    : {};
+  // The photo is a link. Photos of old backups (an `imageId` plus the
+  // embedded image) were kept in the browser and are not imported.
+  const photoUrl = normalizePhotoUrl(source.imageUrl);
+  const image = photoUrl ? { imageUrl: photoUrl } : {};
   // Optional: without a category the recipe is "Sin categoría", without a
   // sale price only the suggested price applies.
   const category = nonEmptyString(source.categoryId)

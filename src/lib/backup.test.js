@@ -149,17 +149,19 @@ describe("sanitizeBackup", () => {
     expect(result.recipes[0].updatedAt).toBe(NOW);
   });
 
-  it("keeps a recipe imageId and drops one that is not a non-empty string", () => {
+  it("keeps a web photo link and drops anything else, including old imageIds", () => {
+    const photo = "https://res.cloudinary.com/miga/image/upload/v1/a.jpg";
     const result = sanitizeBackup({
       recipes: [
-        { ...validRecipe, id: "a", imageId: "img-1" },
-        { ...validRecipe, id: "b", imageId: 42 },
-        { ...validRecipe, id: "c", imageId: "" },
+        { ...validRecipe, id: "a", imageUrl: ` ${photo} ` },
+        { ...validRecipe, id: "b", imageUrl: "javascript:alert(1)" },
+        { ...validRecipe, id: "c", imageId: "img-1" },
       ],
     });
-    expect(result.recipes[0].imageId).toBe("img-1");
-    expect(result.recipes[1]).not.toHaveProperty("imageId");
+    expect(result.recipes[0].imageUrl).toBe(photo);
+    expect(result.recipes[1]).not.toHaveProperty("imageUrl");
     expect(result.recipes[2]).not.toHaveProperty("imageId");
+    expect(result.recipes[2]).not.toHaveProperty("imageUrl");
   });
 
   it("keeps recipe categories and the new recipe fields", () => {

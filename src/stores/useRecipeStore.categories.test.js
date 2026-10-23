@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from "vitest";
 import useRecipeStore from "./useRecipeStore";
-import { RECIPE_STORAGE_KEY } from "../lib/recipeStorage";
 
 const initialState = useRecipeStore.getState();
 const ids = (list) => list.map((item) => item.id);
@@ -17,9 +16,6 @@ const recipe = (id, categoryId) => ({
 });
 const store = () => useRecipeStore.getState();
 
-function stored() {
-  return JSON.parse(window.localStorage.getItem(RECIPE_STORAGE_KEY));
-}
 
 beforeEach(() => {
   window.localStorage.clear();
@@ -67,16 +63,6 @@ describe("recipe categories", () => {
     // Not an edit of the recipe: its date stays.
     expect(b1.updatedAt).toBe(1000);
     expect(store().getRecipe("c1").categoryId).toBe("cookies");
-  });
-
-  it("persists the categories with the data", () => {
-    store().addRecipeCategory("Trufas");
-    expect(stored().version).toBe(2);
-    expect(Object.keys(stored().state).sort()).toEqual([
-      "ingredients",
-      "recipeCategories",
-      "recipes",
-    ]);
   });
 
   it("imports categories merged by id", () => {

@@ -6,7 +6,6 @@ import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 import ToastRegion from "./ToastRegion";
 import { viewForPath } from "./navigation";
-import useOrphanImageCleanup from "./useOrphanImageCleanup";
 
 const SIDEBAR_ID = "app-sidebar";
 // Same breakpoint as the drawer styles in App.css.
@@ -25,7 +24,6 @@ function AppLayout() {
   const isMobile = useMediaQuery(MOBILE_QUERY);
   const menuButtonRef = useRef(null);
   const sidebarRef = useRef(null);
-  useOrphanImageCleanup();
 
   useEffect(() => setMenuOpen(false), [pathname]);
 

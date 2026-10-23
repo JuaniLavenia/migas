@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import useRecipeStore from "./useRecipeStore";
-import { RECIPE_STORAGE_KEY } from "../lib/recipeStorage";
 
 const ingredient = {
   id: "leche",
@@ -22,40 +21,6 @@ const legacyRecipe = {
   items: [{ ingredientId: "leche", quantity: 500 }],
 };
 
-function stored() {
-  return JSON.parse(window.localStorage.getItem(RECIPE_STORAGE_KEY));
-}
-
-describe("useRecipeStore persistence", () => {
-  beforeEach(() => window.localStorage.clear());
-
-  it("loads unversioned (v0) data and stores it back as the current version", async () => {
-    window.localStorage.setItem(
-      RECIPE_STORAGE_KEY,
-      JSON.stringify({
-        state: { ingredients: [ingredient], recipes: [legacyRecipe] },
-        version: 0,
-      }),
-    );
-    await useRecipeStore.persist.rehydrate();
-
-    const state = useRecipeStore.getState();
-    expect(state.ingredients).toEqual([ingredient]);
-    expect(state.recipes.map((recipe) => recipe.name)).toEqual(["Flan"]);
-    expect(state.recipes[0]).not.toHaveProperty("updated");
-    expect(Number.isFinite(state.recipes[0].updatedAt)).toBe(true);
-    expect(stored().version).toBe(2);
-  });
-
-  it("persists only the data collections", () => {
-    useRecipeStore.getState().addIngredient({ ...ingredient, id: undefined });
-    expect(Object.keys(stored().state).sort()).toEqual([
-      "ingredients",
-      "recipeCategories",
-      "recipes",
-    ]);
-  });
-});
 
 describe("useRecipeStore recipe dates", () => {
   const NOW = new Date(2026, 9, 6, 12, 0, 0).getTime();
@@ -120,7 +85,6 @@ describe("useRecipeStore custom order", () => {
       "c",
       "a",
     ]);
-    expect(ids(stored().state.ingredients)).toEqual(["d", "b", "c", "a"]);
   });
 
   it("moves an ingredient one position, staying put at the edges", () => {
@@ -152,33 +116,5 @@ describe("useRecipeStore custom order", () => {
     const { recipes } = useRecipeStore.getState();
     expect(ids(recipes)).toEqual(["r3", "r2", "r1"]);
     expect(recipes.map((entry) => entry.updatedAt)).toEqual([3, 2, 1]);
-  });
-});
-
-describe("useRecipeStore recipe images", () => {
-  const NOW = new Date(2026, 9, 6, 12, 0, 0).getTime();
-
-  beforeEach(() => {
-    vi.useFakeTimers();
-    vi.setSystemTime(NOW);
-  });
-  afterEach(() => vi.useRealTimers());
-
-  it("sets and clears a recipe image as an edit (updatedAt changes)", () => {
-    const id = useRecipeStore
-      .getState()
-      .addRecipe({ name: "Tarta", yield: 8, margin: 50, extras: 0, items: [] });
-    vi.setSystemTime(NOW + 1000);
-    useRecipeStore.getState().setRecipeImage(id, "img-1");
-    let recipe = useRecipeStore.getState().getRecipe(id);
-    expect(recipe.imageId).toBe("img-1");
-    expect(recipe.updatedAt).toBe(NOW + 1000);
-    expect(stored().state.recipes.at(-1).imageId).toBe("img-1");
-
-    vi.setSystemTime(NOW + 2000);
-    useRecipeStore.getState().setRecipeImage(id, null);
-    recipe = useRecipeStore.getState().getRecipe(id);
-    expect(recipe).not.toHaveProperty("imageId");
-    expect(recipe.updatedAt).toBe(NOW + 2000);
   });
 });

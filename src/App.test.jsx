@@ -1,7 +1,8 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { act, screen, within } from "@testing-library/react";
 import { currentPath, renderApp } from "./test/renderApp";
 import useRecipeStore from "./stores/useRecipeStore";
+import useSaveStatusStore from "./stores/useSaveStatusStore";
 import { formatMonthYear } from "./lib/dates";
 
 // Characterization tests of the main UI flows. They describe what the user
@@ -156,23 +157,18 @@ describe("App", () => {
     expect(useRecipeStore.getState().ingredients).toHaveLength(4);
   });
 
-  it("tells the user when saving to the browser fails", async () => {
-    const { user } = renderApp();
-    expect(screen.getByText("Guardado localmente")).toBeInTheDocument();
-
-    const setItem = vi
-      .spyOn(Storage.prototype, "setItem")
-      .mockImplementation(() => {
-        throw new DOMException("full", "QuotaExceededError");
-      });
-    await user.click(navItem(/^Recetas/));
-    await user.type(screen.getByDisplayValue("18"), "0");
-    expect(screen.getByText("No se pudo guardar")).toBeInTheDocument();
-    expect(screen.queryByText("Guardado localmente")).not.toBeInTheDocument();
-
-    setItem.mockRestore();
-    await user.type(screen.getByDisplayValue("65"), "0");
-    expect(screen.getByText("Guardado localmente")).toBeInTheDocument();
+  it("shows whether the changes are saved in the cloud", () => {
+    renderApp();
+    const status = screen.getByText("Guardado en la nube").closest("[role=status]");
+    expect(status).toHaveTextContent("Guardado en la nube");
+    act(() => useSaveStatusStore.setState({ status: "saving" }));
+    expect(status).toHaveTextContent("Guardando…");
+    act(() => useSaveStatusStore.setState({ status: "error" }));
+    expect(status).toHaveTextContent("No se pudo guardar");
+    expect(status).toHaveAttribute(
+      "title",
+      "No pudimos guardar los últimos cambios. Revisá la conexión: la app vuelve a intentarlo sola.",
+    );
   });
 
   it("shows when each recipe was last updated, relative to now", async () => {

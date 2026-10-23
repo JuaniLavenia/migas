@@ -1,12 +1,8 @@
-import useRecipeImage from "./useRecipeImage";
-
-// The recipe photo when it has one, `fallback` otherwise (also while it
-// loads or when it cannot be read). Decorative: the name is always shown next
-// to it.
+// The recipe photo when it has one, `fallback` otherwise. Decorative: the
+// name is always shown next to it.
 function RecipeThumb({ recipe, className, fallback }) {
-  const { url } = useRecipeImage(recipe.imageId);
-  if (!url) return fallback;
-  return <img className={className} src={url} alt="" />;
+  if (!recipe.imageUrl) return fallback;
+  return <img className={className} src={recipe.imageUrl} alt="" />;
 }
 
 export default RecipeThumb;

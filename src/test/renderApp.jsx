@@ -3,12 +3,13 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, useLocation } from "react-router-dom";
 import App from "../App";
 import useRecipeStore from "../stores/useRecipeStore";
+import { demoIngredients, demoRecipes } from "../stores/demoData";
 import useRecipeSelectionStore from "../stores/useRecipeSelectionStore";
 import useSaveStatusStore from "../stores/useSaveStatusStore";
 import useToastStore from "../stores/useToastStore";
 
-// Captured at import time, before any test mutates the store: demo data plus
-// the store actions.
+// Captured at import time, before any test mutates the store: the store
+// actions (its data starts empty).
 const initialState = useRecipeStore.getState();
 
 function LocationProbe() {
@@ -35,7 +36,16 @@ export function currentSearchParams() {
 // overridden), empty localStorage and no transient UI state, so tests never
 // leak state into each other.
 export function renderApp({ state, route = "/" } = {}) {
-  useRecipeStore.setState({ ...initialState, ...state }, true);
+  useRecipeStore.setState(
+    {
+      ...initialState,
+      ingredients: demoIngredients,
+      recipes: demoRecipes,
+      recipeCategories: [],
+      ...state,
+    },
+    true,
+  );
   window.localStorage.clear();
   useSaveStatusStore.setState({ status: "saved" });
   useToastStore.setState({ toast: null });

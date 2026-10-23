@@ -71,7 +71,9 @@ beforeAll(async () => {
     insert into auth.users values ('${ANA}'), ('${BETO}');
   `);
   await db.exec(migration);
-});
+  // Starting Postgres (WASM) takes a few seconds, more with the whole suite
+  // running in parallel.
+}, 60000);
 
 describe("Supabase schema", () => {
   it("creates one business per user on first sign-in, with them as owner", async () => {

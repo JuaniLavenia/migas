@@ -1,12 +1,10 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { screen, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { screen } from "@testing-library/react";
 import { renderApp } from "../../test/renderApp";
 import useRecipeStore from "../../stores/useRecipeStore";
-import { getImageStore, setImageStore } from "../../lib/images/imageStore";
-import { createMemoryImageStore } from "../../lib/images/memoryImageStore";
+import { demoIngredients, demoRecipes } from "../../stores/demoData";
 
-const defaultStore = getImageStore();
-const demo = useRecipeStore.getState();
+const PHOTO = "https://res.cloudinary.com/miga/image/upload/v1/brownie.jpg";
 let downloads;
 
 function readText(blob) {
@@ -28,8 +26,6 @@ beforeEach(() => {
   vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
 });
 
-afterEach(() => setImageStore(defaultStore));
-
 async function exportBackup(user) {
   await user.click(screen.getByRole("button", { name: /Descargar backup/ }));
   await screen.findByText("Backup descargado");
@@ -37,134 +33,76 @@ async function exportBackup(user) {
   return readText(backup);
 }
 
-describe("backup with photos", () => {
-  it("exports the photos and restores them on a clean browser", async () => {
-    const images = createMemoryImageStore();
-    setImageStore(images);
-    const imageId = await images.save(
-      new Blob([new Uint8Array([1, 2, 3])], { type: "image/webp" }),
-    );
-    const first = renderApp({
-      route: "/configuracion",
-      state: {
-        recipes: demo.recipes.map((recipe) =>
-          recipe.id === "cookies" ? { ...recipe, imageId } : recipe,
-        ),
-      },
-    });
-    const text = await exportBackup(first.user);
-    const parsed = JSON.parse(text);
-    expect(parsed.images).toEqual({
-      [imageId]: "data:image/webp;base64,AQID",
-    });
-    expect(parsed.recipes.find((recipe) => recipe.id === "cookies").imageId).toBe(
-      imageId,
-    );
+async function importBackup(user, data) {
+  await user.upload(
+    screen.getByLabelText("Archivo de backup"),
+    new File([typeof data === "string" ? data : JSON.stringify(data)], "b.json", {
+      type: "application/json",
+    }),
+  );
+}
 
-    // A clean browser: no recipes, no images.
-    first.unmount();
-    const fresh = createMemoryImageStore();
-    setImageStore(fresh);
-    const second = renderApp({
-      route: "/configuracion",
-      state: { ingredients: [], recipes: [] },
-    });
-    await second.user.upload(
-      screen.getByLabelText("Archivo de backup"),
-      new File([text], "miga-backup.json", { type: "application/json" }),
-    );
-    expect(
-      await screen.findByText("Importamos 5 insumos y 2 recetas con 1 foto"),
-    ).toBeInTheDocument();
-    const restored = useRecipeStore.getState().getRecipe("cookies");
-    const [stored] = await fresh.list();
-    expect(restored.imageId).toBe(stored.id);
-    expect(restored.imageId).not.toBe(imageId);
-    expect(useRecipeStore.getState().getRecipe("brownie")).not.toHaveProperty(
-      "imageId",
-    );
-  });
-
-  it("imports the recipe without its photo when the photo is invalid", async () => {
-    const images = createMemoryImageStore();
-    setImageStore(images);
-    const { user } = renderApp({
-      route: "/configuracion",
-      state: { ingredients: [], recipes: [] },
-    });
-    const backup = {
-      ingredients: demo.ingredients,
-      recipes: [{ ...demo.recipes[0], imageId: "broken" }],
-      images: { broken: "data:text/html;base64,PHA+" },
-    };
-    await user.upload(
-      screen.getByLabelText("Archivo de backup"),
-      new File([JSON.stringify(backup)], "b.json", { type: "application/json" }),
-    );
-    expect(
-      await screen.findByText(
-        "Importamos 5 insumos y 1 recetas · 1 foto omitida",
-      ),
-    ).toBeInTheDocument();
-    expect(useRecipeStore.getState().recipes).toHaveLength(1);
-    expect(useRecipeStore.getState().recipes[0]).not.toHaveProperty("imageId");
-    expect(await images.list()).toEqual([]);
-  });
-
-  it("keeps importing old backups without photos", async () => {
-    setImageStore(createMemoryImageStore());
-    const { user } = renderApp({
-      route: "/configuracion",
-      state: { ingredients: [], recipes: [] },
-    });
-    const backup = { ingredients: demo.ingredients, recipes: demo.recipes };
-    await user.upload(
-      screen.getByLabelText("Archivo de backup"),
-      new File([JSON.stringify(backup)], "b.json", { type: "application/json" }),
-    );
-    expect(
-      await screen.findByText("Importamos 5 insumos y 2 recetas"),
-    ).toBeInTheDocument();
-    await waitFor(() =>
-      expect(useRecipeStore.getState().recipes).toHaveLength(2),
-    );
-  });
-});
-
-describe("backup with recipe categories", () => {
-  it("exports and restores categories, recipe categories and sale prices", async () => {
-    setImageStore(createMemoryImageStore());
+describe("backup", () => {
+  it("exports and restores categories, sale prices and photo links", async () => {
     const first = renderApp({
       route: "/configuracion",
       state: {
         recipeCategories: [{ id: "budines", name: "Budines" }],
-        recipes: demo.recipes.map((recipe) =>
+        recipes: demoRecipes.map((recipe) =>
           recipe.id === "brownie"
-            ? { ...recipe, categoryId: "budines", salePrice: 1500 }
+            ? { ...recipe, categoryId: "budines", salePrice: 1500, imageUrl: PHOTO }
             : recipe,
         ),
       },
     });
     const text = await exportBackup(first.user);
-    expect(JSON.parse(text).recipeCategories).toEqual([
-      { id: "budines", name: "Budines" },
-    ]);
+    const parsed = JSON.parse(text);
+    expect(parsed.recipeCategories).toEqual([{ id: "budines", name: "Budines" }]);
+    expect(parsed).not.toHaveProperty("images");
 
     first.unmount();
     const second = renderApp({
       route: "/configuracion",
       state: { ingredients: [], recipes: [], recipeCategories: [] },
     });
-    await second.user.upload(
-      screen.getByLabelText("Archivo de backup"),
-      new File([text], "miga-backup.json", { type: "application/json" }),
-    );
-    await screen.findByText(/^Importamos/);
+    await importBackup(second.user, text);
+    expect(
+      await screen.findByText("Importamos 5 insumos y 2 recetas"),
+    ).toBeInTheDocument();
     const state = useRecipeStore.getState();
     expect(state.recipeCategories).toEqual([{ id: "budines", name: "Budines" }]);
     expect(state.getRecipe("brownie")).toMatchObject({
       categoryId: "budines",
       salePrice: 1500,
+      imageUrl: PHOTO,
     });
+  });
+
+  it("imports an old backup with embedded photos, without the photos", async () => {
+    const { user } = renderApp({
+      route: "/configuracion",
+      state: { ingredients: [], recipes: [] },
+    });
+    await importBackup(user, {
+      ingredients: demoIngredients,
+      recipes: [{ ...demoRecipes[0], imageId: "img-1" }],
+      images: { "img-1": "data:image/webp;base64,AQID" },
+    });
+    expect(
+      await screen.findByText("Importamos 5 insumos y 1 recetas"),
+    ).toBeInTheDocument();
+    const [recipe] = useRecipeStore.getState().recipes;
+    expect(recipe).not.toHaveProperty("imageId");
+    expect(recipe).not.toHaveProperty("imageUrl");
+  });
+
+  it("rejects a file that is not a backup and leaves the data alone", async () => {
+    const { user } = renderApp({ route: "/configuracion" });
+    const before = useRecipeStore.getState().recipes;
+    await importBackup(user, "no es json");
+    expect(
+      await screen.findByText("No pudimos leer ese archivo: no es un backup válido"),
+    ).toBeInTheDocument();
+    expect(useRecipeStore.getState().recipes).toBe(before);
   });
 });

@@ -1,9 +1,10 @@
-// Persistence contract of the recipe store. The ErrorBoundary reads the same
-// key to offer a download/reset of the stored data, so it lives here.
+// Format of the data an earlier version of the app kept in the browser
+// (before it moved to the cloud). The manual upload (src/lib/localData.js)
+// and the ErrorBoundary read it through this key.
 export const RECIPE_STORAGE_KEY = "miga-recipe-storage";
 
-// Bump on every change to the persisted shape and teach migrateRecipeState
-// how to upgrade from the previous version.
+// Last version the app wrote to the browser; older data is upgraded with
+// migrateRecipeState.
 export const RECIPE_STORAGE_VERSION = 2;
 
 function isObject(value) {
@@ -43,34 +44,4 @@ function datedRecipe(recipe, now) {
   if (!isObject(recipe)) return recipe;
   const { updated, ...rest } = recipe;
   return Number.isFinite(rest.updatedAt) ? rest : { ...rest, updatedAt: now };
-}
-
-// Storage adapter for zustand's createJSONStorage. Writes can fail (quota
-// exceeded, storage blocked by the browser); instead of throwing inside the
-// store update, each write reports whether it succeeded through onWrite.
-export function createSafeStorage(getStorage, onWrite) {
-  return {
-    getItem(name) {
-      try {
-        return getStorage().getItem(name);
-      } catch {
-        return null;
-      }
-    },
-    setItem(name, value) {
-      try {
-        getStorage().setItem(name, value);
-        onWrite(true);
-      } catch {
-        onWrite(false);
-      }
-    },
-    removeItem(name) {
-      try {
-        getStorage().removeItem(name);
-      } catch {
-        // Nothing stored can be removed when storage is unavailable.
-      }
-    },
-  };
 }
