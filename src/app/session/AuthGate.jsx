@@ -3,11 +3,13 @@ import useRecipeStore from "../../stores/useRecipeStore";
 import useSaveStatusStore from "../../stores/useSaveStatusStore";
 import useToastStore from "../../stores/useToastStore";
 import { createCloudSync } from "../../lib/data/cloudSync";
+import { COLLECTIONS } from "../../lib/data/rows";
 import { SessionContext } from "./SessionContext";
 import LoginScreen from "./LoginScreen";
 import GateMessage from "./GateMessage";
 
-const emptyData = { ingredients: [], recipes: [], recipeCategories: [] };
+// Every collection the cloud keeps, empty (what signing out leaves).
+const emptyData = Object.fromEntries(COLLECTIONS.map((collection) => [collection, []]));
 
 // Shows the app only to a signed-in user. After sign-in it gets (or creates)
 // the user's business, loads its data into the store and starts cloudSync;

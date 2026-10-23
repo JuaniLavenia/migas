@@ -1,4 +1,4 @@
-import { LayoutDashboard, Package, ReceiptText, Settings2 } from "lucide-react";
+import { Box, LayoutDashboard, Package, ReceiptText, Settings2 } from "lucide-react";
 
 // The app's top-level views, in sidebar order. `main` items go in the main
 // list; the rest sit at the bottom of the sidebar.
@@ -15,6 +15,13 @@ export const views = [
     path: "/insumos",
     label: "Insumos",
     icon: Package,
+    main: true,
+  },
+  {
+    id: "packaging",
+    path: "/packaging",
+    label: "Packaging",
+    icon: Box,
     main: true,
   },
   {

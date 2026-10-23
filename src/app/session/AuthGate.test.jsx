@@ -73,7 +73,7 @@ function setVisibility(state) {
 let repository;
 
 beforeEach(() => {
-  useRecipeStore.setState({ ingredients: [], recipes: [], recipeCategories: [] });
+  useRecipeStore.setState({ ingredients: [], recipes: [], recipeCategories: [], packaging: [] });
   useSaveStatusStore.setState({ status: "saved" });
   repository = createMemoryRepository({
     data: { recipes: [recipe("a", "Alfajores")], ingredients: [], recipeCategories: [] },
@@ -228,12 +228,18 @@ describe("AuthGate", () => {
   });
 
   it("signs out, clearing the data from memory", async () => {
+    repository.seed({
+      recipes: [recipe("a", "Alfajores")],
+      packaging: [{ id: "bolsa", name: "Bolsa", packSize: 100, packCost: 5000, stock: 40 }],
+    });
     const auth = createFakeAuth(ANA);
     const user = renderGate(auth);
     await screen.findByText("Alfajores");
+    expect(useRecipeStore.getState().packaging).toHaveLength(1);
     await user.click(screen.getByRole("button", { name: "Salir" }));
     expect(await screen.findByRole("button", { name: /Entrar con Google/ })).toBeInTheDocument();
     expect(useRecipeStore.getState().recipes).toEqual([]);
+    expect(useRecipeStore.getState().packaging).toEqual([]);
     expect(auth.signOut).toHaveBeenCalledTimes(1);
   });
 

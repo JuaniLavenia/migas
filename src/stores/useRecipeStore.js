@@ -76,6 +76,7 @@ const useRecipeStore = create()((set, get) => ({
   ingredients: [],
   recipes: [],
   recipeCategories: [],
+  packaging: [],
   addIngredient: (ingredient) =>
     set((state) => ({
       ingredients: [...state.ingredients, { ...ingredient, id: uuidv4() }],
@@ -89,6 +90,28 @@ const useRecipeStore = create()((set, get) => ({
   deleteIngredient: (id) =>
     set((state) => ({
       ingredients: state.ingredients.filter((item) => item.id !== id),
+    })),
+  addPackaging: (item) =>
+    set((state) => ({
+      packaging: [...state.packaging, { ...item, id: uuidv4() }],
+    })),
+  updatePackaging: (id, changes) =>
+    set((state) => ({
+      packaging: state.packaging.map((item) =>
+        item.id === id ? { ...item, ...changes } : item,
+      ),
+    })),
+  deletePackaging: (id) =>
+    set((state) => ({
+      packaging: state.packaging.filter((item) => item.id !== id),
+    })),
+  reorderPackaging: (activeId, overId) =>
+    set((state) => ({
+      packaging: reorderById(state.packaging, activeId, overId),
+    })),
+  movePackaging: (id, delta) =>
+    set((state) => ({
+      packaging: moveById(state.packaging, id, delta),
     })),
   addRecipe: (recipe) => {
     const nextRecipe = { ...recipe, id: uuidv4(), updatedAt: Date.now() };
@@ -177,7 +200,12 @@ const useRecipeStore = create()((set, get) => ({
   getRecipe: (id) => get().recipes.find((recipe) => recipe.id === id),
   // Merges by id. A category whose name already exists (from another device,
   // with another id) is not duplicated: its recipes move to the existing one.
-  importData: ({ ingredients = [], recipes = [], recipeCategories = [] }) =>
+  importData: ({
+    ingredients = [],
+    recipes = [],
+    recipeCategories = [],
+    packaging = [],
+  }) =>
     set((state) => {
       const renamed = new Map();
       const newCategories = [];
@@ -195,6 +223,10 @@ const useRecipeStore = create()((set, get) => ({
         ingredients: mergeById(
           state.ingredients,
           ingredients.map((item) => ({ ...item, id: item.id || uuidv4() })),
+        ),
+        packaging: mergeById(
+          state.packaging,
+          packaging.map((item) => ({ ...item, id: item.id || uuidv4() })),
         ),
         recipes: mergeById(
           state.recipes,

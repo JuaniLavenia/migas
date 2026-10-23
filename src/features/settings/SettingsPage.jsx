@@ -19,6 +19,7 @@ function SettingsPage() {
   const ingredients = useRecipeStore((state) => state.ingredients);
   const recipes = useRecipeStore((state) => state.recipes);
   const recipeCategories = useRecipeStore((state) => state.recipeCategories);
+  const packaging = useRecipeStore((state) => state.packaging);
   const importData = useRecipeStore((state) => state.importData);
   const renameRecipeCategory = useRecipeStore(
     (state) => state.renameRecipeCategory,
@@ -38,7 +39,10 @@ function SettingsPage() {
   const [busy, setBusy] = useState(false);
   const localData = useMemo(() => (session ? readLocalData() : null), [session]);
   const cloudEmpty =
-    !ingredients.length && !recipes.length && !recipeCategories.length;
+    !ingredients.length &&
+    !recipes.length &&
+    !recipeCategories.length &&
+    !packaging.length;
 
   async function handleUpload() {
     setBusy(true);
@@ -63,7 +67,7 @@ function SettingsPage() {
     try {
       downloadFile(
         `miga-backup-${new Date().toISOString().slice(0, 10)}.json`,
-        JSON.stringify({ ingredients, recipeCategories, recipes }, null, 2),
+        JSON.stringify({ ingredients, recipeCategories, recipes, packaging }, null, 2),
         "application/json",
       );
       showToast("Backup descargado");
@@ -83,7 +87,8 @@ function SettingsPage() {
     if (
       backup.ingredients.length ||
       backup.recipes.length ||
-      backup.recipeCategories.length
+      backup.recipeCategories.length ||
+      backup.packaging.length
     ) {
       importData(backup);
     }

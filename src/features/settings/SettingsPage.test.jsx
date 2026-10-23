@@ -78,6 +78,50 @@ describe("backup", () => {
     });
   });
 
+  it("exports and restores packaging and the stock of each ingredient", async () => {
+    const bolsa = { id: "bolsa", name: "Bolsa individual", packSize: 100, packCost: 5000, stock: 40 };
+    const first = renderApp({
+      route: "/configuracion",
+      state: {
+        ingredients: [{ ...demoIngredients[0], stock: 2500 }],
+        recipes: [],
+        packaging: [bolsa],
+      },
+    });
+    const parsed = JSON.parse(await exportBackup(first.user));
+    expect(parsed.packaging).toEqual([bolsa]);
+    expect(parsed.ingredients[0].stock).toBe(2500);
+
+    first.unmount();
+    const second = renderApp({
+      route: "/configuracion",
+      state: { ingredients: [], recipes: [], packaging: [] },
+    });
+    await importBackup(second.user, parsed);
+    expect(
+      await screen.findByText("Importamos 1 insumos, 0 recetas y 1 packaging"),
+    ).toBeInTheDocument();
+    const state = useRecipeStore.getState();
+    expect(state.packaging).toEqual([bolsa]);
+    expect(state.ingredients[0].stock).toBe(2500);
+  });
+
+  it("imports a backup that only brings packaging", async () => {
+    const { user } = renderApp({
+      route: "/configuracion",
+      state: { ingredients: [], recipes: [], packaging: [] },
+    });
+    await importBackup(user, {
+      ingredients: [],
+      recipes: [],
+      packaging: [{ id: "box", name: "Box x8", packSize: 10, packCost: 9000 }],
+    });
+    expect(await screen.findByText("Importamos 1 packaging")).toBeInTheDocument();
+    expect(useRecipeStore.getState().packaging).toEqual([
+      { id: "box", name: "Box x8", packSize: 10, packCost: 9000 },
+    ]);
+  });
+
   it("imports an old backup with embedded photos, without the photos", async () => {
     const { user } = renderApp({
       route: "/configuracion",

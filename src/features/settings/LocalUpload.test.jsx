@@ -97,6 +97,21 @@ describe("Manual first upload", () => {
     expect(panel()).toBeNull();
   });
 
+  it("is not offered, nor pointed to, when the cloud only has packaging", () => {
+    const state = {
+      ...empty,
+      packaging: [{ id: "box", name: "Box x8", packSize: 10, packCost: 9000, stock: 0 }],
+    };
+    const session = signedIn(createMemoryRepository());
+    const settings = renderApp({ route: "/configuracion", state, session, localStorage: deviceData });
+    expect(panel()).toBeNull();
+    settings.unmount();
+    renderApp({ state, session, localStorage: deviceData });
+    expect(
+      screen.queryByRole("link", { name: /Subir los datos de este dispositivo/ }),
+    ).toBeNull();
+  });
+
   it("is not offered without data on this device or outside a session", () => {
     renderApp({
       route: "/configuracion",
