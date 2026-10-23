@@ -61,19 +61,23 @@ describe("recipe photos", () => {
     const { user } = renderApp({ route: "/recetas/cookies" });
     await addPhoto(user);
 
-    expect(
-      within(editor()).getByRole("img", { name: "Cookies de chocolate" }),
-    ).toBeInTheDocument();
+    // Photos are decorative (alt=""): the recipe name sits next to them.
+    expect(editor().querySelector('img[alt=""]')).toBeInTheDocument();
     const library = screen.getByRole("region", {
       name: "Biblioteca de recetas",
     });
-    expect(
-      await within(library).findByRole("img", { name: "Cookies de chocolate" }),
-    ).toBeInTheDocument();
+    // The library item itself, not its "Subir"/"Bajar"/"Reordenar" controls.
+    const libraryItem = (name) =>
+      [...library.querySelectorAll(".selector-item")].find((item) =>
+        item.textContent.includes(name),
+      );
+    await waitFor(() =>
+      expect(
+        libraryItem("Cookies de chocolate").querySelector('img[alt=""]'),
+      ).toBeInTheDocument(),
+    );
     // Without a photo the letter avatar stays.
-    expect(
-      within(library).queryByRole("img", { name: "Brownie clásico" }),
-    ).not.toBeInTheDocument();
+    expect(libraryItem("Brownie clásico").querySelector("img")).toBeNull();
 
     const listed = await images.list();
     expect(listed).toHaveLength(1);
@@ -165,9 +169,13 @@ describe("recipe photos", () => {
           ),
       },
     });
-    expect(
-      await screen.findByRole("img", { name: "Brownie clásico" }),
-    ).toHaveAttribute("src", expect.stringMatching(/^blob:test\//));
+    const row = screen.getByRole("link", { name: /Brownie clásico/ });
+    await waitFor(() =>
+      expect(row.querySelector('img[alt=""]')).toHaveAttribute(
+        "src",
+        expect.stringMatching(/^blob:test\//),
+      ),
+    );
   });
 
   it("removes images no recipe references on startup", async () => {

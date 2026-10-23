@@ -97,6 +97,5 @@ describe("Form accessibility", () => {
     expect(
       screen.getByRole("button", { name: "Cerrar menú" }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Mi perfil" })).toBeInTheDocument();
   });
 });

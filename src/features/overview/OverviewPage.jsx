@@ -4,14 +4,14 @@ import useRecipeStore from "../../stores/useRecipeStore";
 import useRecipeSelectionStore from "../../stores/useRecipeSelectionStore";
 import { recipeTotals } from "../../lib/recipeMath";
 import { resolveSelectedRecipe } from "../../lib/recipeSelection";
-import { recipePath, viewPath } from "../../app/navigation";
+import { recipePath } from "../../app/navigation";
 import useNewRecipeModal from "../recipes/useNewRecipeModal";
 import Overview from "./Overview";
 
 const emptyTotals = { cost: 0, unitCost: 0, price: 0, missingCount: 0 };
 
 // Container of the overview. The spotlight shows the last recipe opened in
-// this session (the first one otherwise); opening a recipe goes to its URL.
+// this session (the first one otherwise); a new recipe opens at its URL.
 function OverviewPage() {
   const ingredients = useRecipeStore((state) => state.ingredients);
   const recipes = useRecipeStore((state) => state.recipes);
@@ -36,8 +36,6 @@ function OverviewPage() {
         ingredients={ingredients}
         selectedRecipe={selectedRecipe}
         totals={totals}
-        onNavigate={(view) => navigate(viewPath(view))}
-        onSelect={openRecipe}
         onNewRecipe={openNewRecipe}
       />
       {newRecipeModal}

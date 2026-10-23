@@ -10,20 +10,20 @@ import {
   Plus,
   ReceiptText,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import PageHeader from "../../shared/PageHeader";
 import StatCard from "../../shared/StatCard";
 import { currency } from "../../lib/format";
 import { indexIngredients, recipeTotals } from "../../lib/recipeMath";
 import { formatMonthYear, formatRelativeDate } from "../../lib/dates";
 import RecipeThumb from "../recipes/RecipeThumb";
+import { recipePath, viewPath } from "../../app/navigation";
 
 function Overview({
   recipes,
   ingredients,
   selectedRecipe,
   totals,
-  onNavigate,
-  onSelect,
   onNewRecipe,
 }) {
   const now = Date.now();
@@ -83,12 +83,9 @@ function Overview({
               <h2>{selectedRecipe?.name || "Sin recetas"}</h2>
             </div>
             {selectedRecipe && (
-              <button
-                className="text-button"
-                onClick={() => onSelect(selectedRecipe.id)}
-              >
+              <Link className="text-button" to={recipePath(selectedRecipe.id)}>
                 Ver detalle <ArrowUpRight size={15} />
-              </button>
+              </Link>
             )}
           </div>
           {!selectedRecipe && (
@@ -143,10 +140,7 @@ function Overview({
               <h2>Seguí avanzando</h2>
             </div>
           </div>
-          <button
-            className="quick-action"
-            onClick={() => onNavigate("ingredients")}
-          >
+          <Link className="quick-action" to={viewPath("ingredients")}>
             <span className="quick-icon mint">
               <Package size={19} />
             </span>
@@ -155,8 +149,8 @@ function Overview({
               <small>Actualizá tus costos de compra</small>
             </span>
             <ChevronRight size={17} />
-          </button>
-          <button className="quick-action" onClick={onNewRecipe}>
+          </Link>
+          <button type="button" className="quick-action" onClick={onNewRecipe}>
             <span className="quick-icon peach">
               <FilePlus2 size={19} />
             </span>
@@ -174,18 +168,18 @@ function Overview({
             <span className="eyebrow">Biblioteca</span>
             <h2>Tus recetas</h2>
           </div>
-          <button className="text-button" onClick={() => onNavigate("recipes")}>
+          <Link className="text-button" to={viewPath("recipes")}>
             Ver todas <ArrowUpRight size={15} />
-          </button>
+          </Link>
         </div>
         <div className="recipe-list">
           {recipes.map((recipe, index) => {
             const cost = costs[index];
             return (
-              <button
+              <Link
                 className="recipe-row"
                 key={recipe.id}
-                onClick={() => onSelect(recipe.id)}
+                to={recipePath(recipe.id)}
               >
                 <RecipeThumb
                   recipe={recipe}
@@ -211,7 +205,7 @@ function Overview({
                   <strong>{currency.format(cost)}</strong>
                 </span>
                 <ChevronRight size={17} />
-              </button>
+              </Link>
             );
           })}
         </div>

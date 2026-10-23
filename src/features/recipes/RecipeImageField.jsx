@@ -10,7 +10,6 @@ const statusText = {
 // Photo of the recipe in the editor. `available` is null while checking
 // whether images can be stored, then true or false.
 function RecipeImageField({
-  recipeName,
   hasImage,
   url,
   status,
@@ -34,7 +33,7 @@ function RecipeImageField({
     <section className="recipe-image-field" aria-label="Foto de la receta">
       <div className="recipe-image-preview">
         {url ? (
-          <img src={url} alt={recipeName} />
+          <img src={url} alt="" />
         ) : (
           <span className="recipe-image-placeholder">
             <ImageIcon size={20} />
