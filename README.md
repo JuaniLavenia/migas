@@ -35,7 +35,7 @@ La aplicación queda disponible en `http://localhost:5173`.
 | Tecnología   | Propósito                          |
 | ------------ | ---------------------------------- |
 | React 18     | Interfaz de usuario                |
-| Vite 4       | Desarrollo y build                 |
+| Vite 8       | Desarrollo y build                 |
 | Zustand      | Estado global y persistencia local |
 | React Router | Rutas por vista y por receta       |
 | Lucide React | Iconografía                        |
@@ -76,7 +76,9 @@ Cualquier otra ruta redirige a `/`.
 
 ## Hosting
 
-La app usa `BrowserRouter`, así que el hosting tiene que tener un fallback de SPA: toda ruta que no sea un archivo existente debe responder con `index.html` (por ejemplo, un rewrite `/* → /index.html`). Sin eso, recargar o abrir un link como `/recetas/cookies` devuelve 404.
+La app usa `BrowserRouter`, así que el hosting tiene que tener un fallback de SPA: toda ruta que no sea un archivo existente debe responder con `index.html` (por ejemplo, un rewrite `/* → /index.html`). Sin eso, recargar o abrir un link como `/recetas/cookies` devuelve 404. En Vercel ese rewrite está en `vercel.json`.
+
+El favicon, los íconos para "Agregar a inicio" y el manifest están en `public/`. Los colores de la app son variables CSS definidas en `:root` de `src/App.css`.
 
 ## Datos
 
