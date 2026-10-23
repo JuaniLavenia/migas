@@ -21,21 +21,9 @@ function downloadStoredData() {
   URL.revokeObjectURL(url);
 }
 
-function resetStoredData() {
-  const confirmed = window.confirm(
-    "Se van a borrar los insumos y recetas guardados en este navegador. ¿Descargaste una copia antes?",
-  );
-  if (!confirmed) return;
-  try {
-    window.localStorage.removeItem(STORAGE_KEY);
-  } catch {
-    // Storage unavailable: reloading is still the best recovery we have.
-  }
-  window.location.reload();
-}
-
 // Root boundary: a render error shows a recovery screen instead of a blank
-// page. Stored data is only reset on an explicit, confirmed click.
+// page. The data lives in the cloud; what an earlier version kept in this
+// browser (not uploaded yet, maybe) can be downloaded, never deleted here.
 class ErrorBoundary extends Component {
   constructor(props) {
     super(props);
@@ -59,9 +47,9 @@ class ErrorBoundary extends Component {
           <span className="eyebrow">Algo salió mal</span>
           <h1>No pudimos mostrar la app.</h1>
           <p>
-            Probá reintentar. Si el problema sigue, puede que los datos
-            guardados estén dañados: descargá una copia antes de
-            restablecerlos.
+            Probá reintentar: tus datos están guardados en la nube. Si este
+            dispositivo tiene datos de antes de la nube, podés descargar una
+            copia.
           </p>
           <div className="error-actions">
             <button
@@ -77,15 +65,7 @@ class ErrorBoundary extends Component {
               onClick={downloadStoredData}
               disabled={!hasStoredData}
             >
-              Descargar datos guardados
-            </button>
-            <button
-              type="button"
-              className="secondary-button danger"
-              onClick={resetStoredData}
-              disabled={!hasStoredData}
-            >
-              Restablecer datos
+              Descargar datos de este dispositivo
             </button>
           </div>
         </div>

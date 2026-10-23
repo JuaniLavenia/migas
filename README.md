@@ -9,7 +9,12 @@ pnpm install
 pnpm dev
 ```
 
-La aplicación queda disponible en `http://localhost:5173`.
+La aplicación queda disponible en `http://localhost:5173`. Necesita un proyecto de Supabase y estas variables en un `.env.local` (la guía completa está en [docs/supabase.md](docs/supabase.md)):
+
+```
+VITE_SUPABASE_URL=https://<proyecto>.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
+```
 
 ## Comandos
 
@@ -28,7 +33,10 @@ La aplicación queda disponible en `http://localhost:5173`.
 - Crear recetas con categoría, rendimiento, ganancia sobre el costo, precio de venta, gastos extra e ingredientes utilizados.
 - Ver la biblioteca de recetas agrupada por categoría, con secciones plegables y filtro. Las categorías se crean desde la receta y se renombran o eliminan en Configuración.
 - Calcular lo que cuesta la tanda y cada unidad, el precio sugerido, la ganancia por unidad y avisar si el precio de venta quedó por debajo del sugerido.
-- Persistir recetas, categorías e insumos en el navegador mediante Zustand Persist.
+- Entrar con Google y ver los mismos datos en todos los dispositivos (Supabase, con reglas de acceso por negocio y preparado para varios miembros).
+- Subir a mano, una sola vez, los datos que una versión anterior guardaba en el navegador.
+- Agregar la foto de cada receta como link (por ejemplo, de Cloudinary).
+- Exportar e importar un backup en JSON.
 - Usar la interfaz desde desktop o mobile.
 
 ## Stack
@@ -37,7 +45,8 @@ La aplicación queda disponible en `http://localhost:5173`.
 | ------------ | ---------------------------------- |
 | React 18     | Interfaz de usuario                |
 | Vite 8       | Desarrollo y build                 |
-| Zustand      | Estado global y persistencia local |
+| Zustand      | Estado global en memoria           |
+| Supabase     | Login con Google y base de datos   |
 | React Router | Rutas por vista y por receta       |
 | Lucide React | Iconografía                        |
 | CSS          | Sistema visual responsive          |
@@ -48,8 +57,10 @@ La aplicación queda disponible en `http://localhost:5173`.
 ```text
 src/
 ├── app/                    # Layout (sidebar, topbar, footer, toasts) y navegación
-├── stores/                 # Stores de Zustand (datos persistidos y estado de UI)
+│   └── session/            # Login y carga del negocio (AuthGate)
+├── stores/                 # Stores de Zustand (datos del negocio y estado de UI)
 ├── lib/                    # Helpers puros (formato, fechas, costos, migraciones)
+│   └── data/               # Puerto de datos, Supabase, sincronización con la nube
 ├── shared/                 # Componentes reutilizables entre vistas
 ├── features/               # Una carpeta por vista: contenedor (*Page) + vistas
 │   ├── overview/
@@ -60,7 +71,9 @@ src/
 ├── App.jsx                 # Rutas de la aplicación
 ├── App.css                 # Estilos de la aplicación
 ├── index.css               # Estilos base y tipografías
-└── main.jsx                # Punto de entrada (router y ErrorBoundary)
+└── main.jsx                # Punto de entrada (router, ErrorBoundary y login)
+supabase/migrations/        # Esquema de la base (tablas, reglas de acceso, funciones)
+docs/                       # Guías (configuración de Supabase)
 ```
 
 ## Rutas
@@ -71,7 +84,7 @@ src/
 | `/insumos`           | Insumos                                  |
 | `/recetas`           | Abre la última receta vista (o la primera) |
 | `/recetas/:recipeId` | Una receta                               |
-| `/configuracion`     | Backup                                   |
+| `/configuracion`     | Backup, categorías y primera carga       |
 
 Cualquier otra ruta redirige a `/`.
 
@@ -83,7 +96,7 @@ El favicon, los íconos para "Agregar a inicio" y el manifest están en `public/
 
 ## Datos
 
-Los datos se guardan localmente en el navegador. No se envían a un backend. Si se borra el almacenamiento del navegador, la app vuelve a cargar los datos demo iniciales. Los datos guardados tienen versión y se migran automáticamente al actualizar la app; si el navegador no deja guardar (por ejemplo, sin espacio), el encabezado lo avisa.
+Los datos viven en Supabase, por negocio: al entrar se cargan, cada cambio se guarda solo y al volver a la pestaña se recargan. Si un guardado falla, el encabezado lo avisa y la app reintenta. El detalle está en [docs/supabase.md](docs/supabase.md).
 
 ## Licencia
 
