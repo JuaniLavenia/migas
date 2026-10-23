@@ -46,7 +46,7 @@ const demoIngredients = [
   {
     id: "chocolate",
     name: "Chocolate cobertura",
-    category: "Repostería",
+    category: "Chocolates",
     unit: "g",
     packSize: 500,
     packCost: 4600,

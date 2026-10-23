@@ -11,7 +11,7 @@ export const ingredientSortOptions = [
   { value: "categoria", label: "Categoría", getValue: (item) => item.category },
   {
     value: "precioPack",
-    label: "Precio del pack",
+    label: "Costo de compra",
     getValue: (item) => Number(item.packCost),
   },
   {

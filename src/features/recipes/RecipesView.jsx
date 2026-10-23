@@ -369,7 +369,7 @@ function RecipesView({
                   {totals.missingCount === 1
                     ? "1 insumo de esta receta no tiene costo"
                     : `${totals.missingCount} insumos de esta receta no tienen costo`}
-                  : fue eliminado o tiene un contenido de pack inválido. El
+                  : fue eliminado o tiene una presentación de compra inválida. El
                   costo total está incompleto.
                 </span>
               </div>

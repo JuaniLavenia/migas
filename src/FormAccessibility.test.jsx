@@ -61,17 +61,17 @@ describe("Form accessibility", () => {
     expect(
       screen.getByRole("textbox", { name: "Nombre del insumo" }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("textbox", { name: "Categoría" })).toHaveValue(
-      "Secos",
+    expect(screen.getByRole("combobox", { name: "Categoría" })).toHaveValue(
+      "Otros",
     );
     expect(screen.getByRole("combobox", { name: "Unidad base" })).toHaveValue(
       "g",
     );
     expect(
-      screen.getByRole("spinbutton", { name: "Contenido del pack" }),
+      screen.getByRole("spinbutton", { name: "Presentación de compra" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("spinbutton", { name: "Costo del pack" }),
+      screen.getByRole("spinbutton", { name: "Costo de la presentación" }),
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Cerrar" })).toBeInTheDocument();
   });
