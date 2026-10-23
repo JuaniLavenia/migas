@@ -208,6 +208,13 @@ describe("Supabase schema", () => {
     expect(await rows("select stock from public.ingredients where id = 'harina'")).toEqual([
       { stock: "2500" },
     ]);
+    // Stock is never negative, not even written straight to the API.
+    await expect(
+      db.query("update public.ingredients set stock = -1 where business_id = $1", [business]),
+    ).rejects.toThrow(/check/);
+    await expect(
+      db.query("insert into public.packaging (business_id, id, name, stock) values ($1, 'neg', 'N', -3)", [business]),
+    ).rejects.toThrow(/check/);
   });
 
   it("keeps packaging private to the business members", async () => {

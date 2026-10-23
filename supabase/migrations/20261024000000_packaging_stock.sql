@@ -4,7 +4,7 @@
 
 -- How much of each ingredient she has, in its base unit (g, ml, un).
 alter table public.ingredients
-  add column stock numeric not null default 0;
+  add column stock numeric not null default 0 check (stock >= 0);
 
 -- Bags, boxes and the like. Bought in packs (`pack_size` units for
 -- `pack_cost`); `stock` is the units on hand. Not part of recipes: packaging
@@ -15,7 +15,7 @@ create table public.packaging (
   name text not null,
   pack_size numeric not null default 0,
   pack_cost numeric not null default 0,
-  stock numeric not null default 0,
+  stock numeric not null default 0 check (stock >= 0),
   position integer not null default 0,
   primary key (business_id, id)
 );
