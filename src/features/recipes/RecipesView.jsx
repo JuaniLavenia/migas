@@ -296,9 +296,17 @@ function RecipesView({
                 className="secondary-button"
                 onClick={addItem}
                 disabled={!ingredients.length}
+                aria-describedby={
+                  ingredients.length ? undefined : `${fieldId}-no-ingredients`
+                }
               >
                 <Plus size={16} /> Agregar insumo
               </button>
+              {!ingredients.length && (
+                <p className="field-hint" id={`${fieldId}-no-ingredients`}>
+                  Primero cargá insumos en la sección Insumos.
+                </p>
+              )}
             </div>
           </div>
         )}

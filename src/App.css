@@ -1661,3 +1661,15 @@ textarea:focus-visible {
     scroll-behavior: auto !important;
   }
 }
+
+.secondary-button:disabled,
+.primary-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.field-hint {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 8px;
+}
