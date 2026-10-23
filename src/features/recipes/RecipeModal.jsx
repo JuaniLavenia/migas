@@ -5,11 +5,19 @@ import NumericInput from "../../shared/NumericInput";
 import { addNextItem, removeItemAt, updateItemAt } from "../../lib/recipeItems";
 import { indexIngredients } from "../../lib/recipeMath";
 import RecipeItemRow from "./RecipeItemRow";
+import CategorySelect from "./CategorySelect";
 
-function RecipeModal({ ingredients, onClose, onSave }) {
+function RecipeModal({
+  ingredients,
+  categories,
+  onCreateCategory,
+  onClose,
+  onSave,
+}) {
   const fieldId = useId();
   const [form, setForm] = useState({
     name: "",
+    categoryId: "",
     yield: 12,
     margin: 60,
     extras: 0,
@@ -50,6 +58,18 @@ function RecipeModal({ ingredients, onClose, onSave }) {
                 setForm({ ...form, name: event.target.value })
               }
               placeholder="Ej. Budín de limón"
+            />
+          </div>
+          <div className="field-group full">
+            <label htmlFor={`${fieldId}-category`}>Categoría</label>
+            <CategorySelect
+              id={`${fieldId}-category`}
+              value={form.categoryId}
+              categories={categories}
+              onChange={(categoryId) =>
+                setForm((current) => ({ ...current, categoryId }))
+              }
+              onCreate={onCreateCategory}
             />
           </div>
           <div className="field-group">

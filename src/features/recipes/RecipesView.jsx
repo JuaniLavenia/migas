@@ -1,8 +1,13 @@
-import { useId, useMemo } from "react";
-import { AlertTriangle, Plus, Trash2 } from "lucide-react";
+import { useId, useMemo, useState } from "react";
+import {
+  AlertTriangle,
+  ChevronDown,
+  ChevronRight,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import PageHeader from "../../shared/PageHeader";
 import NumericInput from "../../shared/NumericInput";
-import Pagination from "../../shared/Pagination";
 import SortControl from "../../shared/SortControl";
 import ReorderControls from "../../shared/ReorderControls";
 import { SortableItem, SortableList } from "../../shared/SortableList";
@@ -11,6 +16,8 @@ import { currency } from "../../lib/format";
 import { indexIngredients } from "../../lib/recipeMath";
 import { addNextItem, removeItemAt, updateItemAt } from "../../lib/recipeItems";
 import { formatRelativeDate } from "../../lib/dates";
+import { UNCATEGORIZED } from "../../lib/recipeGroups";
+import CategorySelect from "./CategorySelect";
 import RecipeImageField from "./RecipeImageField";
 import RecipeItemRow from "./RecipeItemRow";
 import RecipeThumb from "./RecipeThumb";
@@ -38,13 +45,120 @@ function LibraryItem({ recipe, selected, onSelect }) {
   );
 }
 
-// `recipes` is the current library page, already sorted; `recipeCount` is the
-// total. `selectedRecipe` may be on another page. `reorder` ({ onReorder,
-// onMove, firstId, lastId }) enables the custom order controls; null hides
-// them. First/last refer to the full library, not the page. `imageField`
-// holds the props of the open recipe's RecipeImageField.
+// The recipes of one library group, in order. In the custom order they can be
+// dragged or moved inside the group: first/last are the group's edges.
+function GroupItems({ recipes, selectedId, onSelect, reorder }) {
+  if (!reorder) {
+    return recipes.map((recipe) => (
+      <LibraryItem
+        key={recipe.id}
+        recipe={recipe}
+        selected={selectedId === recipe.id}
+        onSelect={onSelect}
+      />
+    ));
+  }
+  const firstId = recipes[0]?.id;
+  const lastId = recipes.at(-1)?.id;
+  return (
+    // The rect strategy works both for the desktop column and the
+    // horizontal scroller on mobile.
+    <SortableList
+      ids={recipes.map((recipe) => recipe.id)}
+      getLabel={(id) => recipes.find((recipe) => recipe.id === id)?.name}
+      onReorder={reorder.onReorder}
+      strategy={rectSortingStrategy}
+    >
+      {recipes.map((recipe) => (
+        <SortableItem key={recipe.id} id={recipe.id} className="selector-row">
+          {(handleProps) => (
+            <>
+              <LibraryItem
+                recipe={recipe}
+                selected={selectedId === recipe.id}
+                onSelect={onSelect}
+              />
+              <ReorderControls
+                id={recipe.id}
+                name={recipe.name}
+                handleProps={handleProps}
+                stacked
+                canMoveUp={recipe.id !== firstId}
+                canMoveDown={recipe.id !== lastId}
+                onMove={(delta) => reorder.onMove(recipe.id, delta)}
+              />
+            </>
+          )}
+        </SortableItem>
+      ))}
+    </SortableList>
+  );
+}
+
+function LibraryGroup({ group, collapsed, onToggle, children }) {
+  const bodyId = useId();
+  return (
+    <div className="library-group">
+      <button
+        type="button"
+        className="library-group-toggle"
+        aria-expanded={!collapsed}
+        aria-controls={bodyId}
+        onClick={onToggle}
+      >
+        {collapsed ? <ChevronRight size={15} /> : <ChevronDown size={15} />}
+        {`${group.name} (${group.recipes.length})`}
+      </button>
+      <div className="library-group-body" id={bodyId} hidden={collapsed}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+const ALL_CATEGORIES = "__all__";
+const COLLAPSED_KEY = "miga-collapsed-categories";
+
+// Which categories are collapsed is a per-browser convenience: it survives
+// reloads when storage works and silently starts empty when it does not.
+function useCollapsedGroups() {
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return new Set(JSON.parse(window.localStorage.getItem(COLLAPSED_KEY)) ?? []);
+    } catch {
+      return new Set();
+    }
+  });
+  function toggleGroup(id) {
+    setCollapsed((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      try {
+        window.localStorage.setItem(COLLAPSED_KEY, JSON.stringify([...next]));
+      } catch {
+        // Only this browser forgets the collapsed groups.
+      }
+      return next;
+    });
+  }
+  return { collapsed, toggleGroup };
+}
+
+// `groups` ([{ id, name, recipes }]) is the visible library, already sorted
+// and filtered; `grouped` shows the category headers and filter (there are
+// categories). `recipeCount` is the total. `selectedRecipe` may be in a hidden
+// group. `reorder` ({ onReorder, onMove }) enables the custom order controls;
+// null hides them. `imageField` holds the props of the open recipe's
+// RecipeImageField.
 function RecipesView({
-  recipes,
+  groups,
+  grouped,
+  categories,
+  categoryFilter,
+  onCategoryFilterChange,
+  hasUncategorized,
+  onCreateCategory,
   recipeCount,
   ingredients,
   sortOptions,
@@ -52,9 +166,6 @@ function RecipesView({
   direction,
   onSortChange,
   onDirectionChange,
-  page,
-  pageCount,
-  onPageChange,
   selectedId,
   onSelect,
   onNew,
@@ -66,6 +177,7 @@ function RecipesView({
   reorder = null,
 }) {
   const fieldId = useId();
+  const { collapsed, toggleGroup } = useCollapsedGroups();
   const byId = useMemo(() => indexIngredients(ingredients), [ingredients]);
   function setItems(items) {
     if (items !== selectedRecipe.items) updateRecipe("items", items);
@@ -109,62 +221,59 @@ function RecipesView({
               onDirectionChange={onDirectionChange}
             />
           )}
-          <div className="selector-list">
-            {reorder ? (
-              // The rect strategy works both for the desktop column and the
-              // horizontal scroller on mobile.
-              <SortableList
-                ids={recipes.map((recipe) => recipe.id)}
-                getLabel={(id) =>
-                  recipes.find((recipe) => recipe.id === id)?.name
+          {grouped && (
+            <div className="category-filter">
+              <label htmlFor={`${fieldId}-filter`}>Categoría</label>
+              <select
+                id={`${fieldId}-filter`}
+                value={categoryFilter ?? ALL_CATEGORIES}
+                onChange={(event) =>
+                  onCategoryFilterChange(
+                    event.target.value === ALL_CATEGORIES
+                      ? null
+                      : event.target.value,
+                  )
                 }
-                onReorder={reorder.onReorder}
-                strategy={rectSortingStrategy}
               >
-                {recipes.map((recipe) => (
-                  <SortableItem
-                    key={recipe.id}
-                    id={recipe.id}
-                    className="selector-row"
-                  >
-                    {(handleProps) => (
-                      <>
-                        <LibraryItem
-                          recipe={recipe}
-                          selected={selectedId === recipe.id}
-                          onSelect={onSelect}
-                        />
-                        <ReorderControls
-                          id={recipe.id}
-                          name={recipe.name}
-                          handleProps={handleProps}
-                          stacked
-                          canMoveUp={recipe.id !== reorder.firstId}
-                          canMoveDown={recipe.id !== reorder.lastId}
-                          onMove={(delta) => reorder.onMove(recipe.id, delta)}
-                        />
-                      </>
-                    )}
-                  </SortableItem>
+                <option value={ALL_CATEGORIES}>Todas las categorías</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
                 ))}
-              </SortableList>
-            ) : (
-              recipes.map((recipe) => (
-                <LibraryItem
-                  key={recipe.id}
-                  recipe={recipe}
-                  selected={selectedId === recipe.id}
+                {hasUncategorized && (
+                  <option value={UNCATEGORIZED}>Sin categoría</option>
+                )}
+              </select>
+            </div>
+          )}
+          <div className="selector-list">
+            {groups.map((group) =>
+              grouped ? (
+                <LibraryGroup
+                  key={group.id}
+                  group={group}
+                  collapsed={collapsed.has(group.id)}
+                  onToggle={() => toggleGroup(group.id)}
+                >
+                  <GroupItems
+                    recipes={group.recipes}
+                    selectedId={selectedId}
+                    onSelect={onSelect}
+                    reorder={reorder}
+                  />
+                </LibraryGroup>
+              ) : (
+                <GroupItems
+                  key={group.id}
+                  recipes={group.recipes}
+                  selectedId={selectedId}
                   onSelect={onSelect}
+                  reorder={reorder}
                 />
-              ))
+              ),
             )}
           </div>
-          <Pagination
-            className="pagination-compact"
-            page={page}
-            pageCount={pageCount}
-            onPageChange={onPageChange}
-          />
         </section>
         {!selectedRecipe && (
           <div className="panel empty-state">
@@ -206,6 +315,16 @@ function RecipesView({
             </div>
             {imageField && <RecipeImageField {...imageField} />}
             <div className="editor-grid">
+              <div className="field-group">
+                <label htmlFor={`${fieldId}-category`}>Categoría</label>
+                <CategorySelect
+                  id={`${fieldId}-category`}
+                  value={selectedRecipe.categoryId}
+                  categories={categories}
+                  onChange={(id) => updateRecipe("categoryId", id)}
+                  onCreate={onCreateCategory}
+                />
+              </div>
               <div className="field-group">
                 <label htmlFor={`${fieldId}-yield`}>Rendimiento</label>
                 <div className="input-with-suffix">

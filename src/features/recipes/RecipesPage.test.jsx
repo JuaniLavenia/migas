@@ -37,23 +37,13 @@ function libraryNames() {
     .map((element) => element.textContent);
 }
 
-function pagination() {
-  return within(library()).getByRole("navigation", { name: "Paginación" });
-}
-
 describe("Recipes library sorting and pagination", () => {
-  it("lists in the custom (stored) order by default, eight per page", () => {
+  // Categories replaced the pages: collapsing them keeps the list short.
+  it("lists every recipe in the custom (stored) order by default", () => {
     renderApp({ route: "/recetas/receta-20?dir=asc", state: seedRecipes(20) });
-    expect(libraryNames()).toEqual([
-      "Receta 1",
-      "Receta 2",
-      "Receta 3",
-      "Receta 4",
-      "Receta 5",
-      "Receta 6",
-      "Receta 7",
-      "Receta 8",
-    ]);
+    expect(libraryNames()).toEqual(
+      Array.from({ length: 20 }, (_, index) => `Receta ${index + 1}`),
+    );
     expect(within(library()).getByLabelText("Ordenar por")).toHaveValue(
       "personalizado",
     );
@@ -64,11 +54,10 @@ describe("Recipes library sorting and pagination", () => {
       }),
     ).not.toBeInTheDocument();
     expect(within(library()).getByText("20 recetas")).toBeInTheDocument();
-    expect(pagination()).toHaveTextContent("Página 1 de 3");
   });
 
-  it("hides the pagination when every recipe fits on one page", () => {
-    renderApp({ route: "/recetas/cookies" });
+  it("has no pagination, however many recipes there are", () => {
+    renderApp({ route: "/recetas/receta-20", state: seedRecipes(20) });
     expect(
       within(library()).queryByRole("navigation", { name: "Paginación" }),
     ).not.toBeInTheDocument();
@@ -118,52 +107,23 @@ describe("Recipes library sorting and pagination", () => {
     expect(libraryNames()[0]).toBe("Receta 1");
   });
 
-  it("pages through the library", async () => {
-    const { user } = renderApp({
-      route: "/recetas/receta-20",
-      state: seedRecipes(20),
-    });
-    await user.click(
-      within(pagination()).getByRole("button", { name: "Siguiente" }),
-    );
-    expect(pagination()).toHaveTextContent("Página 2 de 3");
-    expect(libraryNames()[0]).toBe("Receta 9");
-    expect(currentPath()).toBe("/recetas/receta-20");
-    expect(currentSearchParams().get("pagina")).toBe("2");
-    expect(
-      within(pagination()).getByRole("button", { name: "Página 2" }),
-    ).toHaveAttribute("aria-current", "page");
-  });
-
   it("keeps the query string when selecting a recipe", async () => {
     const { user } = renderApp({
-      route: "/recetas/receta-20?orden=nombre&dir=asc&pagina=2",
+      route: "/recetas/receta-20?orden=nombre&dir=asc",
       state: seedRecipes(20),
     });
-    expect(libraryNames()[0]).toBe("Receta 9");
-
     await user.click(
       within(library()).getByRole("button", { name: /Receta 12\b/ }),
     );
     expect(currentPath()).toBe("/recetas/receta-12");
-    expect(currentSearchParams().toString()).toBe(
-      "orden=nombre&dir=asc&pagina=2",
-    );
+    expect(currentSearchParams().toString()).toBe("orden=nombre&dir=asc");
     expect(screen.getByDisplayValue("Receta 12")).toBeInTheDocument();
-    expect(pagination()).toHaveTextContent("Página 2 de 3");
   });
 
   it("keeps the query string when redirecting to the last recipe", () => {
     renderApp({ route: "/recetas?orden=nombre", state: seedRecipes(20) });
     expect(currentPath()).toBe("/recetas/receta-1");
     expect(currentSearchParams().get("orden")).toBe("nombre");
-  });
-
-  it("keeps the open recipe open when it is not on the visible page", () => {
-    renderApp({ route: "/recetas/receta-20", state: seedRecipes(20) });
-    expect(screen.getByDisplayValue("Receta 20")).toBeInTheDocument();
-    expect(libraryNames()).not.toContain("Receta 20");
-    expect(pagination()).toHaveTextContent("Página 1 de 3");
   });
 
   it("falls back to the defaults for invalid query values", () => {
@@ -175,7 +135,6 @@ describe("Recipes library sorting and pagination", () => {
       "personalizado",
     );
     expect(libraryNames()[0]).toBe("Receta 1");
-    expect(pagination()).toHaveTextContent("Página 1 de 3");
   });
 });
 
@@ -200,19 +159,6 @@ describe("Recipes library custom order", () => {
       BASE_TIME + 1000,
     );
     // Reordering is not navigation.
-    expect(currentPath()).toBe("/recetas/receta-1");
-  });
-
-  it("follows the moved recipe to its new page", async () => {
-    const { user } = renderApp({
-      route: "/recetas/receta-1",
-      state: seedRecipes(20),
-    });
-    await user.click(
-      within(library()).getByRole("button", { name: "Bajar Receta 8" }),
-    );
-    expect(pagination()).toHaveTextContent("Página 2 de 3");
-    expect(libraryNames().slice(0, 2)).toEqual(["Receta 8", "Receta 10"]);
     expect(currentPath()).toBe("/recetas/receta-1");
   });
 

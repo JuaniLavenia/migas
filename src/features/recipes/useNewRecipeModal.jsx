@@ -9,12 +9,15 @@ import RecipeModal from "./RecipeModal";
 function useNewRecipeModal({ onCreated } = {}) {
   const ingredients = useRecipeStore((state) => state.ingredients);
   const addRecipe = useRecipeStore((state) => state.addRecipe);
+  const recipeCategories = useRecipeStore((state) => state.recipeCategories);
+  const addRecipeCategory = useRecipeStore((state) => state.addRecipeCategory);
   const showToast = useToastStore((state) => state.showToast);
   const [open, setOpen] = useState(false);
 
-  function save(form) {
+  function save({ categoryId, ...form }) {
     const id = addRecipe({
       ...form,
+      ...(categoryId ? { categoryId } : {}),
       yield: Number(form.yield),
       margin: Number(form.margin),
       extras: Number(form.extras),
@@ -27,6 +30,8 @@ function useNewRecipeModal({ onCreated } = {}) {
   const modal = open ? (
     <RecipeModal
       ingredients={ingredients}
+      categories={recipeCategories}
+      onCreateCategory={addRecipeCategory}
       onClose={() => setOpen(false)}
       onSave={save}
     />

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import useRecipeStore from "../../stores/useRecipeStore";
 import useToastStore from "../../stores/useToastStore";
 import { sanitizeBackup } from "../../lib/backup";
@@ -10,15 +10,30 @@ import {
 import { downloadFile } from "../../shared/downloadFile";
 import { importSummary } from "./importSummary";
 import SettingsView from "./SettingsView";
+import RecipeCategoriesPanel from "./RecipeCategoriesPanel";
 import useStorageInfo from "./useStorageInfo";
 
 // Container of the settings view: backup export/import against the store,
-// including the recipe photos, and the storage panel.
+// including the recipe photos, the storage panel and the recipe categories.
 function SettingsPage() {
   const ingredients = useRecipeStore((state) => state.ingredients);
   const recipes = useRecipeStore((state) => state.recipes);
   const recipeCategories = useRecipeStore((state) => state.recipeCategories);
   const importData = useRecipeStore((state) => state.importData);
+  const renameRecipeCategory = useRecipeStore(
+    (state) => state.renameRecipeCategory,
+  );
+  const deleteRecipeCategory = useRecipeStore(
+    (state) => state.deleteRecipeCategory,
+  );
+  const recipeCounts = useMemo(() => {
+    const counts = {};
+    recipes.forEach((recipe) => {
+      if (recipe.categoryId)
+        counts[recipe.categoryId] = (counts[recipe.categoryId] ?? 0) + 1;
+    });
+    return counts;
+  }, [recipes]);
   const showToast = useToastStore((state) => state.showToast);
   const [busy, setBusy] = useState(false);
   const storage = useStorageInfo();
@@ -105,7 +120,14 @@ function SettingsPage() {
         onRefresh: storage.refresh,
         onPersist: handlePersist,
       }}
-    />
+    >
+      <RecipeCategoriesPanel
+        categories={recipeCategories}
+        recipeCounts={recipeCounts}
+        onRename={renameRecipeCategory}
+        onDelete={deleteRecipeCategory}
+      />
+    </SettingsView>
   );
 }
 

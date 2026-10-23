@@ -5,12 +5,8 @@ import useRecipeSelectionStore from "../../stores/useRecipeSelectionStore";
 import useToastStore from "../../stores/useToastStore";
 import { recipeTotals } from "../../lib/recipeMath";
 import { resolveSelectedRecipe } from "../../lib/recipeSelection";
-import {
-  CUSTOM_SORT,
-  pageOfIndex,
-  paginate,
-  sortListing,
-} from "../../lib/listing";
+import { CUSTOM_SORT, sortListing } from "../../lib/listing";
+import { UNCATEGORIZED, groupRecipes } from "../../lib/recipeGroups";
 import useListingParams from "../../shared/useListingParams";
 import { recipePath, viewPath } from "../../app/navigation";
 import ConfirmDialog from "../../shared/ConfirmDialog";
@@ -19,7 +15,6 @@ import RecipesView from "./RecipesView";
 import useNewRecipeModal from "./useNewRecipeModal";
 import useRecipeImageEditor from "./useRecipeImageEditor";
 import {
-  RECIPES_PER_PAGE,
   recipeListingDefaults,
   recipeSortOptions,
   recipeSortValue,
@@ -30,10 +25,10 @@ const emptyTotals = { cost: 0, unitCost: 0, price: 0, missingCount: 0 };
 
 // Container of the recipes view. The open recipe comes from the URL:
 // /recetas redirects to the last opened (or first) recipe, and an unknown id
-// falls back to /recetas. Owns the create/delete flows and the library's
-// sort and pagination, and the open recipe's photo, whose query string (`?orden=…`) is kept when moving
-// between recipes here. The open recipe does not need to be on the visible
-// library page.
+// falls back to /recetas. Owns the create/delete flows, the library's sort
+// (whose query string, `?orden=…`, is kept when moving between recipes here)
+// and category filter, and the open recipe's photo. The library is grouped by
+// category; the open recipe may be in a filtered-out or collapsed group.
 function RecipesPage() {
   const { recipeId } = useParams();
   const { search } = useLocation();
@@ -45,12 +40,16 @@ function RecipesPage() {
   const deleteRecipe = useRecipeStore((state) => state.deleteRecipe);
   const reorderRecipes = useRecipeStore((state) => state.reorderRecipes);
   const moveRecipe = useRecipeStore((state) => state.moveRecipe);
+  const recipeCategories = useRecipeStore((state) => state.recipeCategories);
+  const addRecipeCategory = useRecipeStore((state) => state.addRecipeCategory);
   const lastRecipeId = useRecipeSelectionStore((state) => state.lastRecipeId);
   const setLastRecipeId = useRecipeSelectionStore(
     (state) => state.setLastRecipeId,
   );
   const showToast = useToastStore((state) => state.showToast);
   const [pendingDelete, setPendingDelete] = useState(null);
+  // null: every category.
+  const [categoryFilter, setCategoryFilter] = useState(null);
   const withQuery = (pathname) => ({ pathname, search });
   const openRecipe = (id) => navigate(withQuery(recipePath(id)));
   const { openNewRecipe, newRecipeModal } = useNewRecipeModal({
@@ -88,19 +87,18 @@ function RecipesPage() {
       selectedRecipe ? recipeTotals(selectedRecipe, ingredients) : emptyTotals,
     [selectedRecipe, ingredients],
   );
-  const pageInfo = paginate(sortedRecipes, listing.page, RECIPES_PER_PAGE);
+  const groups = useMemo(
+    () => groupRecipes(sortedRecipes, recipeCategories),
+    [sortedRecipes, recipeCategories],
+  );
+  const visibleGroups =
+    categoryFilter === null
+      ? groups
+      : groups.filter((group) => group.id === categoryFilter);
 
   useEffect(() => {
     if (selectedRecipe) setLastRecipeId(selectedRecipe.id);
   }, [selectedRecipe?.id, setLastRecipeId]);
-
-  // A page beyond the last one (deep link, or after deleting) is shown
-  // clamped; this keeps the URL in line with what is shown.
-  useEffect(() => {
-    if (!redirectPath && listing.page !== pageInfo.page) {
-      listing.setPage(pageInfo.page);
-    }
-  }, [redirectPath, listing.page, pageInfo.page]);
 
   if (redirectPath) {
     return <Navigate to={withQuery(redirectPath)} replace />;
@@ -108,30 +106,18 @@ function RecipesPage() {
 
   function updateRecipe(field, value) {
     if (!selectedRecipe) return;
-    updateRecipeInStore(selectedRecipe.id, {
-      [field]: numericRecipeFields.has(field) ? Number(value) : value,
-    });
+    let change;
+    if (field === "categoryId") change = { categoryId: value || undefined };
+    else if (numericRecipeFields.has(field)) change = { [field]: Number(value) };
+    else change = { [field]: value };
+    updateRecipeInStore(selectedRecipe.id, change);
   }
 
-  // Moves one position in the full library and, when the recipe leaves the
-  // visible page, follows it so it stays in view. The open recipe stays open.
-  function move(id, delta) {
-    const target = recipes.findIndex((recipe) => recipe.id === id) + delta;
-    if (target < 0 || target >= recipes.length) return;
-    moveRecipe(id, delta);
-    const targetPage = pageOfIndex(target, RECIPES_PER_PAGE);
-    if (targetPage !== pageInfo.page) listing.setPage(targetPage);
-  }
-
-  // In the custom order the visible order is the stored order.
+  // In the custom order the visible order of each group is the stored order;
+  // the store keeps moves inside the recipe's category.
   const reorder =
     listing.sort === CUSTOM_SORT
-      ? {
-          onReorder: reorderRecipes,
-          onMove: move,
-          firstId: recipes[0]?.id,
-          lastId: recipes.at(-1)?.id,
-        }
+      ? { onReorder: reorderRecipes, onMove: moveRecipe }
       : null;
 
   function requestDelete(id) {
@@ -158,7 +144,13 @@ function RecipesPage() {
   return (
     <>
       <RecipesView
-        recipes={pageInfo.items}
+        groups={visibleGroups}
+        grouped={recipeCategories.length > 0}
+        categories={recipeCategories}
+        categoryFilter={categoryFilter}
+        onCategoryFilterChange={setCategoryFilter}
+        hasUncategorized={groups.some((group) => group.id === UNCATEGORIZED)}
+        onCreateCategory={addRecipeCategory}
         recipeCount={recipes.length}
         ingredients={ingredients}
         sortOptions={recipeSortOptions}
@@ -166,9 +158,6 @@ function RecipesPage() {
         direction={listing.direction}
         onSortChange={listing.setSort}
         onDirectionChange={listing.setDirection}
-        page={pageInfo.page}
-        pageCount={pageInfo.pageCount}
-        onPageChange={listing.setPage}
         selectedId={selectedRecipe?.id}
         onSelect={openRecipe}
         onNew={openNewRecipe}
