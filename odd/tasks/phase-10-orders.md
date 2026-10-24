@@ -15,11 +15,11 @@ Branch: `feat/phase-10-orders` from main@b9fa9fa. Delivery: single-pr (the user'
 
 | ID | Specs | Route | Status | Commit |
 |---|---|---|---|---|
-| T10.1 | S5 (SQL, rows) | inline | pending | |
-| T10.2 | S2, S3, S4 (order math, grouping) | inline | pending | |
-| T10.3 | S1, S5 (store, backups, settings) | inline | pending | |
-| T10.4 | S1–S4 (orders view and form) | inline | pending | |
-| T10.5 | docs | inline | pending | |
+| T10.1 | S5 (SQL, rows) | inline | done (schema +4, rows +2 RED→GREEN) | 0dbeb45 |
+| T10.2 | S2, S3, S4 (order math, grouping) | inline | done (9 RED→GREEN) | b80ef32 |
+| T10.3 | S1, S5 (store, backups, settings) | inline | done (8 RED→GREEN; existing summary strings pinned) | ceb88eb |
+| T10.4 | S1–S4 (orders view and form) | inline | done (10 tests; RED confirmed without the route, 10/10 failed) | 67faaa6 |
+| T10.5 | docs | inline | done | (this commit) |
 
 Route evidence: one sequential feature in one repo; T10.3/T10.4 depend on T10.1/T10.2, so there are no parallel independent units and no writer trigger. T10.1 touches a migration (high-risk item 1): own commit, independent verifier at the feature's end.
 
@@ -27,3 +27,8 @@ Route evidence: one sequential feature in one repo; T10.3/T10.4 depend on T10.1/
 
 - L1 (2026-10-23, user): "listo, ya mergeé y deploye, sigamos" (start of phase 10 per the approved roadmap: "## Fase 10: Pedidos").
 - L2 Requests quoted in S1–S4 come from the planning conversation (2026-10-23).
+- L3 Progress: T10.1–T10.5 done. Suite 391 tests / 39 files green; build OK.
+- L4 Decisions within the specs: the agreed price is stored on save (a new order follows the proposed price until she types one; blank uses the proposed one); "Cobrado" holds the deposit or the full payment, so the payment status is derived; lines of deleted recipes or packaging keep their quantity and show as deleted; cost uses the per-unit cost (full batches are phase 11).
+- L5 Visual check pending on the Vercel preview (local needs a Google sign-in).
+- L6 Deploy order: run 20261025000000_orders.sql in the SQL Editor before merging (the new code fails to load without the table; the old code ignores it).
+- L7 Advisory: cloudSync renumbers every record of a collection when one is inserted, so each new order re-saves all orders (shared behavior, unchanged).
