@@ -153,6 +153,41 @@ describe("planPreparation", () => {
   });
 });
 
+describe("planPreparation edge quantities", () => {
+  const sal = { id: "sal", name: "Sal", category: "Secos", unit: "g", packSize: 1000, packCost: 500, stock: 0.3 };
+  const withLines = (items) => ({ ...cookies, items });
+
+  it("leaves recipe lines without quantity out of the move", () => {
+    // The recipe editor keeps new lines at 0 until she types a quantity.
+    const { move, shortages } = planPreparation(
+      order({ packagingItems: [] }),
+      data({
+        recipes: [withLines([{ ingredientId: "harina", quantity: 1000 }, { ingredientId: "sal", quantity: 0 }])],
+        ingredients: [harina, { ...sal, stock: 0 }],
+      }),
+      TODAY,
+      ids(),
+    );
+    expect(shortages).toEqual([]);
+    expect(move.ingredients).toEqual([{ ingredientId: "harina", quantity: 1000 }]);
+  });
+
+  it("does not report a shortage from rounding decimals", () => {
+    // 3 batches × 0.1 g against 0.3 g: enough, although 0.1 × 3 is 0.30000000000000004.
+    const plan = planPreparation(
+      order({ items: [{ recipeId: "cookies", quantity: 63 }], packagingItems: [] }),
+      data({
+        recipes: [withLines([{ ingredientId: "sal", quantity: 0.1 }])],
+        ingredients: [sal],
+      }),
+      TODAY,
+      ids(),
+    );
+    expect(plan.shortages).toEqual([]);
+    expect(applyMove(data({ ingredients: [sal] }), plan.move).ingredients[0].stock).toBe(0);
+  });
+});
+
 describe("applyMove", () => {
   it("deducts the ingredients and packaging and updates the finished goods", () => {
     const before = data({

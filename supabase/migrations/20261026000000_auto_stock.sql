@@ -24,6 +24,6 @@ create policy "members manage finished goods" on public.finished_goods
 grant select, insert, update, delete on public.finished_goods to authenticated;
 
 -- What an order deducted when it was prepared ({ ingredients, packaging,
--- taken, created }), so going back returns exactly that. Null: nothing
+-- taken, cooked, created }), so going back returns exactly that. Null: nothing
 -- deducted (orders from before this migration included).
 alter table public.orders add column stock_move jsonb;

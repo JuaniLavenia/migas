@@ -30,18 +30,24 @@ export function stockTransition(from, to, hasMove) {
   return "none";
 }
 
+// Quantities may be decimals (0.1 g × 3 is 0.30000000000000004): sums are
+// rounded so a rounding error never reads as a shortage or a leftover.
+function round(value) {
+  return Math.round(value * 1e6) / 1e6;
+}
+
 // Adds the quantities of repeated ids, keeping their first-seen order.
 function addUp(lines, key) {
   const totals = new Map();
   (lines ?? []).forEach((line) => {
     const quantity = Number(line.quantity) || 0;
-    if (quantity > 0) totals.set(line[key], (totals.get(line[key]) ?? 0) + quantity);
+    if (quantity > 0) totals.set(line[key], round((totals.get(line[key]) ?? 0) + quantity));
   });
   return totals;
 }
 
 function add(map, id, quantity) {
-  map.set(id, (map.get(id) ?? 0) + quantity);
+  map.set(id, round((map.get(id) ?? 0) + quantity));
 }
 
 // Full batches that cover `units`, and the ingredients they take.
@@ -53,9 +59,11 @@ function batchesFor(recipe, units) {
 
 function addBatchIngredients(needs, recipe, count, ingredientIds) {
   (recipe.items ?? []).forEach((item) => {
-    // A deleted ingredient has no stock to take.
-    if (ingredientIds.has(item.ingredientId)) {
-      add(needs, item.ingredientId, count * (Number(item.quantity) || 0));
+    const quantity = count * (Number(item.quantity) || 0);
+    // A deleted ingredient has no stock to take; a line still at 0 takes
+    // nothing (and a move only records positive quantities).
+    if (quantity > 0 && ingredientIds.has(item.ingredientId)) {
+      add(needs, item.ingredientId, quantity);
     }
   });
 }
@@ -71,7 +79,7 @@ function shortageList(kind, needs, list, unitOf) {
       unit: unitOf(item),
       need,
       have,
-      missing: Math.max(need - have, 0),
+      missing: Math.max(round(need - have), 0),
     };
   });
 }
@@ -158,7 +166,7 @@ function shiftStock(list, lines, key, sign) {
   if (!deltas.size) return list;
   return list.map((item) =>
     deltas.has(item.id)
-      ? { ...item, stock: (Number(item.stock) || 0) + sign * deltas.get(item.id) }
+      ? { ...item, stock: round((Number(item.stock) || 0) + sign * deltas.get(item.id)) }
       : item,
   );
 }
@@ -169,7 +177,7 @@ function takeFromLots(lots, lines) {
   if (!deltas.size) return lots;
   return lots.flatMap((lot) => {
     if (!deltas.has(lot.id)) return [lot];
-    const quantity = (Number(lot.quantity) || 0) - deltas.get(lot.id);
+    const quantity = round((Number(lot.quantity) || 0) - deltas.get(lot.id));
     return quantity > 0 ? [{ ...lot, quantity }] : [];
   });
 }
@@ -182,7 +190,7 @@ function returnToLots(lots, taken) {
     const existing = next.find((lot) => lot.id === lotId);
     next = existing
       ? next.map((lot) =>
-          lot.id === lotId ? { ...lot, quantity: (Number(lot.quantity) || 0) + quantity } : lot,
+          lot.id === lotId ? { ...lot, quantity: round((Number(lot.quantity) || 0) + quantity) } : lot,
         )
       : [...next, { id: lotId, recipeId, quantity, madeAt }];
   });
