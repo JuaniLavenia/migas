@@ -29,7 +29,8 @@ VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 ## Funcionalidades
 
 - Registrar, editar y eliminar insumos.
-- Definir categoría (Secos, Lácteos, Frescos, Chocolates, Decoración u Otros), unidad base, presentación de compra y su costo.
+- Definir categoría (Secos, Lácteos, Frescos, Chocolates, Decoración u Otros), unidad base, presentación de compra, su costo y cuánto tenés ("Tengo").
+- Llevar el listado de packaging (bolsas, cajas) con su presentación de compra, costo, costo por unidad y cuántas unidades tenés. El packaging va por pedido, no en la receta.
 - Crear recetas con categoría, rendimiento, ganancia sobre el costo, precio de venta, gastos extra e ingredientes utilizados.
 - Ver la biblioteca de recetas agrupada por categoría, con secciones plegables y filtro. Las categorías se crean desde la receta y se renombran o eliminan en Configuración.
 - Calcular lo que cuesta la tanda y cada unidad, el precio sugerido, la ganancia por unidad y avisar si el precio de venta quedó por debajo del sugerido.
@@ -65,6 +66,7 @@ src/
 ├── features/               # Una carpeta por vista: contenedor (*Page) + vistas
 │   ├── overview/
 │   ├── ingredients/
+│   ├── packaging/
 │   ├── recipes/
 │   └── settings/
 ├── test/                   # Setup y helpers de los tests de interfaz
@@ -82,6 +84,7 @@ docs/                       # Guías (configuración de Supabase)
 | -------------------- | ---------------------------------------- |
 | `/`                  | Resumen                                  |
 | `/insumos`           | Insumos                                  |
+| `/packaging`         | Packaging                                |
 | `/recetas`           | Abre la última receta vista (o la primera) |
 | `/recetas/:recipeId` | Una receta                               |
 | `/configuracion`     | Backup, categorías y primera carga       |

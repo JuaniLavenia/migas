@@ -118,3 +118,29 @@ describe("useRecipeStore custom order", () => {
     expect(recipes.map((entry) => entry.updatedAt)).toEqual([3, 2, 1]);
   });
 });
+
+describe("useRecipeStore ingredient stock", () => {
+  beforeEach(() => {
+    useRecipeStore.setState({
+      ingredients: [{ ...ingredient, stock: 800 }],
+      recipes: [],
+      recipeCategories: [],
+    });
+  });
+
+  it("keeps the stock when an import does not bring one", () => {
+    useRecipeStore.getState().importData({
+      ingredients: [{ ...ingredient, packCost: 950 }],
+    });
+    expect(useRecipeStore.getState().ingredients).toEqual([
+      { ...ingredient, packCost: 950, stock: 800 },
+    ]);
+  });
+
+  it("takes the stock an import brings", () => {
+    useRecipeStore.getState().importData({
+      ingredients: [{ ...ingredient, stock: 300 }],
+    });
+    expect(useRecipeStore.getState().ingredients[0].stock).toBe(300);
+  });
+});

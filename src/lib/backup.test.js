@@ -196,6 +196,50 @@ describe("sanitizeBackup", () => {
     expect(result.recipes).toEqual([validRecipe]);
   });
 
+  it("keeps a valid ingredient stock and leaves out a missing or invalid one", () => {
+    const result = sanitizeBackup({
+      ingredients: [
+        { ...validIngredient, id: "a", stock: 2500 },
+        { ...validIngredient, id: "b", stock: "30" },
+        { ...validIngredient, id: "c" },
+        { ...validIngredient, id: "d", stock: -5 },
+        { ...validIngredient, id: "e", stock: "mucho" },
+      ],
+    });
+    expect(result.ingredients.map((item) => item.stock)).toEqual([
+      2500,
+      30,
+      undefined,
+      undefined,
+      undefined,
+    ]);
+    expect(result.ingredients[2]).not.toHaveProperty("stock");
+    expect(result.skipped).toBe(0);
+  });
+
+  it("keeps valid packaging and skips broken items", () => {
+    const result = sanitizeBackup({
+      ingredients: [],
+      packaging: [
+        { id: "bolsa", name: "Bolsa", packSize: "100", packCost: 5000, stock: 40, evil: 1 },
+        { id: "box", name: "Box", packSize: 10, packCost: 9000 },
+        { id: "x", name: "", packSize: 1, packCost: 1 },
+        { id: "y", name: "Sin presentación", packSize: 0, packCost: 1 },
+        "caja",
+      ],
+    });
+    expect(result.packaging).toEqual([
+      { id: "bolsa", name: "Bolsa", packSize: 100, packCost: 5000, stock: 40 },
+      { id: "box", name: "Box", packSize: 10, packCost: 9000 },
+    ]);
+    expect(result.skipped).toBe(3);
+  });
+
+  it("accepts an old backup without packaging", () => {
+    expect(sanitizeBackup({ recipes: [validRecipe] }).packaging).toEqual([]);
+    expect(sanitizeBackup({ packaging: [] }).packaging).toEqual([]);
+  });
+
   it("counts skipped records across both collections", () => {
     const result = sanitizeBackup({
       ingredients: [validIngredient, { name: "" }],

@@ -43,9 +43,26 @@ function sanitizeIngredient(source) {
       unit: nonEmptyString(source.unit) ? source.unit : "g",
       packSize,
       packCost,
+      ...stockOf(source),
     },
     source,
   );
+}
+
+// Optional: a backup without a valid stock (an older one) leaves it out, so
+// importing it keeps the stock already loaded.
+function stockOf(source) {
+  const stock = toFiniteNumber(source.stock);
+  return stock >= 0 ? { stock } : {};
+}
+
+// Packaging is counted in units, so it has no unit or category.
+function sanitizePackaging(source) {
+  if (!isObject(source) || !nonEmptyString(source.name)) return null;
+  const packSize = toFiniteNumber(source.packSize);
+  const packCost = toFiniteNumber(source.packCost);
+  if (!(packSize > 0) || !(packCost >= 0)) return null;
+  return withId({ name: source.name, packSize, packCost, ...stockOf(source) }, source);
 }
 
 function sanitizeItem(source) {
@@ -115,13 +132,16 @@ function sanitizeList(list, sanitize) {
   return { kept, skipped };
 }
 
-// Returns { ingredients, recipes, recipeCategories, skipped }. Accepts recipes with `updatedAt`
-// (current) or the legacy `updated` label. Throws when the data is not a
-// backup at all (not an object, or without ingredients/recipes arrays).
+// Returns { ingredients, recipes, recipeCategories, packaging, skipped }.
+// Accepts recipes with `updatedAt` (current) or the legacy `updated` label.
+// Throws when the data is not a backup at all (not an object, or without
+// ingredients/recipes/packaging arrays).
 export function sanitizeBackup(data, now = Date.now()) {
   if (
     !isObject(data) ||
-    (!Array.isArray(data.ingredients) && !Array.isArray(data.recipes))
+    (!Array.isArray(data.ingredients) &&
+      !Array.isArray(data.recipes) &&
+      !Array.isArray(data.packaging))
   ) {
     throw new Error("invalid backup shape");
   }
@@ -130,10 +150,13 @@ export function sanitizeBackup(data, now = Date.now()) {
     sanitizeRecipe(recipe, now),
   );
   const categories = sanitizeList(data.recipeCategories, sanitizeCategory);
+  const packaging = sanitizeList(data.packaging, sanitizePackaging);
   return {
     ingredients: ingredients.kept,
     recipes: recipes.kept,
     recipeCategories: categories.kept,
-    skipped: ingredients.skipped + recipes.skipped + categories.skipped,
+    packaging: packaging.kept,
+    skipped:
+      ingredients.skipped + recipes.skipped + categories.skipped + packaging.skipped,
   };
 }

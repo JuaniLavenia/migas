@@ -7,9 +7,12 @@ import { readFileSync } from "node:fs";
 import { beforeAll, describe, expect, it } from "vitest";
 import { PGlite } from "@electric-sql/pglite";
 
-const migration = readFileSync(
-  new URL("../../../supabase/migrations/20261023000000_init.sql", import.meta.url),
-  "utf8",
+// Every migration, in the order they are run in the SQL Editor.
+const migrations = [
+  "20261023000000_init.sql",
+  "20261024000000_packaging_stock.sql",
+].map((file) =>
+  readFileSync(new URL(`../../../supabase/migrations/${file}`, import.meta.url), "utf8"),
 );
 
 const ANA = "00000000-0000-4000-8000-00000000000a";
@@ -75,7 +78,7 @@ beforeAll(async () => {
     grant execute on function auth.uid() to anon, authenticated;
     insert into auth.users values ('${ANA}'), ('${BETO}');
   `);
-  await db.exec(migration);
+  for (const migration of migrations) await db.exec(migration);
   // Starting Postgres (WASM) takes a few seconds, more with the whole suite
   // running in parallel.
 }, 60000);
@@ -188,6 +191,73 @@ describe("Supabase schema", () => {
         (row) => row.name,
       ),
     ).toEqual(["Cookies", "Brownie"]);
+  });
+
+  it("keeps the stock of each ingredient, 0 for the ones loaded before", async () => {
+    const business = await businessOf(ANA);
+    expect(
+      await rows("select id, stock from public.ingredients order by position"),
+    ).toEqual([
+      { id: "harina", stock: "0" },
+      { id: "huevos", stock: "0" },
+    ]);
+    await rows(
+      "update public.ingredients set stock = 2500 where business_id = $1 and id = 'harina'",
+      [business],
+    );
+    expect(await rows("select stock from public.ingredients where id = 'harina'")).toEqual([
+      { stock: "2500" },
+    ]);
+    // Stock is never negative, not even written straight to the API.
+    await expect(
+      db.query("update public.ingredients set stock = -1 where business_id = $1", [business]),
+    ).rejects.toThrow(/check/);
+    await expect(
+      db.query("insert into public.packaging (business_id, id, name, stock) values ($1, 'neg', 'N', -3)", [business]),
+    ).rejects.toThrow(/check/);
+  });
+
+  it("keeps packaging private to the business members", async () => {
+    const anas = await businessOf(ANA);
+    await rows(
+      "insert into public.packaging (business_id, id, name, pack_size, pack_cost, stock) values ($1, 'bolsa', 'Bolsa individual', 100, 5000, 40)",
+      [anas],
+    );
+    expect(
+      await rows("select id, name, pack_size, pack_cost, stock, position from public.packaging"),
+    ).toEqual([
+      { id: "bolsa", name: "Bolsa individual", pack_size: "100", pack_cost: "5000", stock: "40", position: 0 },
+    ]);
+
+    await as(BETO);
+    expect(await rows("select id from public.packaging")).toEqual([]);
+    await expect(
+      db.query("insert into public.packaging (business_id, id, name) values ($1, 'x', 'X')", [anas]),
+    ).rejects.toThrow();
+    await rows("update public.packaging set name = 'hackeado' where business_id = $1", [anas]);
+    await rows("delete from public.packaging where business_id = $1", [anas]);
+    await as(null);
+    expect(await rows("select id from public.packaging")).toEqual([]);
+
+    await as(ANA);
+    expect(await rows("select name from public.packaging")).toEqual([
+      { name: "Bolsa individual" },
+    ]);
+  });
+
+  it("never uploads into a business that only has packaging", async () => {
+    const business = await businessOf(BETO);
+    await rows(
+      "insert into public.packaging (business_id, id, name) values ($1, 'box', 'Box x8')",
+      [business],
+    );
+    await expect(
+      db.query("select public.upload_local_data($1, $2)", [
+        business,
+        { recipes: [{ id: "otra", name: "Otra" }] },
+      ]),
+    ).rejects.toThrow(/business_not_empty/);
+    expect(await rows("select id from public.recipes")).toEqual([]);
   });
 
   it("lets a member edit, reorder and delete their rows", async () => {

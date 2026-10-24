@@ -78,6 +78,7 @@ describe("rows", () => {
         unit: "g",
         pack_size: "1000",
         pack_cost: "1250.5",
+        stock: "2500",
         position: 0,
       }),
     ).toEqual({
@@ -87,6 +88,7 @@ describe("rows", () => {
       unit: "g",
       packSize: 1000,
       packCost: 1250.5,
+      stock: 2500,
     });
   });
 
@@ -98,6 +100,7 @@ describe("rows", () => {
       unit: "g",
       packSize: 1000,
       packCost: 1250,
+      stock: 500,
     };
     const row = toRow("ingredients", ingredient, BUSINESS, 1);
     expect(row).toEqual({
@@ -108,6 +111,7 @@ describe("rows", () => {
       unit: "g",
       pack_size: 1000,
       pack_cost: 1250,
+      stock: 500,
       position: 1,
     });
     expect(fromRow("ingredients", row)).toEqual(ingredient);
@@ -128,6 +132,35 @@ describe("rows", () => {
       BUSINESS,
       0,
     );
-    expect(row).toMatchObject({ pack_size: 0, pack_cost: 0 });
+    expect(row).toMatchObject({ pack_size: 0, pack_cost: 0, stock: 0 });
+  });
+
+  it("maps packaging, with a missing stock read as 0", () => {
+    const packaging = {
+      id: "bolsa",
+      name: "Bolsa individual",
+      packSize: 100,
+      packCost: 5000,
+      stock: 40,
+    };
+    const row = toRow("packaging", packaging, BUSINESS, 2);
+    expect(row).toEqual({
+      business_id: BUSINESS,
+      id: "bolsa",
+      name: "Bolsa individual",
+      pack_size: 100,
+      pack_cost: 5000,
+      stock: 40,
+      position: 2,
+    });
+    expect(fromRow("packaging", row)).toEqual(packaging);
+    expect(
+      fromRow("packaging", { id: "b", name: "Box", pack_size: "1", pack_cost: "900", stock: null }),
+    ).toEqual({ id: "b", name: "Box", packSize: 1, packCost: 900, stock: 0 });
+    expect(toRow("packaging", { id: "b", name: "Box" }, BUSINESS, 0)).toMatchObject({
+      pack_size: 0,
+      pack_cost: 0,
+      stock: 0,
+    });
   });
 });

@@ -2,6 +2,8 @@ import { useId, useState } from "react";
 import ModalShell from "../../shared/ModalShell";
 import { INGREDIENT_CATEGORIES } from "./ingredientCategories";
 
+const UNIT_NAMES = { g: "gramos", ml: "mililitros", un: "unidades" };
+
 function IngredientModal({ initial, onClose, onSave }) {
   const fieldId = useId();
   const [form, setForm] = useState({
@@ -11,6 +13,7 @@ function IngredientModal({ initial, onClose, onSave }) {
     // ?? keeps a stored 0 visible (|| blanked a free ingredient's cost).
     packSize: initial.packSize ?? "",
     packCost: initial.packCost ?? "",
+    stock: initial.stock ?? (initial.id ? 0 : ""),
   });
   // A category from before the fixed list stays selectable until changed.
   const categories = INGREDIENT_CATEGORIES.includes(form.category)
@@ -94,6 +97,25 @@ function IngredientModal({ initial, onClose, onSave }) {
               />
               <span>ARS</span>
             </div>
+          </div>
+          <div className="field-group">
+            <label htmlFor={`${fieldId}-stock`}>Tengo</label>
+            <div className="input-with-suffix">
+              <input
+                id={`${fieldId}-stock`}
+                type="number"
+                min="0"
+                step="any"
+                value={form.stock}
+                onChange={(event) => change("stock", event.target.value)}
+                placeholder="0"
+                aria-describedby={`${fieldId}-stock-hint`}
+              />
+              <span>{form.unit}</span>
+            </div>
+            <p className="field-hint" id={`${fieldId}-stock-hint`}>
+              Cuánto te queda, en {UNIT_NAMES[form.unit] ?? form.unit}.
+            </p>
           </div>
         </div>
         <div className="modal-actions">

@@ -35,4 +35,13 @@ describe("importSummary", () => {
       }),
     ).toBe("Importamos 2 categorías");
   });
+
+  it("adds the packaging when the backup brings some", () => {
+    expect(
+      importSummary({ ingredients: list(3), recipes: list(2), packaging: list(4), skipped: 0 }),
+    ).toBe("Importamos 3 insumos, 2 recetas y 4 packaging");
+    expect(
+      importSummary({ ingredients: [], recipes: [], packaging: list(1), skipped: 1 }),
+    ).toBe("Importamos 1 packaging · 1 registro omitido por datos inválidos");
+  });
 });

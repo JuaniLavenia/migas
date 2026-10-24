@@ -19,6 +19,7 @@ const MOBILE_QUERY = "(max-width: 680px)";
 function AppLayout() {
   const ingredientCount = useRecipeStore((state) => state.ingredients.length);
   const recipeCount = useRecipeStore((state) => state.recipes.length);
+  const packagingCount = useRecipeStore((state) => state.packaging.length);
   const { pathname } = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const isMobile = useMediaQuery(MOBILE_QUERY);
@@ -52,7 +53,11 @@ function AppLayout() {
       <Sidebar
         id={SIDEBAR_ID}
         ref={sidebarRef}
-        counts={{ ingredients: ingredientCount, recipes: recipeCount }}
+        counts={{
+          ingredients: ingredientCount,
+          packaging: packagingCount,
+          recipes: recipeCount,
+        }}
         open={menuOpen}
         inert={isMobile && !menuOpen}
         onNavigate={() => setMenuOpen(false)}
