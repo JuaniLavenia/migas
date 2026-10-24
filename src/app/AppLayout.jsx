@@ -7,6 +7,7 @@ import Topbar from "./Topbar";
 import ToastRegion from "./ToastRegion";
 import { viewForPath } from "./navigation";
 import { isClosed } from "../lib/orders";
+import { shoppingList } from "../lib/stockMoves";
 
 const SIDEBAR_ID = "app-sidebar";
 // Same breakpoint as the drawer styles in App.css.
@@ -22,6 +23,12 @@ function AppLayout() {
   const recipeCount = useRecipeStore((state) => state.recipes.length);
   const packagingCount = useRecipeStore((state) => state.packaging.length);
   const finishedCount = useRecipeStore((state) => state.finishedGoods.length);
+  // What she has to buy for the orders waiting to be prepared.
+  const missingCount = useRecipeStore(
+    (state) =>
+      shoppingList(state).groups.flatMap((group) => group.items).filter((item) => item.missing > 0)
+        .length,
+  );
   // Open orders only: delivered and cancelled ones need nothing more.
   const openOrderCount = useRecipeStore(
     (state) => state.orders.filter((order) => !isClosed(order.status)).length,
@@ -61,6 +68,7 @@ function AppLayout() {
         ref={sidebarRef}
         counts={{
           orders: openOrderCount,
+          shopping: missingCount,
           ingredients: ingredientCount,
           packaging: packagingCount,
           finished: finishedCount,

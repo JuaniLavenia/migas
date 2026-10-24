@@ -6,6 +6,7 @@ import {
   Package,
   ReceiptText,
   Settings2,
+  ShoppingCart,
 } from "lucide-react";
 
 // The app's top-level views, in sidebar order. `main` items go in the main
@@ -23,6 +24,13 @@ export const views = [
     path: "/pedidos",
     label: "Pedidos",
     icon: ClipboardList,
+    main: true,
+  },
+  {
+    id: "shopping",
+    path: "/compras",
+    label: "Compras",
+    icon: ShoppingCart,
     main: true,
   },
   {
