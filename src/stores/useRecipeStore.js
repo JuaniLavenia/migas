@@ -114,6 +114,27 @@ const useRecipeStore = create()((set, get) => ({
     set((state) => ({
       packaging: moveById(state.packaging, id, delta),
     })),
+  // New orders start as Pendiente. Returns the new id.
+  addOrder: (order) => {
+    const nextOrder = {
+      ...order,
+      id: uuidv4(),
+      status: "pending",
+      createdAt: Date.now(),
+    };
+    set((state) => ({ orders: [...state.orders, nextOrder] }));
+    return nextOrder.id;
+  },
+  updateOrder: (id, changes) =>
+    set((state) => ({
+      orders: state.orders.map((order) =>
+        order.id === id ? { ...order, ...changes } : order,
+      ),
+    })),
+  deleteOrder: (id) =>
+    set((state) => ({
+      orders: state.orders.filter((order) => order.id !== id),
+    })),
   addRecipe: (recipe) => {
     const nextRecipe = { ...recipe, id: uuidv4(), updatedAt: Date.now() };
     set((state) => ({ recipes: [...state.recipes, nextRecipe] }));
@@ -206,6 +227,7 @@ const useRecipeStore = create()((set, get) => ({
     recipes = [],
     recipeCategories = [],
     packaging = [],
+    orders = [],
   }) =>
     set((state) => {
       const renamed = new Map();
@@ -228,6 +250,10 @@ const useRecipeStore = create()((set, get) => ({
         packaging: mergeById(
           state.packaging,
           packaging.map((item) => ({ ...item, id: item.id || uuidv4() })),
+        ),
+        orders: mergeById(
+          state.orders,
+          orders.map((order) => ({ ...order, id: order.id || uuidv4() })),
         ),
         recipes: mergeById(
           state.recipes,

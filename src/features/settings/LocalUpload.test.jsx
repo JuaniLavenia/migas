@@ -112,6 +112,21 @@ describe("Manual first upload", () => {
     ).toBeNull();
   });
 
+  it("is not offered, nor pointed to, when the cloud only has orders", () => {
+    const state = {
+      ...empty,
+      orders: [{ id: "o", client: "Ana", dueDate: "2026-10-25", items: [], packagingItems: [], price: 0, paid: 0, status: "pending" }],
+    };
+    const session = signedIn(createMemoryRepository());
+    const settings = renderApp({ route: "/configuracion", state, session, localStorage: deviceData });
+    expect(panel()).toBeNull();
+    settings.unmount();
+    renderApp({ state, session, localStorage: deviceData });
+    expect(
+      screen.queryByRole("link", { name: /Subir los datos de este dispositivo/ }),
+    ).toBeNull();
+  });
+
   it("is not offered without data on this device or outside a session", () => {
     renderApp({
       route: "/configuracion",

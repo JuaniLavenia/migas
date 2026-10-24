@@ -240,6 +240,77 @@ describe("sanitizeBackup", () => {
     expect(sanitizeBackup({ packaging: [] }).packaging).toEqual([]);
   });
 
+  it("keeps valid orders and skips broken ones", () => {
+    const base = {
+      id: "o-1",
+      client: "Sofi",
+      dueDate: "2026-10-25",
+      items: [{ recipeId: "cookies", quantity: "16" }],
+      price: 24000,
+    };
+    const result = sanitizeBackup({
+      orders: [
+        {
+          ...base,
+          contact: "@sofi",
+          dueTime: "17:30",
+          delivery: "delivery",
+          notes: "Sin TACC",
+          packagingItems: [{ packagingId: "box", quantity: 2 }],
+          paid: 10000,
+          status: "confirmed",
+          createdAt: 1767225600000,
+          evil: 1,
+        },
+        // Unknown or missing optional values fall back to their defaults.
+        { ...base, id: "o-2", dueTime: "tarde", delivery: "drone", status: "shipped", paid: -5 },
+        { ...base, id: "x", client: "" },
+        { ...base, id: "y", dueDate: "25/10" },
+        { ...base, id: "z", price: -1 },
+        { ...base, id: "w", items: [{ recipeId: "cookies", quantity: 0 }] },
+        "pedido",
+      ],
+    }, 99);
+    expect(result.orders).toEqual([
+      {
+        id: "o-1",
+        client: "Sofi",
+        contact: "@sofi",
+        dueDate: "2026-10-25",
+        dueTime: "17:30",
+        delivery: "delivery",
+        notes: "Sin TACC",
+        items: [{ recipeId: "cookies", quantity: 16 }],
+        packagingItems: [{ packagingId: "box", quantity: 2 }],
+        price: 24000,
+        paid: 10000,
+        status: "confirmed",
+        createdAt: 1767225600000,
+      },
+      {
+        id: "o-2",
+        client: "Sofi",
+        contact: "",
+        dueDate: "2026-10-25",
+        dueTime: "",
+        delivery: "pickup",
+        notes: "",
+        items: [{ recipeId: "cookies", quantity: 16 }],
+        packagingItems: [],
+        price: 24000,
+        paid: 0,
+        status: "pending",
+        createdAt: 99,
+      },
+    ]);
+    expect(result.skipped).toBe(5);
+  });
+
+  it("accepts an old backup without orders, and one that only brings orders", () => {
+    expect(sanitizeBackup({ recipes: [validRecipe] }).orders).toEqual([]);
+    expect(sanitizeBackup({ orders: [] }).orders).toEqual([]);
+  });
+
   it("counts skipped records across both collections", () => {
     const result = sanitizeBackup({
       ingredients: [validIngredient, { name: "" }],

@@ -122,6 +122,39 @@ describe("backup", () => {
     ]);
   });
 
+  it("exports and restores the orders", async () => {
+    const pedido = {
+      id: "o-1",
+      client: "Sofi",
+      contact: "@sofi",
+      dueDate: "2026-10-25",
+      dueTime: "17:30",
+      delivery: "pickup",
+      notes: "",
+      items: [],
+      packagingItems: [],
+      price: 24000,
+      paid: 0,
+      status: "confirmed",
+      createdAt: 1767225600000,
+    };
+    const first = renderApp({
+      route: "/configuracion",
+      state: { ingredients: [], recipes: [], orders: [pedido] },
+    });
+    const parsed = JSON.parse(await exportBackup(first.user));
+    expect(parsed.orders).toEqual([pedido]);
+
+    first.unmount();
+    const second = renderApp({
+      route: "/configuracion",
+      state: { ingredients: [], recipes: [], orders: [] },
+    });
+    await importBackup(second.user, parsed);
+    expect(await screen.findByText("Importamos 1 pedido")).toBeInTheDocument();
+    expect(useRecipeStore.getState().orders).toEqual([pedido]);
+  });
+
   it("imports an old backup with embedded photos, without the photos", async () => {
     const { user } = renderApp({
       route: "/configuracion",

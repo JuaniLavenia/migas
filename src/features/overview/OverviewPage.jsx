@@ -24,7 +24,8 @@ function UploadHint() {
       !state.ingredients.length &&
       !state.recipes.length &&
       !state.recipeCategories.length &&
-      !state.packaging.length,
+      !state.packaging.length &&
+      !state.orders.length,
   );
   const hasLocalData = useMemo(
     () => Boolean(session && readLocalData()),
