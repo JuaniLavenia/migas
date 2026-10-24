@@ -53,15 +53,16 @@ describe("Recipe photo by URL", () => {
     expect(photoField().querySelector("img")).toBeNull();
   });
 
-  it("shows the photo in the overview list", () => {
+  it("shows the photo in the recipe library", () => {
     renderApp({
+      route: "/recetas/cookies",
       state: {
         recipes: demoRecipes.map((recipe) =>
           recipe.id === "brownie" ? { ...recipe, imageUrl: PHOTO } : recipe,
         ),
       },
     });
-    const row = screen.getByRole("link", { name: /Brownie clásico/ });
+    const row = screen.getByRole("button", { name: /^Brownie clásico/ });
     expect(row.querySelector('img[alt=""]')).toHaveAttribute("src", PHOTO);
   });
 });

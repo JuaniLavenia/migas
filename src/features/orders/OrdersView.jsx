@@ -2,21 +2,7 @@ import { useId } from "react";
 import { Edit3, Plus, Search, Trash2 } from "lucide-react";
 import PageHeader from "../../shared/PageHeader";
 import { currency } from "../../lib/format";
-import { ORDER_STATUSES, paymentStatus } from "../../lib/orders";
-
-const dueFormat = new Intl.DateTimeFormat("es-AR", {
-  weekday: "short",
-  day: "numeric",
-  month: "short",
-  timeZone: "UTC",
-});
-
-// "sáb, 24 oct · 17:30"; dates are calendar days, read in UTC so the
-// browser's time zone never moves them.
-function dueLabel(order) {
-  const date = dueFormat.format(new Date(`${order.dueDate}T00:00:00Z`));
-  return order.dueTime ? `${date} · ${order.dueTime}` : date;
-}
+import { ORDER_STATUSES, dueLabel, paymentStatus } from "../../lib/orders";
 
 // "16 Cookies · 1 Torta · 2 Box x8". Lines whose recipe or packaging was
 // deleted keep their quantity, so nothing silently disappears.

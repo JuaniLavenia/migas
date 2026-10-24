@@ -81,6 +81,20 @@ export function orderTotals(order, { recipes, ingredients, packaging }) {
   };
 }
 
+const dueFormat = new Intl.DateTimeFormat("es-AR", {
+  weekday: "short",
+  day: "numeric",
+  month: "short",
+  timeZone: "UTC",
+});
+
+// "sáb, 24 oct · 17:30"; dates are calendar days, read in UTC so the
+// browser's time zone never moves them.
+export function dueLabel(order) {
+  const date = dueFormat.format(new Date(`${order.dueDate}T00:00:00Z`));
+  return order.dueTime ? `${date} · ${order.dueTime}` : date;
+}
+
 // Today's local calendar date.
 export function todayKey(now = new Date()) {
   const pad = (value) => String(value).padStart(2, "0");
