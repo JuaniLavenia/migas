@@ -28,6 +28,7 @@ VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 
 ## Funcionalidades
 
+- Ver en el inicio cómo va el negocio en el mes: ventas (lo cobrado de los pedidos entregados), ganancia real y margen, cantidad de pedidos y saldo por cobrar, comparados con el mes anterior. También las entregas de los próximos 7 días, lo que falta comprar, los elaborados con más de 3 días y las recetas más vendidas y más rentables.
 - Registrar, editar y eliminar insumos.
 - Definir categoría (Secos, Lácteos, Frescos, Chocolates, Decoración u Otros), unidad base, presentación de compra, su costo y cuánto tenés ("Tengo").
 - Llevar el listado de packaging (bolsas, cajas) con su presentación de compra, costo, costo por unidad y cuántas unidades tenés. El packaging va por pedido, no en la receta.
@@ -93,7 +94,7 @@ docs/                       # Guías (configuración de Supabase)
 
 | Ruta                 | Vista                                    |
 | -------------------- | ---------------------------------------- |
-| `/`                  | Resumen                                  |
+| `/`                  | Resumen (tablero del negocio)            |
 | `/pedidos`           | Pedidos                                  |
 | `/compras`           | Lista de compras                         |
 | `/insumos`           | Insumos                                  |

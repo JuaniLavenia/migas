@@ -15,9 +15,9 @@ Branch: `feat/phase-12-dashboard` from main@56f767c. Delivery: single-pr (the us
 
 | ID | Specs | Route | Status | Commit |
 |---|---|---|---|---|
-| T12.1 | S2–S5 (dashboard math, pure) | inline | pending | |
-| T12.2 | S1–S5 (dashboard view replacing the overview) | inline | pending | |
-| T12.3 | docs | inline | pending | |
+| T12.1 | S2–S5 (dashboard math, pure) | inline | done (9 RED→GREEN) | 5bcca88 |
+| T12.2 | S1–S5 (dashboard view replacing the overview) | inline | done (8 RED→GREEN; 11 old overview tests rewritten) | 5779114 |
+| T12.3 | docs | inline | done | (this commit) |
 
 Route evidence: one sequential feature, T12.2 depends on T12.1: no writer trigger. No migration, no stored data change: no high-risk item, so no independent verifier. Replacing the old overview is requested (S1); its tests are rewritten for the dashboard.
 
@@ -25,3 +25,7 @@ Route evidence: one sequential feature, T12.2 depends on T12.1: no writer trigge
 
 - L1 (2026-10-24, user): "listo, ya mergee y deploye!" (start of phase 12 per the approved roadmap: "## Fase 12: Tablero").
 - L2 (2026-10-24, user, on replacing the current Resumen or adding a separate Tablero view): "si dale, reemplacemos el resumen actual".
+- L3 Progress: T12.1–T12.3 done. Suite 459 tests / 45 files green; build OK.
+- L4 Rewritten tests of the replaced overview, keeping what they covered elsewhere: titles now "Cómo va tu negocio."; the last opened recipe is checked through Recetas; new-recipe, focus trap and form-label tests open from /recetas; the photo thumbnail is checked in the recipe library; the overview link audit now covers the dashboard shortcuts.
+- L5 Advisory: CSS rules of the old overview (spotlight, quick actions, recipe list) are now unused in App.css; left for a cleanup because several share selectors with live rules. Costs and profit use today's recipe costs, not the costs on the day of each order.
+- L6 Visual check pending on the Vercel preview.
