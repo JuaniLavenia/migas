@@ -16,13 +16,13 @@ Branch: `feat/phase-11-auto-stock` from main@74d16d0. Delivery: single-pr (the u
 
 | ID | Specs | Route | Status | Commit |
 |---|---|---|---|---|
-| T11.1 | S6 (SQL, rows) | inline | pending | |
-| T11.2 | S1, S3, S5 (stock planning, pure) | inline | pending | |
-| T11.3 | S1–S3, S6 (store status change, backups) | inline | pending | |
-| T11.4 | S2 (shortage dialog in list and form) | inline | pending | |
-| T11.5 | S4 (Elaborados view) | inline | pending | |
-| T11.6 | S5 (Compras view) | inline | pending | |
-| T11.7 | docs | inline | pending | |
+| T11.1 | S6 (SQL, rows) | inline | done (schema +2, rows +2 RED→GREEN) | bfc2c46 |
+| T11.2 | S1, S3, S5 (stock planning, pure) | inline | done (14 RED→GREEN) | 271b0f7 |
+| T11.3 | S1–S3, S6 (store status change, backups) | inline | done (10 RED→GREEN) | 2862895 |
+| T11.4 | S2 (shortage dialog in list and form) | inline | done (7 RED→GREEN) | 66a71dd |
+| T11.5 | S4 (Elaborados view) | inline | done (6 RED→GREEN, daysAgo +1) | 9eedf10 |
+| T11.6 | S5 (Compras view) | inline | done (5 RED→GREEN) | 604b927 |
+| T11.7 | docs | inline | done | (this commit) |
 
 Route evidence: one sequential feature; T11.3–T11.6 depend on T11.1–T11.2 and share the store, so no parallel independent units and no writer trigger. T11.1 touches a migration (high-risk item 1) and T11.3 changes stored stock (item 1): own commits, independent verifier at the feature's end.
 
@@ -31,3 +31,7 @@ Route evidence: one sequential feature; T11.3–T11.6 depend on T11.1–T11.2 an
 - L1 (2026-10-23, user): "listo! ya mergee y deploye, sigamos" (start of phase 11 per the approved roadmap: "## Fase 11: Stock automático y compras").
 - L2 (2026-10-23, user, on a cancelled order that was already being prepared): "genial, si me gusta que lo cocinado queda como elaborado."
 - L3 Design: the deduction is one store update (orders, ingredients, packaging and finished goods together) saved by cloudSync like every other change, not a Postgres function: the app has one user and every write already goes through cloudSync. Advisory: two devices preparing at the same moment could each deduct from the same stale stock; the database check (stock >= 0) then rejects the second save.
+- L4 Progress: T11.1–T11.7 done. Suite 439 tests / 43 files green; build pending at closure. One full run had 4 environmental 5 s timeouts in untouched UI tests; the rerun passed.
+- L5 Decisions within the specs: lines of a recipe whose ingredient was deleted deduct nothing for that ingredient; an order with a deleted recipe or packaging cannot be prepared ("No se puede preparar"); a status change from the order form saves the other fields first, then checks the stock; the shopping list counts every finished good of a recipe against its pending and confirmed orders. Navigation: Pedidos, Compras, Insumos, Packaging, Elaborados, Recetas. Compras counts what is missing in the sidebar.
+- L6 upload_local_data is unchanged: a business with only finished goods is not "non-empty" for it (finished goods need recipes, which already count).
+- L7 Visual check pending on the Vercel preview. Deploy order: run 20261026000000_auto_stock.sql before merging.
