@@ -38,3 +38,14 @@ export function formatMonthYear(date) {
   const year = parts.find((part) => part.type === "year").value;
   return `${month.charAt(0).toUpperCase()}${month.slice(1)} ${year}`;
 }
+
+// "hoy", "ayer", "hace 3 días": calendar days ("YYYY-MM-DD") between `day`
+// and `today`, in UTC so daylight saving never shifts them. A day after
+// today (another device's clock) reads as "hoy".
+export function daysAgo(day, today) {
+  const days = Math.round(
+    (Date.parse(`${today}T00:00:00Z`) - Date.parse(`${day}T00:00:00Z`)) / DAY,
+  );
+  if (!(days > 0)) return "hoy";
+  return days === 1 ? "ayer" : `hace ${days} días`;
+}

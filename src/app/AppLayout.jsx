@@ -21,6 +21,7 @@ function AppLayout() {
   const ingredientCount = useRecipeStore((state) => state.ingredients.length);
   const recipeCount = useRecipeStore((state) => state.recipes.length);
   const packagingCount = useRecipeStore((state) => state.packaging.length);
+  const finishedCount = useRecipeStore((state) => state.finishedGoods.length);
   // Open orders only: delivered and cancelled ones need nothing more.
   const openOrderCount = useRecipeStore(
     (state) => state.orders.filter((order) => !isClosed(order.status)).length,
@@ -62,6 +63,7 @@ function AppLayout() {
           orders: openOrderCount,
           ingredients: ingredientCount,
           packaging: packagingCount,
+          finished: finishedCount,
           recipes: recipeCount,
         }}
         open={menuOpen}

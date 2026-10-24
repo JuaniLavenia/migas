@@ -1,6 +1,7 @@
 import {
   Box,
   ClipboardList,
+  Cookie,
   LayoutDashboard,
   Package,
   ReceiptText,
@@ -36,6 +37,13 @@ export const views = [
     path: "/packaging",
     label: "Packaging",
     icon: Box,
+    main: true,
+  },
+  {
+    id: "finished",
+    path: "/elaborados",
+    label: "Elaborados",
+    icon: Cookie,
     main: true,
   },
   {

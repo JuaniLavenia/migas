@@ -2016,3 +2016,37 @@ textarea:focus-visible {
   font-size: 13px;
   line-height: 1.5;
 }
+
+/* Finished goods: one panel per recipe, one row per batch. */
+.finished-group {
+  margin-bottom: 12px;
+  padding: 6px 18px;
+}
+.finished-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+.finished-heading h2 {
+  flex: 1;
+  margin: 0;
+  color: var(--ink);
+  font-size: 15px;
+}
+.finished-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 14px;
+  align-items: center;
+  padding: 8px 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.finished-row + .finished-row {
+  border-top: 1px solid var(--line);
+}
+.finished-row strong {
+  color: var(--ink);
+}
