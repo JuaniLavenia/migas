@@ -3,8 +3,17 @@ import useRecipeStore from "../../stores/useRecipeStore";
 import useToastStore from "../../stores/useToastStore";
 import ConfirmDialog from "../../shared/ConfirmDialog";
 import { groupOrders, isClosed, todayKey } from "../../lib/orders";
+import { stockTransition } from "../../lib/stockMoves";
+import { stockValue } from "../../lib/stock";
 import OrdersView from "./OrdersView";
 import OrderModal from "./OrderModal";
+import ShortageDialog from "./ShortageDialog";
+
+const STOCK_TOASTS = {
+  deduct: "Descontamos el stock del pedido",
+  undo: "Devolvimos el stock del pedido",
+  cancel: "Lo cocinado quedó en Elaborados",
+};
 
 // "open": everything but delivered and cancelled (the default); "all"; or one
 // status value.
@@ -34,22 +43,59 @@ function OrdersPage() {
   const addOrder = useRecipeStore((state) => state.addOrder);
   const updateOrder = useRecipeStore((state) => state.updateOrder);
   const deleteOrder = useRecipeStore((state) => state.deleteOrder);
+  const changeOrderStatus = useRecipeStore((state) => state.changeOrderStatus);
+  const updateIngredient = useRecipeStore((state) => state.updateIngredient);
+  const updatePackaging = useRecipeStore((state) => state.updatePackaging);
   const showToast = useToastStore((state) => state.showToast);
   const [filter, setFilter] = useState("open");
   const [search, setSearch] = useState("");
   // null: closed; {}: new order; an order: editing it.
   const [editing, setEditing] = useState(null);
   const [pendingDelete, setPendingDelete] = useState(null);
+  // A status change the stock did not allow: { id, status, shortages,
+  // problems }.
+  const [blocked, setBlocked] = useState(null);
 
   const filtered = orders.filter((order) => matchesFilter(order, filter));
   const matches = filtered.filter((order) => matchesSearch(order, search));
   const groups = groupOrders(matches, todayKey());
 
-  function save(order) {
-    if (editing?.id) updateOrder(editing.id, order);
-    else addOrder(order);
+  // Every status change goes through the store, which moves the stock with
+  // it. A change that moves the stock says so; otherwise fallbackToast (if
+  // any) is shown.
+  function changeStatus(id, status, fallbackToast) {
+    const order = useRecipeStore.getState().orders.find((entry) => entry.id === id);
+    const transition = stockTransition(order.status, status, Boolean(order.stockMove));
+    const result = changeOrderStatus(id, status);
+    if (!result.ok) {
+      setBlocked({ id, status, shortages: result.shortages, problems: result.problems });
+      return;
+    }
+    setBlocked(null);
+    const message = STOCK_TOASTS[transition] ?? fallbackToast;
+    if (message) showToast(message);
+  }
+
+  function retry(updates) {
+    updates.forEach(({ kind, id, stock }) => {
+      const update = kind === "packaging" ? updatePackaging : updateIngredient;
+      update(id, { stock: stockValue(stock) });
+    });
+    changeStatus(blocked.id, blocked.status);
+  }
+
+  // The order's fields are saved first, so a new status deducts the stock
+  // of the lines as they are now.
+  function save({ status, ...order }) {
     setEditing(null);
-    showToast("Pedido guardado");
+    if (!editing?.id) {
+      addOrder(order);
+      showToast("Pedido guardado");
+      return;
+    }
+    updateOrder(editing.id, order);
+    if (status === editing.status) showToast("Pedido guardado");
+    else changeStatus(editing.id, status, "Pedido guardado");
   }
 
   function confirmDelete() {
@@ -74,7 +120,7 @@ function OrdersPage() {
         onAdd={() => setEditing({})}
         onEdit={setEditing}
         onDelete={setPendingDelete}
-        onStatusChange={(id, status) => updateOrder(id, { status })}
+        onStatusChange={changeStatus}
       />
       {editing !== null && (
         <OrderModal
@@ -82,6 +128,16 @@ function OrdersPage() {
           catalog={{ recipes, ingredients, packaging }}
           onClose={() => setEditing(null)}
           onSave={save}
+        />
+      )}
+      {blocked && (
+        <ShortageDialog
+          // A new attempt that is still short shows its own figures.
+          key={JSON.stringify(blocked.shortages)}
+          shortages={blocked.shortages}
+          problems={blocked.problems}
+          onRetry={retry}
+          onClose={() => setBlocked(null)}
         />
       )}
       <ConfirmDialog
