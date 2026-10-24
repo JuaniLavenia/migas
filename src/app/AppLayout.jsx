@@ -6,6 +6,7 @@ import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 import ToastRegion from "./ToastRegion";
 import { viewForPath } from "./navigation";
+import { isClosed } from "../lib/orders";
 
 const SIDEBAR_ID = "app-sidebar";
 // Same breakpoint as the drawer styles in App.css.
@@ -20,6 +21,10 @@ function AppLayout() {
   const ingredientCount = useRecipeStore((state) => state.ingredients.length);
   const recipeCount = useRecipeStore((state) => state.recipes.length);
   const packagingCount = useRecipeStore((state) => state.packaging.length);
+  // Open orders only: delivered and cancelled ones need nothing more.
+  const openOrderCount = useRecipeStore(
+    (state) => state.orders.filter((order) => !isClosed(order.status)).length,
+  );
   const { pathname } = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const isMobile = useMediaQuery(MOBILE_QUERY);
@@ -54,6 +59,7 @@ function AppLayout() {
         id={SIDEBAR_ID}
         ref={sidebarRef}
         counts={{
+          orders: openOrderCount,
           ingredients: ingredientCount,
           packaging: packagingCount,
           recipes: recipeCount,

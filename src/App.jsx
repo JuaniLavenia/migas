@@ -4,6 +4,7 @@ import AppLayout from "./app/AppLayout";
 import OverviewPage from "./features/overview/OverviewPage";
 import IngredientsPage from "./features/ingredients/IngredientsPage";
 import PackagingPage from "./features/packaging/PackagingPage";
+import OrdersPage from "./features/orders/OrdersPage";
 import RecipesPage from "./features/recipes/RecipesPage";
 import SettingsPage from "./features/settings/SettingsPage";
 
@@ -14,6 +15,7 @@ function App() {
     <Routes>
       <Route path="/" element={<AppLayout />}>
         <Route index element={<OverviewPage />} />
+        <Route path="pedidos" element={<OrdersPage />} />
         <Route path="insumos" element={<IngredientsPage />} />
         <Route path="packaging" element={<PackagingPage />} />
         <Route path="recetas" element={<RecipesPage />} />
