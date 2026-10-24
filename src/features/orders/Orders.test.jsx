@@ -5,7 +5,7 @@ import useRecipeStore from "../../stores/useRecipeStore";
 import { currency } from "../../lib/format";
 
 // 21 cookies cost 2100 (100 per unit); suggested at +100%: 200 per unit.
-const harina = { id: "harina", name: "Harina", category: "Secos", unit: "g", packSize: 1000, packCost: 1000 };
+const harina = { id: "harina", name: "Harina", category: "Secos", unit: "g", packSize: 1000, packCost: 1000, stock: 10000 };
 const cookies = {
   id: "cookies",
   name: "Cookies",

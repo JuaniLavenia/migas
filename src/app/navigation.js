@@ -1,10 +1,12 @@
 import {
   Box,
   ClipboardList,
+  Cookie,
   LayoutDashboard,
   Package,
   ReceiptText,
   Settings2,
+  ShoppingCart,
 } from "lucide-react";
 
 // The app's top-level views, in sidebar order. `main` items go in the main
@@ -25,6 +27,13 @@ export const views = [
     main: true,
   },
   {
+    id: "shopping",
+    path: "/compras",
+    label: "Compras",
+    icon: ShoppingCart,
+    main: true,
+  },
+  {
     id: "ingredients",
     path: "/insumos",
     label: "Insumos",
@@ -36,6 +45,13 @@ export const views = [
     path: "/packaging",
     label: "Packaging",
     icon: Box,
+    main: true,
+  },
+  {
+    id: "finished",
+    path: "/elaborados",
+    label: "Elaborados",
+    icon: Cookie,
     main: true,
   },
   {

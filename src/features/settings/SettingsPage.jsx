@@ -21,6 +21,7 @@ function SettingsPage() {
   const recipeCategories = useRecipeStore((state) => state.recipeCategories);
   const packaging = useRecipeStore((state) => state.packaging);
   const orders = useRecipeStore((state) => state.orders);
+  const finishedGoods = useRecipeStore((state) => state.finishedGoods);
   const importData = useRecipeStore((state) => state.importData);
   const renameRecipeCategory = useRecipeStore(
     (state) => state.renameRecipeCategory,
@@ -70,7 +71,7 @@ function SettingsPage() {
       downloadFile(
         `miga-backup-${new Date().toISOString().slice(0, 10)}.json`,
         JSON.stringify(
-          { ingredients, recipeCategories, recipes, packaging, orders },
+          { ingredients, recipeCategories, recipes, packaging, orders, finishedGoods },
           null,
           2,
         ),
@@ -95,7 +96,8 @@ function SettingsPage() {
       backup.recipes.length ||
       backup.recipeCategories.length ||
       backup.packaging.length ||
-      backup.orders.length
+      backup.orders.length ||
+      backup.finishedGoods.length
     ) {
       importData(backup);
     }

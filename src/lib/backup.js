@@ -145,6 +145,52 @@ function isCalendarDay(key) {
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === key;
 }
 
+function positive(value) {
+  const parsed = toFiniteNumber(value);
+  return parsed > 0 ? parsed : null;
+}
+
+// Rebuilds each line from `keys` (non-empty strings, or "YYYY-MM-DD" days
+// for madeAt) plus a positive quantity; null when any line is broken.
+function stockLines(list, keys) {
+  if (list === undefined) return [];
+  if (!Array.isArray(list)) return null;
+  const lines = list.map((line) => {
+    if (!isObject(line)) return null;
+    const quantity = positive(line.quantity);
+    if (quantity === null) return null;
+    const clean = {};
+    for (const key of keys) {
+      const valid = key === "madeAt" ? isCalendarDay(line[key]) : nonEmptyString(line[key]);
+      if (!valid) return null;
+      clean[key] = line[key];
+    }
+    return { ...clean, quantity };
+  });
+  return lines.some((line) => line === null) ? null : lines;
+}
+
+// What an order deducted (lib/stockMoves.js). A broken record is dropped,
+// not the order: it then just has nothing to return.
+function sanitizeStockMove(source) {
+  if (!isObject(source)) return null;
+  const move = {
+    ingredients: stockLines(source.ingredients, ["ingredientId"]),
+    packaging: stockLines(source.packaging, ["packagingId"]),
+    taken: stockLines(source.taken, ["lotId", "recipeId", "madeAt"]),
+    cooked: stockLines(source.cooked, ["recipeId"]),
+    created: stockLines(source.created, ["lotId", "recipeId", "madeAt"]),
+  };
+  return Object.values(move).some((lines) => lines === null) ? null : move;
+}
+
+function sanitizeFinishedGood(source) {
+  if (!isObject(source) || !nonEmptyString(source.recipeId)) return null;
+  const quantity = toFiniteNumber(source.quantity);
+  if (!(quantity >= 0) || !isCalendarDay(source.madeAt)) return null;
+  return withId({ recipeId: source.recipeId, quantity, madeAt: source.madeAt }, source);
+}
+
 function sanitizeOrder(source, now) {
   if (!isObject(source) || !nonEmptyString(source.client)) return null;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(source.dueDate ?? "")) return null;
@@ -154,6 +200,7 @@ function sanitizeOrder(source, now) {
   const items = sanitizeLines(source.items, "recipeId");
   const packagingItems = sanitizeLines(source.packagingItems, "packagingId");
   if (!items || !packagingItems) return null;
+  const stockMove = sanitizeStockMove(source.stockMove);
   return withId(
     {
       client: source.client,
@@ -175,6 +222,7 @@ function sanitizeOrder(source, now) {
         Number.isFinite(source.createdAt) && source.createdAt > 0
           ? source.createdAt
           : now,
+      ...(stockMove ? { stockMove } : {}),
     },
     source,
   );
@@ -197,17 +245,18 @@ function sanitizeList(list, sanitize) {
 }
 
 // Returns { ingredients, recipes, recipeCategories, packaging, orders,
-// skipped }.
+// finishedGoods, skipped }.
 // Accepts recipes with `updatedAt` (current) or the legacy `updated` label.
 // Throws when the data is not a backup at all (not an object, or without
-// ingredients/recipes/packaging/orders arrays).
+// ingredients/recipes/packaging/orders/finishedGoods arrays).
 export function sanitizeBackup(data, now = Date.now()) {
   if (
     !isObject(data) ||
     (!Array.isArray(data.ingredients) &&
       !Array.isArray(data.recipes) &&
       !Array.isArray(data.packaging) &&
-      !Array.isArray(data.orders))
+      !Array.isArray(data.orders) &&
+      !Array.isArray(data.finishedGoods))
   ) {
     throw new Error("invalid backup shape");
   }
@@ -218,17 +267,20 @@ export function sanitizeBackup(data, now = Date.now()) {
   const categories = sanitizeList(data.recipeCategories, sanitizeCategory);
   const packaging = sanitizeList(data.packaging, sanitizePackaging);
   const orders = sanitizeList(data.orders, (order) => sanitizeOrder(order, now));
+  const finishedGoods = sanitizeList(data.finishedGoods, sanitizeFinishedGood);
   return {
     ingredients: ingredients.kept,
     recipes: recipes.kept,
     recipeCategories: categories.kept,
     packaging: packaging.kept,
     orders: orders.kept,
+    finishedGoods: finishedGoods.kept,
     skipped:
       ingredients.skipped +
       recipes.skipped +
       categories.skipped +
       packaging.skipped +
-      orders.skipped,
+      orders.skipped +
+      finishedGoods.skipped,
   };
 }

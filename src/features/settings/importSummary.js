@@ -1,12 +1,7 @@
+import { joinParts } from "../../lib/format";
+
 function plural(count, singular, pluralForm) {
   return `${count} ${count === 1 ? singular : pluralForm}`;
-}
-
-// "a", "a y b", "a, b y c".
-function joinParts(parts) {
-  return parts.length > 1
-    ? `${parts.slice(0, -1).join(", ")} y ${parts.at(-1)}`
-    : parts[0];
 }
 
 // Feedback after importing a backup (the result of sanitizeBackup).
@@ -16,6 +11,7 @@ export function importSummary({
   recipeCategories = [],
   packaging = [],
   orders = [],
+  finishedGoods = [],
   skipped,
 }) {
   const suffix = skipped
@@ -24,6 +20,9 @@ export function importSummary({
   const extras = [
     ...(packaging.length ? [`${packaging.length} packaging`] : []),
     ...(orders.length ? [plural(orders.length, "pedido", "pedidos")] : []),
+    ...(finishedGoods.length
+      ? [plural(finishedGoods.length, "tanda elaborada", "tandas elaboradas")]
+      : []),
   ];
   if (!ingredients.length && !recipes.length) {
     if (extras.length) return `Importamos ${joinParts(extras)}${suffix}`;

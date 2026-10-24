@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatMonthYear, formatRelativeDate } from "./dates";
+import { daysAgo, formatMonthYear, formatRelativeDate } from "./dates";
 
 const NOW = new Date(2026, 9, 6, 15, 0, 0).getTime();
 const MINUTE = 60 * 1000;
@@ -40,5 +40,16 @@ describe("formatMonthYear", () => {
   it("formats a capitalized Spanish month and the year", () => {
     expect(formatMonthYear(new Date(2026, 7, 15))).toBe("Agosto 2026");
     expect(formatMonthYear(new Date(2027, 0, 1))).toBe("Enero 2027");
+  });
+});
+
+describe("daysAgo", () => {
+  it("counts calendar days until today", () => {
+    expect(daysAgo("2026-10-23", "2026-10-23")).toBe("hoy");
+    expect(daysAgo("2026-10-22", "2026-10-23")).toBe("ayer");
+    expect(daysAgo("2026-10-20", "2026-10-23")).toBe("hace 3 días");
+    // Across the daylight saving change and the end of the month.
+    expect(daysAgo("2026-03-28", "2026-04-02")).toBe("hace 5 días");
+    expect(daysAgo("2026-10-24", "2026-10-23")).toBe("hoy");
   });
 });

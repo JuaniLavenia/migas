@@ -1,6 +1,14 @@
 import { create } from "zustand";
 import { v4 as uuidv4 } from "uuid";
 import { moveItem } from "../lib/listing";
+import { todayKey } from "../lib/orders";
+import {
+  applyMove,
+  cancelMove,
+  planPreparation,
+  stockTransition,
+  undoMove,
+} from "../lib/stockMoves";
 
 // The business data in memory. It starts empty: after sign-in the session
 // (src/app/session) loads it from the cloud and cloudSync saves every change
@@ -78,6 +86,7 @@ const useRecipeStore = create()((set, get) => ({
   recipeCategories: [],
   packaging: [],
   orders: [],
+  finishedGoods: [],
   addIngredient: (ingredient) =>
     set((state) => ({
       ingredients: [...state.ingredients, { ...ingredient, id: uuidv4() }],
@@ -134,6 +143,62 @@ const useRecipeStore = create()((set, get) => ({
   deleteOrder: (id) =>
     set((state) => ({
       orders: state.orders.filter((order) => order.id !== id),
+    })),
+  // Changes an order's status and, in the same update, its effect on the
+  // stock (lib/stockMoves.js): preparing deducts, going back returns it,
+  // cancelling keeps what was cooked as finished goods. Returns { ok: true },
+  // or { ok: false, shortages, problems } and changes nothing when the
+  // stock is not enough or a line's recipe or packaging was deleted.
+  changeOrderStatus: (id, status, today = todayKey()) => {
+    const state = get();
+    const order = state.orders.find((entry) => entry.id === id);
+    if (!order || order.status === status) return { ok: true };
+    const data = {
+      recipes: state.recipes,
+      ingredients: state.ingredients,
+      packaging: state.packaging,
+      finishedGoods: state.finishedGoods,
+    };
+    const transition = stockTransition(order.status, status, Boolean(order.stockMove));
+    let stock = {};
+    let stockMove = order.stockMove;
+    if (transition === "deduct") {
+      const plan = planPreparation(order, data, today, uuidv4);
+      if (plan.shortages.length || plan.problems.length) {
+        return { ok: false, shortages: plan.shortages, problems: plan.problems };
+      }
+      stock = applyMove(data, plan.move);
+      stockMove = plan.move;
+    } else if (transition === "undo" || transition === "cancel") {
+      const revert = transition === "undo" ? undoMove : cancelMove;
+      stock = revert(data, order.stockMove, today, uuidv4);
+      stockMove = undefined;
+    }
+    set({
+      ...stock,
+      orders: state.orders.map((entry) => {
+        if (entry.id !== id) return entry;
+        const { stockMove: _previous, ...rest } = entry;
+        return stockMove ? { ...rest, status, stockMove } : { ...rest, status };
+      }),
+    });
+    return { ok: true };
+  },
+  // A batch she cooked outside an order, or a correction. Returns its id.
+  addFinishedGood: (lot) => {
+    const id = uuidv4();
+    set((state) => ({ finishedGoods: [...state.finishedGoods, { ...lot, id }] }));
+    return id;
+  },
+  updateFinishedGood: (id, changes) =>
+    set((state) => ({
+      finishedGoods: state.finishedGoods.map((lot) =>
+        lot.id === id ? { ...lot, ...changes } : lot,
+      ),
+    })),
+  deleteFinishedGood: (id) =>
+    set((state) => ({
+      finishedGoods: state.finishedGoods.filter((lot) => lot.id !== id),
     })),
   addRecipe: (recipe) => {
     const nextRecipe = { ...recipe, id: uuidv4(), updatedAt: Date.now() };
@@ -228,6 +293,7 @@ const useRecipeStore = create()((set, get) => ({
     recipeCategories = [],
     packaging = [],
     orders = [],
+    finishedGoods = [],
   }) =>
     set((state) => {
       const renamed = new Map();
@@ -250,6 +316,10 @@ const useRecipeStore = create()((set, get) => ({
         packaging: mergeById(
           state.packaging,
           packaging.map((item) => ({ ...item, id: item.id || uuidv4() })),
+        ),
+        finishedGoods: mergeById(
+          state.finishedGoods,
+          finishedGoods.map((lot) => ({ ...lot, id: lot.id || uuidv4() })),
         ),
         orders: mergeById(
           state.orders,

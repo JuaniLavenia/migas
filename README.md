@@ -35,6 +35,10 @@ VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 - Seguir cada pedido por estado (Pendiente, Confirmado, En preparación, Listo, Entregado o Cancelado) y por pago (Sin pagar, Señado o Pagado, según lo cobrado).
 - Ver el precio propuesto desde el precio de venta, el sugerido de referencia y la ganancia real del precio acordado.
 - Ver los pedidos agrupados por fecha de entrega (Atrasados, Hoy, Mañana, Esta semana, Más adelante), filtrarlos por estado, buscarlos por cliente y cambiarles el estado desde la lista.
+- Descontar el stock al preparar un pedido: usa primero los elaborados más viejos, cocina tandas completas para el resto y guarda lo que sobra como elaborado. Nunca queda en negativo: si no alcanza, avisa qué falta y deja actualizar el stock ahí mismo.
+- Devolver el stock si el pedido vuelve atrás, y dejar lo cocinado como elaborado si se cancela.
+- Ver los elaborados de cada receta con su antigüedad, cargarlos a mano, corregirlos o descartarlos.
+- Ver la lista de compras de los pedidos pendientes y confirmados, agrupada por góndola, con lo que necesitás, lo que tenés y lo que te falta.
 - Crear recetas con categoría, rendimiento, ganancia sobre el costo, precio de venta, gastos extra e ingredientes utilizados.
 - Ver la biblioteca de recetas agrupada por categoría, con secciones plegables y filtro. Las categorías se crean desde la receta y se renombran o eliminan en Configuración.
 - Calcular lo que cuesta la tanda y cada unidad, el precio sugerido, la ganancia por unidad y avisar si el precio de venta quedó por debajo del sugerido.
@@ -70,8 +74,10 @@ src/
 ├── features/               # Una carpeta por vista: contenedor (*Page) + vistas
 │   ├── overview/
 │   ├── orders/
+│   ├── shopping/
 │   ├── ingredients/
 │   ├── packaging/
+│   ├── finished/
 │   ├── recipes/
 │   └── settings/
 ├── test/                   # Setup y helpers de los tests de interfaz
@@ -89,8 +95,10 @@ docs/                       # Guías (configuración de Supabase)
 | -------------------- | ---------------------------------------- |
 | `/`                  | Resumen                                  |
 | `/pedidos`           | Pedidos                                  |
+| `/compras`           | Lista de compras                         |
 | `/insumos`           | Insumos                                  |
 | `/packaging`         | Packaging                                |
+| `/elaborados`        | Elaborados                               |
 | `/recetas`           | Abre la última receta vista (o la primera) |
 | `/recetas/:recipeId` | Una receta                               |
 | `/configuracion`     | Backup, categorías y primera carga       |

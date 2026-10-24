@@ -200,3 +200,120 @@ describe("useRecipeStore orders", () => {
     ]);
   });
 });
+
+describe("useRecipeStore automatic stock", () => {
+  const harina = { id: "harina", name: "Harina", category: "Secos", unit: "g", packSize: 1000, packCost: 1000, stock: 1500 };
+  const cookies = {
+    id: "cookies",
+    name: "Cookies",
+    yield: 21,
+    margin: 0,
+    extras: 0,
+    items: [{ ingredientId: "harina", quantity: 1000 }],
+  };
+  const box = { id: "box", name: "Box x8", packSize: 10, packCost: 9000, stock: 3 };
+  const pedido = {
+    id: "o",
+    client: "Sofi",
+    dueDate: "2026-10-25",
+    items: [{ recipeId: "cookies", quantity: 16 }],
+    packagingItems: [{ packagingId: "box", quantity: 2 }],
+    price: 0,
+    paid: 0,
+    status: "confirmed",
+  };
+  const lote = { id: "lote", recipeId: "cookies", quantity: 5, madeAt: "2026-10-20" };
+  const change = (status, today = "2026-10-23") =>
+    useRecipeStore.getState().changeOrderStatus("o", status, today);
+
+  beforeEach(() => {
+    useRecipeStore.setState({
+      ingredients: [harina],
+      recipes: [cookies],
+      packaging: [box],
+      finishedGoods: [lote],
+      orders: [pedido],
+    });
+  });
+
+  it("deducts by full batches when preparing and keeps what it deducted", () => {
+    expect(change("preparing")).toEqual({ ok: true });
+    const state = useRecipeStore.getState();
+    expect(state.orders[0].status).toBe("preparing");
+    expect(state.orders[0].stockMove).toMatchObject({
+      ingredients: [{ ingredientId: "harina", quantity: 1000 }],
+      packaging: [{ packagingId: "box", quantity: 2 }],
+      taken: [{ lotId: "lote", quantity: 5 }],
+    });
+    expect(state.ingredients[0].stock).toBe(500);
+    expect(state.packaging[0].stock).toBe(1);
+    expect(state.finishedGoods).toEqual([
+      expect.objectContaining({ recipeId: "cookies", quantity: 10, madeAt: "2026-10-23" }),
+    ]);
+    // Between prepared states nothing moves again.
+    expect(change("ready")).toEqual({ ok: true });
+    expect(useRecipeStore.getState().ingredients[0].stock).toBe(500);
+  });
+
+  it("does not change anything when the stock is not enough", () => {
+    useRecipeStore.setState({ packaging: [{ ...box, stock: 1 }] });
+    const before = useRecipeStore.getState();
+    expect(change("preparing")).toEqual({
+      ok: false,
+      shortages: [{ kind: "packaging", id: "box", name: "Box x8", unit: "un", need: 2, have: 1, missing: 1 }],
+      problems: [],
+    });
+    const after = useRecipeStore.getState();
+    expect(after.orders).toBe(before.orders);
+    expect(after.ingredients).toBe(before.ingredients);
+    expect(after.finishedGoods).toBe(before.finishedGoods);
+  });
+
+  it("returns everything when the order goes back", () => {
+    change("preparing");
+    expect(change("confirmed")).toEqual({ ok: true });
+    const state = useRecipeStore.getState();
+    expect(state.orders[0].status).toBe("confirmed");
+    expect(state.orders[0]).not.toHaveProperty("stockMove");
+    expect(state.ingredients[0].stock).toBe(1500);
+    expect(state.packaging[0].stock).toBe(3);
+    expect(state.finishedGoods).toEqual([lote]);
+  });
+
+  it("keeps what was cooked as finished goods when the order is cancelled", () => {
+    change("preparing");
+    expect(change("cancelled", "2026-10-24")).toEqual({ ok: true });
+    const state = useRecipeStore.getState();
+    expect(state.orders[0]).not.toHaveProperty("stockMove");
+    expect(state.ingredients[0].stock).toBe(500);
+    expect(state.packaging[0].stock).toBe(3);
+    expect(
+      state.finishedGoods.map(({ quantity, madeAt }) => [quantity, madeAt]),
+    ).toEqual([
+      [10, "2026-10-23"],
+      [5, "2026-10-20"],
+      [11, "2026-10-24"],
+    ]);
+  });
+
+  it("only changes the status when there is nothing to deduct or return", () => {
+    expect(change("pending")).toEqual({ ok: true });
+    expect(useRecipeStore.getState().orders[0].status).toBe("pending");
+    expect(useRecipeStore.getState().ingredients[0].stock).toBe(1500);
+  });
+
+  it("adds, edits and discards finished goods by hand", () => {
+    const id = useRecipeStore
+      .getState()
+      .addFinishedGood({ recipeId: "cookies", quantity: 8, madeAt: "2026-10-22" });
+    useRecipeStore.getState().updateFinishedGood(id, { quantity: 6 });
+    expect(useRecipeStore.getState().finishedGoods.at(-1)).toEqual({
+      id,
+      recipeId: "cookies",
+      quantity: 6,
+      madeAt: "2026-10-22",
+    });
+    useRecipeStore.getState().deleteFinishedGood("lote");
+    expect(useRecipeStore.getState().finishedGoods.map((lot) => lot.id)).toEqual([id]);
+  });
+});

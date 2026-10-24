@@ -56,4 +56,13 @@ describe("importSummary", () => {
       importSummary({ ingredients: [], recipes: [], orders: list(5), skipped: 0 }),
     ).toBe("Importamos 5 pedidos");
   });
+
+  it("adds the finished goods when the backup brings some", () => {
+    expect(
+      importSummary({ ingredients: list(1), recipes: list(1), finishedGoods: list(2), skipped: 0 }),
+    ).toBe("Importamos 1 insumos, 1 recetas y 2 tandas elaboradas");
+    expect(
+      importSummary({ ingredients: [], recipes: [], finishedGoods: list(1), skipped: 0 }),
+    ).toBe("Importamos 1 tanda elaborada");
+  });
 });

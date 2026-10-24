@@ -12,6 +12,7 @@ const migrations = [
   "20261023000000_init.sql",
   "20261024000000_packaging_stock.sql",
   "20261025000000_orders.sql",
+  "20261026000000_auto_stock.sql",
 ].map((file) =>
   readFileSync(new URL(`../../../supabase/migrations/${file}`, import.meta.url), "utf8"),
 );
@@ -350,6 +351,50 @@ describe("Supabase schema", () => {
     ]);
     expect(await rows("select id from public.recipes")).toEqual([{ id: "nueva" }]);
     await rows("delete from public.recipes where business_id = $1", [business]);
+  });
+
+  it("keeps finished goods private to the business members, never negative", async () => {
+    const anas = await businessOf(ANA);
+    await rows(
+      "insert into public.finished_goods (business_id, id, recipe_id, quantity, made_at) values ($1, 'lote', 'cookies', 10, '2026-10-22')",
+      [anas],
+    );
+    expect(
+      await rows("select id, recipe_id, quantity, made_at::text from public.finished_goods"),
+    ).toEqual([{ id: "lote", recipe_id: "cookies", quantity: "10", made_at: "2026-10-22" }]);
+    await expect(
+      db.query("update public.finished_goods set quantity = -1 where business_id = $1", [anas]),
+    ).rejects.toThrow(/check/);
+
+    await as(BETO);
+    expect(await rows("select id from public.finished_goods")).toEqual([]);
+    await expect(
+      db.query(
+        "insert into public.finished_goods (business_id, id, recipe_id, quantity) values ($1, 'x', 'x', 1)",
+        [anas],
+      ),
+    ).rejects.toThrow();
+    await rows("update public.finished_goods set quantity = 99 where business_id = $1", [anas]);
+    await rows("delete from public.finished_goods where business_id = $1", [anas]);
+    await as(null);
+    expect(await rows("select id from public.finished_goods")).toEqual([]);
+
+    await as(ANA);
+    expect(await rows("select quantity from public.finished_goods")).toEqual([{ quantity: "10" }]);
+  });
+
+  it("keeps what each order deducted, empty for the orders before", async () => {
+    const business = await businessOf(ANA);
+    expect(await rows("select stock_move from public.orders where id = 'o-1'")).toEqual([
+      { stock_move: null },
+    ]);
+    await rows(
+      "update public.orders set stock_move = $2 where business_id = $1 and id = 'o-1'",
+      [business, { ingredients: [{ ingredientId: "harina", quantity: 2100 }] }],
+    );
+    expect(await rows("select stock_move from public.orders where id = 'o-1'")).toEqual([
+      { stock_move: { ingredients: [{ ingredientId: "harina", quantity: 2100 }] } },
+    ]);
   });
 
   it("lets a member edit, reorder and delete their rows", async () => {

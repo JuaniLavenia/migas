@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { sanitizeBackup } from "./backup";
+import { planPreparation } from "./stockMoves";
 
 const validIngredient = {
   id: "harina",
@@ -306,6 +307,57 @@ describe("sanitizeBackup", () => {
       },
     ]);
     expect(result.skipped).toBe(6);
+  });
+
+  it("keeps what each order deducted, dropping a broken record of it", () => {
+    const base = { id: "o", client: "Sofi", dueDate: "2026-10-25", price: 0, status: "preparing" };
+    const stockMove = {
+      ingredients: [{ ingredientId: "harina", quantity: 1000 }],
+      packaging: [{ packagingId: "box", quantity: 2 }],
+      taken: [{ lotId: "lote", recipeId: "cookies", quantity: 5, madeAt: "2026-10-20" }],
+      cooked: [{ recipeId: "cookies", quantity: 11 }],
+      created: [{ lotId: "nuevo", recipeId: "cookies", quantity: 10, madeAt: "2026-10-23" }],
+    };
+    const result = sanitizeBackup({
+      orders: [
+        { ...base, stockMove },
+        { ...base, id: "p", stockMove: { ingredients: [{ ingredientId: "", quantity: 1 }] } },
+        { ...base, id: "q" },
+      ],
+    });
+    expect(result.orders[0].stockMove).toEqual(stockMove);
+    expect(result.orders[1]).not.toHaveProperty("stockMove");
+    expect(result.orders[2]).not.toHaveProperty("stockMove");
+    expect(result.orders).toHaveLength(3);
+  });
+
+  it("keeps what an order deducted when its recipe has a line without quantity", () => {
+    const data = {
+      recipes: [{ id: "r", yield: 21, items: [{ ingredientId: "h", quantity: 300 }, { ingredientId: "s", quantity: 0 }] }],
+      ingredients: [{ id: "h", name: "Harina", stock: 1000 }, { id: "s", name: "Sal", stock: 0 }],
+      packaging: [],
+      finishedGoods: [],
+    };
+    const order = { id: "o", client: "Ana", dueDate: "2026-10-30", items: [{ recipeId: "r", quantity: 10 }], packagingItems: [], price: 0, status: "preparing", createdAt: 5 };
+    const { move } = planPreparation(order, data, "2026-10-23", () => "lot");
+    const backup = sanitizeBackup(JSON.parse(JSON.stringify({ orders: [{ ...order, stockMove: move }] })), 1);
+    expect(backup.orders[0].stockMove).toEqual(move);
+  });
+
+  it("keeps valid finished goods and skips broken ones", () => {
+    const result = sanitizeBackup({
+      finishedGoods: [
+        { id: "lote", recipeId: "cookies", quantity: "10", madeAt: "2026-10-22", evil: 1 },
+        { id: "x", recipeId: "", quantity: 1, madeAt: "2026-10-22" },
+        { id: "y", recipeId: "cookies", quantity: -1, madeAt: "2026-10-22" },
+        { id: "z", recipeId: "cookies", quantity: 1, madeAt: "ayer" },
+      ],
+    });
+    expect(result.finishedGoods).toEqual([
+      { id: "lote", recipeId: "cookies", quantity: 10, madeAt: "2026-10-22" },
+    ]);
+    expect(result.skipped).toBe(3);
+    expect(sanitizeBackup({ recipes: [validRecipe] }).finishedGoods).toEqual([]);
   });
 
   it("accepts an old backup without orders, and one that only brings orders", () => {
