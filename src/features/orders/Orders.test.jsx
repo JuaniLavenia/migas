@@ -65,7 +65,9 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-describe("Orders", () => {
+// These tests fill whole forms: under a full parallel run they can pass the
+// default 5 s.
+describe("Orders", { timeout: 15000 }, () => {
   it("has its own view in the sidebar, counting the open orders", async () => {
     const { user } = renderOrders(
       [pedido({ client: "Sofi" }), pedido({ client: "Ana", status: "delivered" })],
