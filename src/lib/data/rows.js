@@ -1,6 +1,6 @@
 // Mapping between the app's records and the Supabase rows (see
 // supabase/migrations). Collections are named as in the store: "recipes",
-// "ingredients", "recipeCategories", "packaging". Optional recipe fields are
+// "ingredients", "recipeCategories", "packaging", "orders". Optional recipe fields are
 // null in the database and absent in the app. Postgres numerics come back as
 // strings.
 
@@ -9,6 +9,7 @@ export const TABLES = {
   ingredients: "ingredients",
   recipeCategories: "recipe_categories",
   packaging: "packaging",
+  orders: "orders",
 };
 
 export const COLLECTIONS = Object.keys(TABLES);
@@ -22,6 +23,14 @@ function optionalNumber(value) {
   if (value === null || value === undefined || value === "") return null;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+function text(value, fallback = "") {
+  return typeof value === "string" ? value : fallback;
+}
+
+function list(value) {
+  return Array.isArray(value) ? value : [];
 }
 
 function optionalText(value) {
@@ -93,6 +102,37 @@ const mappers = {
       packSize: number(row.pack_size),
       packCost: number(row.pack_cost),
       stock: number(row.stock),
+    }),
+  },
+  orders: {
+    toRow: (order) => ({
+      client: order.client ?? "",
+      contact: text(order.contact),
+      due_date: order.dueDate,
+      due_time: text(order.dueTime),
+      delivery: text(order.delivery, "pickup"),
+      notes: text(order.notes),
+      items: list(order.items),
+      packaging_items: list(order.packagingItems),
+      price: number(order.price),
+      paid: number(order.paid),
+      status: text(order.status, "pending"),
+      created_at: number(order.createdAt, Date.now()),
+    }),
+    fromRow: (row) => ({
+      id: row.id,
+      client: row.client,
+      contact: text(row.contact),
+      dueDate: row.due_date,
+      dueTime: text(row.due_time),
+      delivery: text(row.delivery, "pickup"),
+      notes: text(row.notes),
+      items: list(row.items),
+      packagingItems: list(row.packaging_items),
+      price: number(row.price),
+      paid: number(row.paid),
+      status: text(row.status, "pending"),
+      createdAt: number(row.created_at),
     }),
   },
 };

@@ -77,6 +77,7 @@ const useRecipeStore = create()((set, get) => ({
   recipes: [],
   recipeCategories: [],
   packaging: [],
+  orders: [],
   addIngredient: (ingredient) =>
     set((state) => ({
       ingredients: [...state.ingredients, { ...ingredient, id: uuidv4() }],
