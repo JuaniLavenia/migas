@@ -1,36 +1,25 @@
 import { describe, expect, it } from "vitest";
-import { screen, within } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { currentPath, renderApp } from "./test/renderApp";
 import useRecipeStore from "./stores/useRecipeStore";
 
-describe("Overview navigation", () => {
-  it("exposes recipe rows and shortcuts as links", () => {
+describe("Dashboard navigation", () => {
+  it("exposes its shortcuts as links", () => {
     renderApp();
-    const [first] = useRecipeStore.getState().recipes;
-    const library = screen
-      .getByRole("heading", { name: "Tus recetas" })
-      .closest("section");
-    const rows = within(library).getAllByRole("link", {
-      name: new RegExp(first.name),
-    });
-    expect(rows[0]).toHaveAttribute("href", `/recetas/${first.id}`);
+    expect(screen.getByRole("link", { name: /Ver pedidos/ })).toHaveAttribute("href", "/pedidos");
     expect(
-      within(library).getByRole("link", { name: /Ver todas/ }),
-    ).toHaveAttribute("href", "/recetas");
-    expect(screen.getByRole("link", { name: /Ver detalle/ })).toHaveAttribute(
+      screen.getByRole("link", { name: /Ver lista de compras/ }),
+    ).toHaveAttribute("href", "/compras");
+    expect(screen.getByRole("link", { name: /Ver elaborados/ })).toHaveAttribute(
       "href",
-      `/recetas/${first.id}`,
+      "/elaborados",
     );
-    expect(
-      screen.getByRole("link", { name: /Cargar un insumo/ }),
-    ).toHaveAttribute("href", "/insumos");
   });
 
-  it("still opens a recipe from the overview", async () => {
+  it("opens the orders from a shortcut", async () => {
     const { user } = renderApp();
-    const [first] = useRecipeStore.getState().recipes;
-    await user.click(screen.getByRole("link", { name: /Ver detalle/ }));
-    expect(currentPath()).toBe(`/recetas/${first.id}`);
+    await user.click(screen.getByRole("link", { name: /Ver pedidos/ }));
+    expect(currentPath()).toBe("/pedidos");
   });
 });
 

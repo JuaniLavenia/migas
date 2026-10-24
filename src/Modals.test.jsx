@@ -40,7 +40,7 @@ describe("Form modals", () => {
   });
 
   it("keeps Tab inside the dialog", async () => {
-    const { user } = renderApp();
+    const { user } = renderApp({ route: "/recetas" });
     await user.click(screen.getAllByRole("button", { name: /Nueva receta/ })[0]);
     const dialog = screen.getByRole("dialog", { name: "Nueva receta" });
     for (let step = 0; step < 25; step += 1) {

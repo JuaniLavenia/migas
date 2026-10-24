@@ -3,7 +3,6 @@ import { act, screen, within } from "@testing-library/react";
 import { currentPath, renderApp } from "./test/renderApp";
 import useRecipeStore from "./stores/useRecipeStore";
 import useSaveStatusStore from "./stores/useSaveStatusStore";
-import { formatMonthYear } from "./lib/dates";
 
 // Characterization tests of the main UI flows. They describe what the user
 // sees and does (roles, labels, text), so they keep passing while the app is
@@ -21,7 +20,7 @@ function pageTitle(name) {
 describe("App", () => {
   it("navigates between views from the sidebar", async () => {
     const { user } = renderApp();
-    expect(pageTitle("Un precio justo empieza acá.")).toBeInTheDocument();
+    expect(pageTitle("Cómo va tu negocio.")).toBeInTheDocument();
 
     await user.click(navItem(/^Insumos/));
     expect(pageTitle("Tus insumos.")).toBeInTheDocument();
@@ -37,7 +36,7 @@ describe("App", () => {
     expect(currentPath()).toBe("/configuracion");
 
     await user.click(navItem(/^Resumen/));
-    expect(pageTitle("Un precio justo empieza acá.")).toBeInTheDocument();
+    expect(pageTitle("Cómo va tu negocio.")).toBeInTheDocument();
     expect(currentPath()).toBe("/");
   });
 
@@ -55,31 +54,26 @@ describe("App", () => {
 
   it("redirects unknown paths to the overview", () => {
     renderApp({ route: "/cualquier-cosa" });
-    expect(pageTitle("Un precio justo empieza acá.")).toBeInTheDocument();
+    expect(pageTitle("Cómo va tu negocio.")).toBeInTheDocument();
     expect(currentPath()).toBe("/");
   });
 
-  it("opens a recipe from the overview and the recipe selector", async () => {
-    const { user } = renderApp();
-    await user.click(screen.getByRole("link", { name: /Brownie clásico/ }));
-    expect(currentPath()).toBe("/recetas/brownie");
-    expect(screen.getByDisplayValue("Brownie clásico")).toBeInTheDocument();
-
+  it("opens a recipe from the recipe selector and comes back to it", async () => {
+    const { user } = renderApp({ route: "/recetas/brownie" });
     // The library item itself, not its "Subir"/"Bajar"/"Reordenar" controls.
     await user.click(
       screen.getByRole("button", { name: /^C Cookies de chocolate/ }),
     );
     expect(currentPath()).toBe("/recetas/cookies");
 
-    // The overview keeps showing the last recipe opened.
+    // Recetas reopens the last recipe opened.
     await user.click(navItem(/^Resumen/));
-    expect(
-      screen.getByRole("heading", { level: 2, name: "Cookies de chocolate" }),
-    ).toBeInTheDocument();
+    await user.click(navItem(/^Recetas/));
+    expect(currentPath()).toBe("/recetas/cookies");
   });
 
   it("navigates to a recipe after creating it", async () => {
-    const { user } = renderApp();
+    const { user } = renderApp({ route: "/recetas" });
     await user.click(screen.getAllByRole("button", { name: /Nueva receta/ })[0]);
     await user.type(screen.getByPlaceholderText("Ej. Budín de limón"), "Tarta");
     await user.click(screen.getByRole("button", { name: "Crear receta" }));
@@ -182,13 +176,6 @@ describe("App", () => {
         })),
       })),
     );
-    expect(
-      screen.getAllByText(/Actualizada hace 3 días/).length,
-    ).toBeGreaterThan(0);
-    expect(
-      screen.getByText(`Mi cocina / ${formatMonthYear(new Date())}`),
-    ).toBeInTheDocument();
-
     await user.click(navItem(/^Recetas/));
     expect(screen.getByText("hace 3 días")).toBeInTheDocument();
     await user.type(screen.getByDisplayValue("18"), "0");
@@ -197,11 +184,6 @@ describe("App", () => {
 
   it("shows empty states when there are no recipes", async () => {
     const { user } = renderApp({ state: { recipes: [] } });
-    expect(
-      screen.getByRole("heading", { level: 2, name: "Sin recetas" }),
-    ).toBeInTheDocument();
-    expect(screen.getByText("Todavía no hay recetas.")).toBeInTheDocument();
-
     await user.click(navItem(/^Recetas/));
     expect(pageTitle("Tus recetas.")).toBeInTheDocument();
     expect(screen.getByText("Todavía no hay recetas.")).toBeInTheDocument();

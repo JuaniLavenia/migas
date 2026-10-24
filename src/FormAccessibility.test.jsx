@@ -32,7 +32,7 @@ describe("Form accessibility", () => {
   });
 
   it("labels every control of the new recipe modal", async () => {
-    const { user } = renderApp();
+    const { user } = renderApp({ route: "/recetas" });
     await user.click(screen.getAllByRole("button", { name: /Nueva receta/ })[0]);
     const form = screen.getByRole("button", { name: "Crear receta" }).closest(
       "form",

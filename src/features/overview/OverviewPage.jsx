@@ -1,20 +1,25 @@
-import { useMemo } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { CloudUpload } from "lucide-react";
 import useRecipeStore from "../../stores/useRecipeStore";
-import useRecipeSelectionStore from "../../stores/useRecipeSelectionStore";
-import { recipeTotals } from "../../lib/recipeMath";
-import { resolveSelectedRecipe } from "../../lib/recipeSelection";
-import { recipePath, viewPath } from "../../app/navigation";
-import useNewRecipeModal from "../recipes/useNewRecipeModal";
-import Overview from "./Overview";
+import { viewPath } from "../../app/navigation";
 import { useSession } from "../../app/session/SessionContext";
 import { readLocalData } from "../../lib/localData";
+import { daysAgo } from "../../lib/dates";
+import { todayKey } from "../../lib/orders";
+import { shoppingList } from "../../lib/stockMoves";
+import {
+  balanceDue,
+  compareMonths,
+  monthLabel,
+  monthSummary,
+  oldFinishedGoods,
+  shiftMonth,
+  topRecipes,
+  upcomingDeliveries,
+} from "../../lib/dashboard";
+import Dashboard from "./Dashboard";
 
-const emptyTotals = { cost: 0, unitCost: 0, price: 0, missingCount: 0 };
-
-// Container of the overview. The spotlight shows the last recipe opened in
-// this session (the first one otherwise); a new recipe opens at its URL.
 // On a first sign-in the cloud is empty while the phone still has the old
 // data: say where to upload it, so the empty app does not look like a loss.
 function UploadHint() {
@@ -45,34 +50,52 @@ function UploadHint() {
   );
 }
 
-function OverviewPage() {
-  const ingredients = useRecipeStore((state) => state.ingredients);
-  const recipes = useRecipeStore((state) => state.recipes);
-  const lastRecipeId = useRecipeSelectionStore((state) => state.lastRecipeId);
-  const navigate = useNavigate();
-  const openRecipe = (id) => navigate(recipePath(id));
-  const { openNewRecipe, newRecipeModal } = useNewRecipeModal({
-    onCreated: openRecipe,
-  });
+// "septiembre", for "vs septiembre".
+function monthName(month) {
+  return monthLabel(month).split(" ")[0].toLowerCase();
+}
 
-  const selectedRecipe = resolveSelectedRecipe(recipes, lastRecipeId);
-  const totals = useMemo(
-    () =>
-      selectedRecipe ? recipeTotals(selectedRecipe, ingredients) : emptyTotals,
-    [selectedRecipe, ingredients],
-  );
+// Container of the home view, the business dashboard: the chosen month
+// (the current one by default) against the month before, plus what needs
+// attention today.
+function OverviewPage() {
+  const orders = useRecipeStore((state) => state.orders);
+  const recipes = useRecipeStore((state) => state.recipes);
+  const ingredients = useRecipeStore((state) => state.ingredients);
+  const packaging = useRecipeStore((state) => state.packaging);
+  const finishedGoods = useRecipeStore((state) => state.finishedGoods);
+  const today = todayKey();
+  const [month, setMonth] = useState(() => today.slice(0, 7));
+
+  const catalog = { recipes, ingredients, packaging };
+  const previous = shiftMonth(month, -1);
+  const summary = monthSummary(orders, catalog, month);
+  const missingCount = shoppingList({ ...catalog, finishedGoods, orders })
+    .groups.flatMap((group) => group.items)
+    .filter((item) => item.missing > 0).length;
+  const nameOf = (recipeId) =>
+    recipes.find((recipe) => recipe.id === recipeId)?.name ?? "de una receta eliminada";
 
   return (
     <>
       <UploadHint />
-      <Overview
-        recipes={recipes}
-        ingredients={ingredients}
-        selectedRecipe={selectedRecipe}
-        totals={totals}
-        onNewRecipe={openNewRecipe}
+      <Dashboard
+        month={{ label: monthLabel(month), previousName: monthName(previous) }}
+        onPreviousMonth={() => setMonth(previous)}
+        onNextMonth={() => setMonth(shiftMonth(month, 1))}
+        summary={summary}
+        changes={compareMonths(summary, monthSummary(orders, catalog, previous))}
+        balance={balanceDue(orders)}
+        hasOrders={orders.length > 0}
+        upcoming={upcomingDeliveries(orders, today)}
+        missingCount={missingCount}
+        oldLots={oldFinishedGoods(finishedGoods, today).map((lot) => ({
+          ...lot,
+          name: nameOf(lot.recipeId),
+          age: daysAgo(lot.madeAt, today),
+        }))}
+        topRecipes={topRecipes(orders, catalog, month)}
       />
-      {newRecipeModal}
     </>
   );
 }
