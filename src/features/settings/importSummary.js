@@ -16,6 +16,7 @@ export function importSummary({
   recipeCategories = [],
   packaging = [],
   orders = [],
+  finishedGoods = [],
   skipped,
 }) {
   const suffix = skipped
@@ -24,6 +25,9 @@ export function importSummary({
   const extras = [
     ...(packaging.length ? [`${packaging.length} packaging`] : []),
     ...(orders.length ? [plural(orders.length, "pedido", "pedidos")] : []),
+    ...(finishedGoods.length
+      ? [plural(finishedGoods.length, "tanda elaborada", "tandas elaboradas")]
+      : []),
   ];
   if (!ingredients.length && !recipes.length) {
     if (extras.length) return `Importamos ${joinParts(extras)}${suffix}`;

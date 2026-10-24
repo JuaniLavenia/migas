@@ -308,6 +308,44 @@ describe("sanitizeBackup", () => {
     expect(result.skipped).toBe(6);
   });
 
+  it("keeps what each order deducted, dropping a broken record of it", () => {
+    const base = { id: "o", client: "Sofi", dueDate: "2026-10-25", price: 0, status: "preparing" };
+    const stockMove = {
+      ingredients: [{ ingredientId: "harina", quantity: 1000 }],
+      packaging: [{ packagingId: "box", quantity: 2 }],
+      taken: [{ lotId: "lote", recipeId: "cookies", quantity: 5, madeAt: "2026-10-20" }],
+      cooked: [{ recipeId: "cookies", quantity: 11 }],
+      created: [{ lotId: "nuevo", recipeId: "cookies", quantity: 10, madeAt: "2026-10-23" }],
+    };
+    const result = sanitizeBackup({
+      orders: [
+        { ...base, stockMove },
+        { ...base, id: "p", stockMove: { ingredients: [{ ingredientId: "", quantity: 1 }] } },
+        { ...base, id: "q" },
+      ],
+    });
+    expect(result.orders[0].stockMove).toEqual(stockMove);
+    expect(result.orders[1]).not.toHaveProperty("stockMove");
+    expect(result.orders[2]).not.toHaveProperty("stockMove");
+    expect(result.orders).toHaveLength(3);
+  });
+
+  it("keeps valid finished goods and skips broken ones", () => {
+    const result = sanitizeBackup({
+      finishedGoods: [
+        { id: "lote", recipeId: "cookies", quantity: "10", madeAt: "2026-10-22", evil: 1 },
+        { id: "x", recipeId: "", quantity: 1, madeAt: "2026-10-22" },
+        { id: "y", recipeId: "cookies", quantity: -1, madeAt: "2026-10-22" },
+        { id: "z", recipeId: "cookies", quantity: 1, madeAt: "ayer" },
+      ],
+    });
+    expect(result.finishedGoods).toEqual([
+      { id: "lote", recipeId: "cookies", quantity: 10, madeAt: "2026-10-22" },
+    ]);
+    expect(result.skipped).toBe(3);
+    expect(sanitizeBackup({ recipes: [validRecipe] }).finishedGoods).toEqual([]);
+  });
+
   it("accepts an old backup without orders, and one that only brings orders", () => {
     expect(sanitizeBackup({ recipes: [validRecipe] }).orders).toEqual([]);
     expect(sanitizeBackup({ orders: [] }).orders).toEqual([]);

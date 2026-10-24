@@ -155,6 +155,24 @@ describe("backup", () => {
     expect(useRecipeStore.getState().orders).toEqual([pedido]);
   });
 
+  it("exports and restores the finished goods", async () => {
+    const lote = { id: "lote", recipeId: "cookies", quantity: 10, madeAt: "2026-10-22" };
+    const first = renderApp({
+      route: "/configuracion",
+      state: { ingredients: [], recipes: [], finishedGoods: [lote] },
+    });
+    const parsed = JSON.parse(await exportBackup(first.user));
+    expect(parsed.finishedGoods).toEqual([lote]);
+    first.unmount();
+    const second = renderApp({
+      route: "/configuracion",
+      state: { ingredients: [], recipes: [], finishedGoods: [] },
+    });
+    await importBackup(second.user, parsed);
+    expect(await screen.findByText("Importamos 1 tanda elaborada")).toBeInTheDocument();
+    expect(useRecipeStore.getState().finishedGoods).toEqual([lote]);
+  });
+
   it("imports an old backup with embedded photos, without the photos", async () => {
     const { user } = renderApp({
       route: "/configuracion",
