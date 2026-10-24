@@ -1,8 +1,8 @@
 // Mapping between the app's records and the Supabase rows (see
 // supabase/migrations). Collections are named as in the store: "recipes",
-// "ingredients", "recipeCategories", "packaging", "orders". Optional recipe fields are
-// null in the database and absent in the app. Postgres numerics come back as
-// strings.
+// "ingredients", "recipeCategories", "packaging", "orders", "finishedGoods".
+// Optional fields (of recipes, an order's stockMove) are null in the database
+// and absent in the app. Postgres numerics come back as strings.
 
 export const TABLES = {
   recipes: "recipes",
@@ -10,6 +10,7 @@ export const TABLES = {
   recipeCategories: "recipe_categories",
   packaging: "packaging",
   orders: "orders",
+  finishedGoods: "finished_goods",
 };
 
 export const COLLECTIONS = Object.keys(TABLES);
@@ -118,6 +119,7 @@ const mappers = {
       paid: number(order.paid),
       status: text(order.status, "pending"),
       created_at: number(order.createdAt, Date.now()),
+      stock_move: order.stockMove ?? null,
     }),
     fromRow: (row) => ({
       id: row.id,
@@ -133,6 +135,20 @@ const mappers = {
       paid: number(row.paid),
       status: text(row.status, "pending"),
       createdAt: number(row.created_at),
+      ...(row.stock_move ? { stockMove: row.stock_move } : {}),
+    }),
+  },
+  finishedGoods: {
+    toRow: (lot) => ({
+      recipe_id: lot.recipeId,
+      quantity: number(lot.quantity),
+      made_at: lot.madeAt,
+    }),
+    fromRow: (row) => ({
+      id: row.id,
+      recipeId: row.recipe_id,
+      quantity: number(row.quantity),
+      madeAt: row.made_at,
     }),
   },
 };

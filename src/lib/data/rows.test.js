@@ -196,9 +196,37 @@ describe("rows", () => {
       paid: 10000,
       status: "confirmed",
       created_at: 1767225600000,
+      stock_move: null,
       position: 4,
     });
     expect(fromRow("orders", row)).toEqual(order);
+  });
+
+  it("keeps what an order deducted from the stock", () => {
+    const stockMove = {
+      ingredients: [{ ingredientId: "harina", quantity: 2100 }],
+      packaging: [{ packagingId: "box", quantity: 2 }],
+      taken: [{ lotId: "lote-1", recipeId: "cookies", quantity: 5, madeAt: "2026-10-20" }],
+      created: [{ lotId: "lote-2", recipeId: "cookies", quantity: 10 }],
+    };
+    const order = { id: "o", client: "Sofi", dueDate: "2026-10-25", stockMove };
+    const row = toRow("orders", order, BUSINESS, 0);
+    expect(row.stock_move).toEqual(stockMove);
+    expect(fromRow("orders", row).stockMove).toEqual(stockMove);
+  });
+
+  it("maps a batch of finished goods", () => {
+    const lot = { id: "lote-1", recipeId: "cookies", quantity: 10, madeAt: "2026-10-22" };
+    const row = toRow("finishedGoods", lot, BUSINESS, 1);
+    expect(row).toEqual({
+      business_id: BUSINESS,
+      id: "lote-1",
+      recipe_id: "cookies",
+      quantity: 10,
+      made_at: "2026-10-22",
+      position: 1,
+    });
+    expect(fromRow("finishedGoods", { ...row, quantity: "10" })).toEqual(lot);
   });
 
   it("fills the optional order fields with their defaults", () => {
