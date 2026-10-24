@@ -138,10 +138,17 @@ function textOr(value, fallback = "") {
   return typeof value === "string" ? value : fallback;
 }
 
+// "2026-02-30" parses in JavaScript but is not a day (Postgres rejects it):
+// the date must read back the same.
+function isCalendarDay(key) {
+  const date = new Date(`${key}T00:00:00Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === key;
+}
+
 function sanitizeOrder(source, now) {
   if (!isObject(source) || !nonEmptyString(source.client)) return null;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(source.dueDate ?? "")) return null;
-  if (Number.isNaN(Date.parse(source.dueDate))) return null;
+  if (!isCalendarDay(source.dueDate)) return null;
   const price = toFiniteNumber(source.price);
   if (!(price >= 0)) return null;
   const items = sanitizeLines(source.items, "recipeId");

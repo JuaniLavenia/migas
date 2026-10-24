@@ -266,6 +266,8 @@ describe("sanitizeBackup", () => {
         { ...base, id: "o-2", dueTime: "tarde", delivery: "drone", status: "shipped", paid: -5 },
         { ...base, id: "x", client: "" },
         { ...base, id: "y", dueDate: "25/10" },
+        // Not a calendar day: Postgres would reject it on every save.
+        { ...base, id: "v", dueDate: "2026-02-30" },
         { ...base, id: "z", price: -1 },
         { ...base, id: "w", items: [{ recipeId: "cookies", quantity: 0 }] },
         "pedido",
@@ -303,7 +305,7 @@ describe("sanitizeBackup", () => {
         createdAt: 99,
       },
     ]);
-    expect(result.skipped).toBe(5);
+    expect(result.skipped).toBe(6);
   });
 
   it("accepts an old backup without orders, and one that only brings orders", () => {

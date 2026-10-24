@@ -112,6 +112,8 @@ function OrderModal({ initial, catalog, onClose, onSave }) {
     paid: editing ? String(initial.paid ?? 0) : "",
     status: initial.status ?? "pending",
   });
+  // A name of only spaces passes "required"; it is checked on submit.
+  const [clientError, setClientError] = useState(false);
   const change = (field, value) => setForm((current) => ({ ...current, [field]: value }));
   const recipes = [...catalog.recipes].sort(byName);
   const packaging = [...catalog.packaging].sort(byName);
@@ -127,6 +129,11 @@ function OrderModal({ initial, catalog, onClose, onSave }) {
 
   function submit(event) {
     event.preventDefault();
+    if (!form.client.trim()) {
+      setClientError(true);
+      document.getElementById(`${fieldId}-client`)?.focus();
+      return;
+    }
     onSave({
       client: form.client.trim(),
       contact: form.contact.trim(),
@@ -151,9 +158,19 @@ function OrderModal({ initial, catalog, onClose, onSave }) {
               id={`${fieldId}-client`}
               required
               value={form.client}
-              onChange={(event) => change("client", event.target.value)}
+              onChange={(event) => {
+                change("client", event.target.value);
+                setClientError(false);
+              }}
               placeholder="Ej. Sofi"
+              aria-invalid={clientError}
+              aria-describedby={clientError ? `${fieldId}-client-error` : undefined}
             />
+            {clientError && (
+              <p className="field-error" id={`${fieldId}-client-error`}>
+                Escribí el nombre del cliente.
+              </p>
+            )}
           </div>
           <div className="field-group">
             <label htmlFor={`${fieldId}-contact`}>Contacto</label>

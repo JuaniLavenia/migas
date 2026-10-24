@@ -152,6 +152,17 @@ describe("Orders", () => {
     );
   });
 
+  it("does not save an order whose client is only spaces", async () => {
+    const { user } = renderOrders([]);
+    await user.click(screen.getByRole("button", { name: /Nuevo pedido/ }));
+    const form = within(screen.getByRole("dialog"));
+    await user.type(form.getByLabelText("Cliente"), "   ");
+    await user.type(form.getByLabelText("Fecha de entrega"), "2026-10-22");
+    await user.click(form.getByRole("button", { name: "Guardar pedido" }));
+    expect(useRecipeStore.getState().orders).toEqual([]);
+    expect(form.getByLabelText("Cliente")).toHaveAccessibleDescription("Escribí el nombre del cliente.");
+  });
+
   it("keeps an agreed price she edits and shows the real profit with it", async () => {
     const { user } = renderOrders([]);
     await user.click(screen.getByRole("button", { name: /Nuevo pedido/ }));
