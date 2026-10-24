@@ -1798,3 +1798,215 @@ textarea:focus-visible {
 .upload-hint:hover strong {
   text-decoration: underline;
 }
+
+/* Orders: groups by delivery date, cards and the order form. */
+.order-group {
+  margin-bottom: 22px;
+}
+.order-group h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  color: var(--ink);
+  font: 700 18px "Playfair Display", serif;
+}
+.order-group h2 span {
+  border-radius: 999px;
+  background: var(--surface-tint-strong);
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 4px 8px;
+}
+.order-group.overdue h2 {
+  color: var(--danger-ink);
+}
+.order-group.overdue h2 span {
+  background: var(--danger-soft);
+  color: var(--danger-ink);
+}
+.order-group.overdue .order-card {
+  border-left: 3px solid var(--danger);
+}
+.order-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+.order-card {
+  display: grid;
+  gap: 8px;
+  padding: 15px 16px;
+}
+.order-card p {
+  margin: 0;
+}
+.order-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+.order-client {
+  display: block;
+  color: var(--ink);
+  font-size: 15px;
+}
+.order-contact,
+.order-due,
+.order-notes {
+  color: var(--muted);
+  font-size: 12px;
+}
+.order-due {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.order-delivery {
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+}
+.order-contents {
+  color: var(--ink);
+  font-size: 13px;
+}
+.order-notes {
+  font-style: italic;
+  overflow-wrap: anywhere;
+}
+.order-card-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+.order-status {
+  border: 1px solid var(--field-border);
+  border-radius: 7px;
+  background: var(--surface-soft);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 7px 8px;
+}
+.order-status:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+  outline: 0;
+}
+.order-status[data-status="ready"],
+.order-status[data-status="delivered"] {
+  background: var(--primary-soft);
+  color: var(--primary-ink);
+}
+.order-status[data-status="preparing"] {
+  background: var(--warning-soft);
+  color: var(--warning-ink);
+}
+.order-status[data-status="cancelled"] {
+  color: var(--muted);
+}
+.order-payment {
+  color: var(--danger-ink);
+  font-size: 12px;
+  font-weight: 700;
+}
+.order-payment[data-payment="deposit"] {
+  color: var(--warning-ink);
+}
+.order-payment[data-payment="paid"] {
+  color: var(--primary-ink);
+}
+.order-price {
+  margin-left: auto;
+  color: var(--ink);
+}
+.order-delivery-field {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+.order-delivery-field legend {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  padding: 0;
+}
+.field-group .radio-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 400;
+}
+.field-group .radio-option input {
+  width: auto;
+  accent-color: var(--primary);
+}
+.field-group textarea {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--field-border);
+  border-radius: 6px;
+  background: var(--surface-soft);
+  outline: 0;
+  padding: 10px;
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  resize: vertical;
+}
+.field-group textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+.order-money {
+  margin-top: 22px;
+}
+.order-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+  border-radius: 8px;
+  background: var(--surface-tint);
+  padding: 12px;
+}
+.order-summary span {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+}
+.order-warning {
+  justify-content: flex-start;
+  margin-top: 10px;
+}
+.order-summary strong {
+  color: var(--ink);
+  font-size: 15px;
+}
+@media (max-width: 680px) {
+  .order-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .order-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

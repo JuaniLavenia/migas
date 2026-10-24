@@ -11,6 +11,7 @@ import { PGlite } from "@electric-sql/pglite";
 const migrations = [
   "20261023000000_init.sql",
   "20261024000000_packaging_stock.sql",
+  "20261025000000_orders.sql",
 ].map((file) =>
   readFileSync(new URL(`../../../supabase/migrations/${file}`, import.meta.url), "utf8"),
 );
@@ -258,6 +259,97 @@ describe("Supabase schema", () => {
       ]),
     ).rejects.toThrow(/business_not_empty/);
     expect(await rows("select id from public.recipes")).toEqual([]);
+  });
+
+  it("keeps orders private to the business members", async () => {
+    const anas = await businessOf(ANA);
+    await rows(
+      `insert into public.orders
+         (business_id, id, client, due_date, due_time, items, packaging_items, price, paid, status)
+       values ($1, 'o-1', 'Sofi', '2026-10-25', '17:30',
+         '[{"recipeId":"cookies","quantity":16}]', '[{"packagingId":"bolsa","quantity":16}]',
+         24000, 10000, 'confirmed')`,
+      [anas],
+    );
+    expect(
+      await rows(
+        "select id, client, contact, due_date::text, due_time, delivery, notes, items, packaging_items, price, paid, status from public.orders",
+      ),
+    ).toEqual([
+      {
+        id: "o-1",
+        client: "Sofi",
+        contact: "",
+        due_date: "2026-10-25",
+        due_time: "17:30",
+        delivery: "pickup",
+        notes: "",
+        items: [{ recipeId: "cookies", quantity: 16 }],
+        packaging_items: [{ packagingId: "bolsa", quantity: 16 }],
+        price: "24000",
+        paid: "10000",
+        status: "confirmed",
+      },
+    ]);
+
+    await as(BETO);
+    expect(await rows("select id from public.orders")).toEqual([]);
+    await expect(
+      db.query(
+        "insert into public.orders (business_id, id, client, due_date) values ($1, 'x', 'X', '2026-10-25')",
+        [anas],
+      ),
+    ).rejects.toThrow();
+    await rows("update public.orders set client = 'hackeado' where business_id = $1", [anas]);
+    await rows("delete from public.orders where business_id = $1", [anas]);
+    await as(null);
+    expect(await rows("select id from public.orders")).toEqual([]);
+
+    await as(ANA);
+    expect(await rows("select client from public.orders")).toEqual([{ client: "Sofi" }]);
+  });
+
+  it("only accepts known statuses, delivery modes, times and amounts for orders", async () => {
+    const business = await businessOf(ANA);
+    const insert = (columns, values) =>
+      db.query(
+        `insert into public.orders (business_id, id, client, due_date, ${columns})
+         values ($1, gen_random_uuid()::text, 'X', '2026-10-25', ${values})`,
+        [business],
+      );
+    await expect(insert("status", "'shipped'")).rejects.toThrow(/check/);
+    await expect(insert("delivery", "'drone'")).rejects.toThrow(/check/);
+    await expect(insert("due_time", "'25:00'")).rejects.toThrow(/check/);
+    await expect(insert("price", "-1")).rejects.toThrow(/check/);
+    await expect(insert("paid", "-1")).rejects.toThrow(/check/);
+    expect(await rows("select id from public.orders")).toHaveLength(1);
+  });
+
+  it("never uploads into a business that only has orders", async () => {
+    const business = await businessOf(BETO);
+    await rows("delete from public.packaging where business_id = $1", [business]);
+    await rows(
+      "insert into public.orders (business_id, id, client, due_date) values ($1, 'o', 'Ana', '2026-10-25')",
+      [business],
+    );
+    await expect(
+      db.query("select public.upload_local_data($1, $2)", [
+        business,
+        { recipes: [{ id: "otra", name: "Otra" }] },
+      ]),
+    ).rejects.toThrow(/business_not_empty/);
+    expect(await rows("select id from public.recipes")).toEqual([]);
+  });
+
+  it("still uploads into an empty business after the orders migration", async () => {
+    const business = await businessOf(BETO);
+    await rows("delete from public.orders where business_id = $1", [business]);
+    await rows("select public.upload_local_data($1, $2)", [
+      business,
+      { recipes: [{ id: "nueva", name: "Nueva", items: [] }] },
+    ]);
+    expect(await rows("select id from public.recipes")).toEqual([{ id: "nueva" }]);
+    await rows("delete from public.recipes where business_id = $1", [business]);
   });
 
   it("lets a member edit, reorder and delete their rows", async () => {

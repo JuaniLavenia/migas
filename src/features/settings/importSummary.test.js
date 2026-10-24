@@ -44,4 +44,16 @@ describe("importSummary", () => {
       importSummary({ ingredients: [], recipes: [], packaging: list(1), skipped: 1 }),
     ).toBe("Importamos 1 packaging · 1 registro omitido por datos inválidos");
   });
+
+  it("adds the orders when the backup brings some", () => {
+    expect(
+      importSummary({ ingredients: list(3), recipes: list(2), packaging: list(4), orders: list(2), skipped: 0 }),
+    ).toBe("Importamos 3 insumos, 2 recetas, 4 packaging y 2 pedidos");
+    expect(
+      importSummary({ ingredients: list(3), recipes: list(2), orders: list(1), skipped: 0 }),
+    ).toBe("Importamos 3 insumos, 2 recetas y 1 pedido");
+    expect(
+      importSummary({ ingredients: [], recipes: [], orders: list(5), skipped: 0 }),
+    ).toBe("Importamos 5 pedidos");
+  });
 });

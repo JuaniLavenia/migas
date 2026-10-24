@@ -1,4 +1,5 @@
 import { normalizePhotoUrl } from "./photoUrl";
+import { ORDER_STATUSES } from "./orders";
 
 // Validation for imported backups. Anything persisted by the store is read on
 // every reload, so a malformed record would crash the app permanently. Only
@@ -116,6 +117,69 @@ function sanitizeRecipe(source, now) {
   );
 }
 
+// An order line: a recipe or a packaging item and a positive quantity.
+function sanitizeLine(source, key) {
+  if (!isObject(source) || !nonEmptyString(source[key])) return null;
+  const quantity = toFiniteNumber(source.quantity);
+  if (!(quantity > 0)) return null;
+  return { [key]: source[key], quantity };
+}
+
+// null when the list is not an array (missing is empty) or has a broken
+// line: like a recipe, an order is never imported partially.
+function sanitizeLines(list, key) {
+  if (list === undefined) return [];
+  if (!Array.isArray(list)) return null;
+  const lines = list.map((line) => sanitizeLine(line, key));
+  return lines.some((line) => line === null) ? null : lines;
+}
+
+function textOr(value, fallback = "") {
+  return typeof value === "string" ? value : fallback;
+}
+
+// "2026-02-30" parses in JavaScript but is not a day (Postgres rejects it):
+// the date must read back the same.
+function isCalendarDay(key) {
+  const date = new Date(`${key}T00:00:00Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === key;
+}
+
+function sanitizeOrder(source, now) {
+  if (!isObject(source) || !nonEmptyString(source.client)) return null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(source.dueDate ?? "")) return null;
+  if (!isCalendarDay(source.dueDate)) return null;
+  const price = toFiniteNumber(source.price);
+  if (!(price >= 0)) return null;
+  const items = sanitizeLines(source.items, "recipeId");
+  const packagingItems = sanitizeLines(source.packagingItems, "packagingId");
+  if (!items || !packagingItems) return null;
+  return withId(
+    {
+      client: source.client,
+      contact: textOr(source.contact),
+      dueDate: source.dueDate,
+      dueTime: /^([01]\d|2[0-3]):[0-5]\d$/.test(source.dueTime ?? "")
+        ? source.dueTime
+        : "",
+      delivery: source.delivery === "delivery" ? "delivery" : "pickup",
+      notes: textOr(source.notes),
+      items,
+      packagingItems,
+      price,
+      paid: numberAtLeast(source.paid, 0, 0),
+      status: ORDER_STATUSES.some((entry) => entry.value === source.status)
+        ? source.status
+        : "pending",
+      createdAt:
+        Number.isFinite(source.createdAt) && source.createdAt > 0
+          ? source.createdAt
+          : now,
+    },
+    source,
+  );
+}
+
 function sanitizeCategory(source) {
   if (!isObject(source) || !nonEmptyString(source.name)) return null;
   return withId({ name: source.name.trim() }, source);
@@ -132,16 +196,18 @@ function sanitizeList(list, sanitize) {
   return { kept, skipped };
 }
 
-// Returns { ingredients, recipes, recipeCategories, packaging, skipped }.
+// Returns { ingredients, recipes, recipeCategories, packaging, orders,
+// skipped }.
 // Accepts recipes with `updatedAt` (current) or the legacy `updated` label.
 // Throws when the data is not a backup at all (not an object, or without
-// ingredients/recipes/packaging arrays).
+// ingredients/recipes/packaging/orders arrays).
 export function sanitizeBackup(data, now = Date.now()) {
   if (
     !isObject(data) ||
     (!Array.isArray(data.ingredients) &&
       !Array.isArray(data.recipes) &&
-      !Array.isArray(data.packaging))
+      !Array.isArray(data.packaging) &&
+      !Array.isArray(data.orders))
   ) {
     throw new Error("invalid backup shape");
   }
@@ -151,12 +217,18 @@ export function sanitizeBackup(data, now = Date.now()) {
   );
   const categories = sanitizeList(data.recipeCategories, sanitizeCategory);
   const packaging = sanitizeList(data.packaging, sanitizePackaging);
+  const orders = sanitizeList(data.orders, (order) => sanitizeOrder(order, now));
   return {
     ingredients: ingredients.kept,
     recipes: recipes.kept,
     recipeCategories: categories.kept,
     packaging: packaging.kept,
+    orders: orders.kept,
     skipped:
-      ingredients.skipped + recipes.skipped + categories.skipped + packaging.skipped,
+      ingredients.skipped +
+      recipes.skipped +
+      categories.skipped +
+      packaging.skipped +
+      orders.skipped,
   };
 }

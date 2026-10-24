@@ -163,4 +163,75 @@ describe("rows", () => {
       stock: 0,
     });
   });
+
+  it("maps an order to its row and back without losing fields", () => {
+    const order = {
+      id: "o-1",
+      client: "Sofi",
+      contact: "@sofi.ok",
+      dueDate: "2026-10-25",
+      dueTime: "17:30",
+      delivery: "delivery",
+      notes: "Que diga Feliz cumple Sofi",
+      items: [{ recipeId: "cookies", quantity: 16 }],
+      packagingItems: [{ packagingId: "box", quantity: 2 }],
+      price: 24000,
+      paid: 10000,
+      status: "confirmed",
+      createdAt: 1767225600000,
+    };
+    const row = toRow("orders", order, BUSINESS, 4);
+    expect(row).toEqual({
+      business_id: BUSINESS,
+      id: "o-1",
+      client: "Sofi",
+      contact: "@sofi.ok",
+      due_date: "2026-10-25",
+      due_time: "17:30",
+      delivery: "delivery",
+      notes: "Que diga Feliz cumple Sofi",
+      items: [{ recipeId: "cookies", quantity: 16 }],
+      packaging_items: [{ packagingId: "box", quantity: 2 }],
+      price: 24000,
+      paid: 10000,
+      status: "confirmed",
+      created_at: 1767225600000,
+      position: 4,
+    });
+    expect(fromRow("orders", row)).toEqual(order);
+  });
+
+  it("fills the optional order fields with their defaults", () => {
+    expect(
+      fromRow("orders", {
+        id: "o-2",
+        client: "Ana",
+        contact: null,
+        due_date: "2026-10-26",
+        due_time: null,
+        delivery: null,
+        notes: null,
+        items: null,
+        packaging_items: null,
+        price: "1500.5",
+        paid: null,
+        status: null,
+        created_at: "1767225600000",
+      }),
+    ).toEqual({
+      id: "o-2",
+      client: "Ana",
+      contact: "",
+      dueDate: "2026-10-26",
+      dueTime: "",
+      delivery: "pickup",
+      notes: "",
+      items: [],
+      packagingItems: [],
+      price: 1500.5,
+      paid: 0,
+      status: "pending",
+      createdAt: 1767225600000,
+    });
+  });
 });

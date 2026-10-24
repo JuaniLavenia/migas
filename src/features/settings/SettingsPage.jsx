@@ -20,6 +20,7 @@ function SettingsPage() {
   const recipes = useRecipeStore((state) => state.recipes);
   const recipeCategories = useRecipeStore((state) => state.recipeCategories);
   const packaging = useRecipeStore((state) => state.packaging);
+  const orders = useRecipeStore((state) => state.orders);
   const importData = useRecipeStore((state) => state.importData);
   const renameRecipeCategory = useRecipeStore(
     (state) => state.renameRecipeCategory,
@@ -42,7 +43,8 @@ function SettingsPage() {
     !ingredients.length &&
     !recipes.length &&
     !recipeCategories.length &&
-    !packaging.length;
+    !packaging.length &&
+    !orders.length;
 
   async function handleUpload() {
     setBusy(true);
@@ -67,7 +69,11 @@ function SettingsPage() {
     try {
       downloadFile(
         `miga-backup-${new Date().toISOString().slice(0, 10)}.json`,
-        JSON.stringify({ ingredients, recipeCategories, recipes, packaging }, null, 2),
+        JSON.stringify(
+          { ingredients, recipeCategories, recipes, packaging, orders },
+          null,
+          2,
+        ),
         "application/json",
       );
       showToast("Backup descargado");
@@ -88,7 +94,8 @@ function SettingsPage() {
       backup.ingredients.length ||
       backup.recipes.length ||
       backup.recipeCategories.length ||
-      backup.packaging.length
+      backup.packaging.length ||
+      backup.orders.length
     ) {
       importData(backup);
     }

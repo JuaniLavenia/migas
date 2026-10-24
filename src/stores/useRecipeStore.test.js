@@ -144,3 +144,59 @@ describe("useRecipeStore ingredient stock", () => {
     expect(useRecipeStore.getState().ingredients[0].stock).toBe(300);
   });
 });
+
+describe("useRecipeStore orders", () => {
+  const order = {
+    client: "Sofi",
+    contact: "",
+    dueDate: "2026-10-25",
+    dueTime: "",
+    delivery: "pickup",
+    notes: "",
+    items: [{ recipeId: "flan", quantity: 2 }],
+    packagingItems: [],
+    price: 12000,
+    paid: 0,
+  };
+
+  beforeEach(() => {
+    useRecipeStore.setState({ orders: [] });
+  });
+
+  it("creates an order as Pendiente, with its creation date, and returns its id", () => {
+    vi.spyOn(Date, "now").mockReturnValue(1767225600000);
+    const id = useRecipeStore.getState().addOrder(order);
+    vi.restoreAllMocks();
+    expect(useRecipeStore.getState().orders).toEqual([
+      { ...order, id, status: "pending", createdAt: 1767225600000 },
+    ]);
+  });
+
+  it("edits, changes the status of and deletes an order", () => {
+    const id = useRecipeStore.getState().addOrder(order);
+    useRecipeStore.getState().updateOrder(id, { price: 13000, status: "ready" });
+    expect(useRecipeStore.getState().orders[0]).toMatchObject({
+      client: "Sofi",
+      price: 13000,
+      status: "ready",
+    });
+    useRecipeStore.getState().deleteOrder(id);
+    expect(useRecipeStore.getState().orders).toEqual([]);
+  });
+
+  it("merges the orders an import brings", () => {
+    useRecipeStore.setState({ orders: [{ ...order, id: "a", status: "confirmed" }] });
+    useRecipeStore.getState().importData({
+      orders: [
+        { ...order, id: "a", status: "delivered" },
+        { ...order, id: "b", status: "pending" },
+      ],
+    });
+    expect(
+      useRecipeStore.getState().orders.map(({ id, status }) => [id, status]),
+    ).toEqual([
+      ["a", "delivered"],
+      ["b", "pending"],
+    ]);
+  });
+});
