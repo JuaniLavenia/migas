@@ -184,6 +184,19 @@ function sanitizeStockMove(source) {
   return Object.values(move).some((lines) => lines === null) ? null : move;
 }
 
+// A themed order's decoration and design fee (lib/orders.js). A broken record
+// is dropped, not the order: it then just has no customization.
+function sanitizeCustomization(source) {
+  if (!isObject(source)) return null;
+  const items = stockLines(source.items, ["ingredientId"]);
+  if (!items) return null;
+  return {
+    items,
+    feeType: source.feeType === "amount" ? "amount" : "percent",
+    fee: numberAtLeast(source.fee, 0, 0),
+  };
+}
+
 function sanitizeFinishedGood(source) {
   if (!isObject(source) || !nonEmptyString(source.recipeId)) return null;
   const quantity = toFiniteNumber(source.quantity);
@@ -201,6 +214,7 @@ function sanitizeOrder(source, now) {
   const packagingItems = sanitizeLines(source.packagingItems, "packagingId");
   if (!items || !packagingItems) return null;
   const stockMove = sanitizeStockMove(source.stockMove);
+  const customization = sanitizeCustomization(source.customization);
   return withId(
     {
       client: source.client,
@@ -223,6 +237,7 @@ function sanitizeOrder(source, now) {
           ? source.createdAt
           : now,
       ...(stockMove ? { stockMove } : {}),
+      ...(customization ? { customization } : {}),
     },
     source,
   );

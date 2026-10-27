@@ -13,6 +13,7 @@ const migrations = [
   "20261024000000_packaging_stock.sql",
   "20261025000000_orders.sql",
   "20261026000000_auto_stock.sql",
+  "20261027000000_order_customization.sql",
 ].map((file) =>
   readFileSync(new URL(`../../../supabase/migrations/${file}`, import.meta.url), "utf8"),
 );
@@ -394,6 +395,25 @@ describe("Supabase schema", () => {
     );
     expect(await rows("select stock_move from public.orders where id = 'o-1'")).toEqual([
       { stock_move: { ingredients: [{ ingredientId: "harina", quantity: 2100 }] } },
+    ]);
+  });
+
+  it("keeps each order's customization, empty for the orders before", async () => {
+    const business = await businessOf(ANA);
+    expect(await rows("select customization from public.orders where id = 'o-1'")).toEqual([
+      { customization: null },
+    ]);
+    const customization = {
+      items: [{ ingredientId: "colorante", quantity: 2 }],
+      feeType: "percent",
+      fee: 30,
+    };
+    await rows(
+      "update public.orders set customization = $2 where business_id = $1 and id = 'o-1'",
+      [business, customization],
+    );
+    expect(await rows("select customization from public.orders where id = 'o-1'")).toEqual([
+      { customization },
     ]);
   });
 
