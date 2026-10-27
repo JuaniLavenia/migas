@@ -15,10 +15,10 @@ Branch: `feat/phase-14-ingredient-categories` from main@2506be1. Delivery: singl
 
 | ID | Specs | Route | Status | Commit |
 |---|---|---|---|---|
-| T14.1 | S5 (migration, RPC, row mapping) | inline | pending | |
-| T14.2 | S1–S3, S5 (store actions, import, backup, local data) | inline | pending | |
-| T14.3 | S1–S4 (ingredient form, list, settings panel, shopping) | inline | pending | |
-| T14.4 | docs | inline | pending | |
+| T14.1 | S5 (migration, RPC, row mapping) | inline | done (schema 6 RED→GREEN against an empty migration, rows 3 RED→GREEN) | 100c520 |
+| T14.2 | S1–S3, S5 (store actions, import, backup, local data) | inline | done (12 RED→GREEN; 1 store fixture moved to categoryId) | a13fa56 |
+| T14.3 | S1–S4 (ingredient form, list, settings panel, shopping) | inline | done (15 RED→GREEN; backup round-trip and summary tests written after the code) | 8f6af4d |
+| T14.4 | docs | inline | done | (this commit) |
 
 Route evidence: one sequential feature (T14.3 depends on T14.1/T14.2): no writer trigger. Risk: item 1 (migration backfills `category_id` of existing ingredients) and item 3 (backup format and `upload_local_data` RPC): one independent verifier at the feature's end. RDD off (global): no native review.
 
@@ -29,3 +29,5 @@ Route evidence: one sequential feature (T14.3 depends on T14.1/T14.2): no writer
 - L3 (2026-10-27, assistant, verified in useRecipeStore.js): no — delete strips the id, create makes a new uuid; she re-picks the category per ingredient. Recommended against an automatic "remember" (surprising moves).
 - L4 (2026-10-27, user): "claro a eso me referia, que ella tiene que entrar a cada insumo y elegirla de nuevo jaja. Si dale, arranca nomas"
 - L5 Baseline: `npx -y pnpm@12.9.1 test` on main@2506be1: 45 files / 477 tests green.
+- L6 Progress: T14.1–T14.4 done. Full suite 45 files / 506 tests green; `pnpm build` OK. Changed expectations on purpose: a new ingredient starts "Sin categoría" (was "Otros"; FormAccessibility), fixtures moved from `category` text to `categoryId` (demoData, Shopping, stockMoves, store). Moved `CategorySelect` to src/shared and generalized `RecipeCategoriesPanel` into `CategoriesPanel`; `shoppingList(data)` now reads `data.ingredientCategories` (the `categoryOrder` argument is gone). Known difference: the migration matches names ignoring case and spaces, the app also ignores accents ("Lacteos" stays apart in the migration).
+- L7 Deploy order: run `20261028000000_ingredient_categories.sql` in Supabase before publishing; `toRow` sends `category_id`, so saves fail without the column.
