@@ -36,6 +36,7 @@ function RecipesPage() {
   const recipes = useRecipeStore((state) => state.recipes);
   const updateRecipeInStore = useRecipeStore((state) => state.updateRecipe);
   const deleteRecipe = useRecipeStore((state) => state.deleteRecipe);
+  const duplicateRecipe = useRecipeStore((state) => state.duplicateRecipe);
   const reorderRecipes = useRecipeStore((state) => state.reorderRecipes);
   const moveRecipe = useRecipeStore((state) => state.moveRecipe);
   const recipeCategories = useRecipeStore((state) => state.recipeCategories);
@@ -119,6 +120,11 @@ function RecipesPage() {
       ? { onReorder: reorderRecipes, onMove: moveRecipe }
       : null;
 
+  function duplicate(id) {
+    openRecipe(duplicateRecipe(id));
+    showToast("Receta duplicada");
+  }
+
   function requestDelete(id) {
     const recipe = recipes.find((entry) => entry.id === id);
     setPendingDelete({ id, name: recipe?.name });
@@ -162,6 +168,7 @@ function RecipesPage() {
         totals={totals}
         selectedRecipe={selectedRecipe}
         updateRecipe={updateRecipe}
+        onDuplicate={duplicate}
         onDelete={requestDelete}
         reorder={reorder}
       />

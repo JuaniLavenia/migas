@@ -3,6 +3,7 @@ import {
   AlertTriangle,
   ChevronDown,
   ChevronRight,
+  Copy,
   Plus,
   Trash2,
 } from "lucide-react";
@@ -235,6 +236,7 @@ function RecipesView({
   totals,
   selectedRecipe,
   updateRecipe,
+  onDuplicate,
   onDelete,
   reorder = null,
 }) {
@@ -364,6 +366,15 @@ function RecipesView({
                   <span className="status-dot" />{" "}
                   {formatRelativeDate(selectedRecipe.updatedAt)}
                 </span>
+                <button
+                  type="button"
+                  className="icon-button"
+                  title="Duplicar receta"
+                  aria-label="Duplicar receta"
+                  onClick={() => onDuplicate(selectedRecipe.id)}
+                >
+                  <Copy size={16} />
+                </button>
                 <button
                   type="button"
                   className="icon-button danger"
