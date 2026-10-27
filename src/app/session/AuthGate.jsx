@@ -22,6 +22,7 @@ function AuthGate({ auth, repository, syncOptions, children }) {
   const [user, setUser] = useState(undefined);
   const [phase, setPhase] = useState("loading");
   const [businessId, setBusinessId] = useState(null);
+  const [businessName, setBusinessName] = useState("");
   const syncRef = useRef(null);
   // Bumped whenever a load is started or abandoned (sign-out, unmount): a
   // load that finishes for an older run is dropped.
@@ -46,7 +47,10 @@ function AuthGate({ auth, repository, syncOptions, children }) {
     setPhase("loading");
     try {
       const id = await repository.ensureBusiness();
-      const data = await repository.load(id);
+      const [data, name] = await Promise.all([
+        repository.load(id),
+        repository.loadBusinessName(id),
+      ]);
       if (run !== runRef.current) return;
       syncRef.current?.stop();
       const sync = createCloudSync({
@@ -59,6 +63,7 @@ function AuthGate({ auth, repository, syncOptions, children }) {
       sync.replaceData(data);
       syncRef.current = sync;
       setBusinessId(id);
+      setBusinessName(name);
       setPhase("ready");
     } catch {
       if (run === runRef.current) setPhase("error");
@@ -129,9 +134,29 @@ function AuthGate({ auth, repository, syncOptions, children }) {
     await auth.signOut();
   }, [auth, stopSync]);
 
+  // Shown right away; a failed save puts the previous name back.
+  const renameBusiness = useCallback(
+    async (name) => {
+      const previous = businessName;
+      setBusinessName(name);
+      try {
+        await repository.renameBusiness(businessId, name);
+      } catch {
+        setBusinessName(previous);
+        useToastStore
+          .getState()
+          .showToast("No pudimos cambiar el nombre. Revisá la conexión y probá de nuevo.");
+      }
+    },
+    [businessId, businessName, repository],
+  );
+
   const session = useMemo(
-    () => (user ? { user, businessId, repository, reload, signOut } : null),
-    [user, businessId, repository, reload, signOut],
+    () =>
+      user
+        ? { user, businessId, businessName, renameBusiness, repository, reload, signOut }
+        : null,
+    [user, businessId, businessName, renameBusiness, repository, reload, signOut],
   );
 
   if (!auth || !repository) {

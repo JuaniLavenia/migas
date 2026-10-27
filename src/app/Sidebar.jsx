@@ -1,6 +1,6 @@
-import { forwardRef } from "react";
+import { forwardRef, useRef, useState } from "react";
 import { NavLink } from "react-router-dom";
-import { LogOut, Utensils, X } from "lucide-react";
+import { LogOut, Pencil, Utensils, X } from "lucide-react";
 import { useSession } from "./session/SessionContext";
 import { views } from "./navigation";
 
@@ -25,6 +25,65 @@ function initials(name) {
     .slice(0, 2)
     .map((part) => part[0].toUpperCase())
     .join("");
+}
+
+const DEFAULT_BUSINESS_NAME = "Mi emprendimiento";
+
+// The business name, renamed in place: Enter or leaving the field saves,
+// Escape cancels; a blank or unchanged name is not saved. Outside a session
+// it is the default name, not editable.
+function BusinessName() {
+  const session = useSession();
+  const [draft, setDraft] = useState(null);
+  // The edit already ended (saved or cancelled): the blur that follows is
+  // ignored.
+  const closedRef = useRef(false);
+  const name = session?.businessName || DEFAULT_BUSINESS_NAME;
+  if (!session?.renameBusiness) {
+    return <div className="workspace-label">{DEFAULT_BUSINESS_NAME}</div>;
+  }
+
+  function start() {
+    closedRef.current = false;
+    setDraft(name);
+  }
+  function close(save) {
+    if (closedRef.current) return;
+    closedRef.current = true;
+    const next = draft.trim();
+    setDraft(null);
+    if (save && next && next !== name) session.renameBusiness(next);
+  }
+
+  if (draft !== null) {
+    return (
+      <input
+        className="workspace-input"
+        aria-label="Nombre del emprendimiento"
+        value={draft}
+        maxLength={60}
+        autoFocus
+        onChange={(event) => setDraft(event.target.value)}
+        onBlur={() => close(true)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") close(true);
+          if (event.key === "Escape") close(false);
+        }}
+      />
+    );
+  }
+  return (
+    <button
+      type="button"
+      className="workspace-label workspace-button"
+      aria-label={`Cambiar el nombre: ${name}`}
+      title="Cambiar el nombre"
+      onClick={start}
+    >
+      <span>{name}</span>
+      <Pencil size={13} aria-hidden="true" />
+    </button>
+  );
 }
 
 // Who is signed in, with the sign-out button. Hidden outside a session.
@@ -92,7 +151,7 @@ const Sidebar = forwardRef(function Sidebar(
           <X size={18} />
         </button>
       </div>
-      <div className="workspace-label">Mi emprendimiento</div>
+      <BusinessName />
       <nav className="nav-list">
         {views.filter((view) => view.main).map(renderItem)}
       </nav>

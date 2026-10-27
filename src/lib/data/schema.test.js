@@ -196,6 +196,20 @@ describe("Supabase schema", () => {
     ).toEqual(["Cookies", "Brownie"]);
   });
 
+  it("lets only the members rename their business", async () => {
+    const anas = await businessOf(ANA);
+    expect(await rows("select name from public.businesses where id = $1", [anas])).toEqual([
+      { name: "Mi emprendimiento" },
+    ]);
+    await as(BETO);
+    await rows("update public.businesses set name = 'hackeado' where id = $1", [anas]);
+    await as(ANA);
+    await rows("update public.businesses set name = 'Dulce Miga' where id = $1", [anas]);
+    expect(await rows("select name from public.businesses where id = $1", [anas])).toEqual([
+      { name: "Dulce Miga" },
+    ]);
+  });
+
   it("keeps the stock of each ingredient, 0 for the ones loaded before", async () => {
     const business = await businessOf(ANA);
     expect(

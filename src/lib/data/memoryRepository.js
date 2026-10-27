@@ -3,7 +3,12 @@ import { RepositoryError } from "./repository";
 
 // In-memory repository for tests. `failNext(n)` makes the next n writes
 // reject, as a dropped connection would. `writes` records every save/remove.
-export function createMemoryRepository({ businessId = "business-1", data } = {}) {
+export function createMemoryRepository({
+  businessId = "business-1",
+  businessName = "Mi emprendimiento",
+  data,
+} = {}) {
+  let name = businessName;
   const tables = Object.fromEntries(
     COLLECTIONS.map((collection) => [collection, new Map()]),
   );
@@ -52,6 +57,13 @@ export function createMemoryRepository({ businessId = "business-1", data } = {})
     },
     async load() {
       return this.snapshot();
+    },
+    async loadBusinessName() {
+      return name;
+    },
+    async renameBusiness(id, nextName) {
+      maybeFail();
+      name = nextName;
     },
     async save(id, collection, rows) {
       maybeFail();
