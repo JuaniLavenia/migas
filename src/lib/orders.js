@@ -38,8 +38,14 @@ export function paymentStatus(order) {
 // Prices of the order's lines. `proposed` sells each product at its sale
 // price (the suggested one when it has none), `suggested` at the suggested
 // price; packaging is charged at cost in both. `profit` uses the agreed
-// price. missingCount: lines whose recipe or packaging was deleted or has an
-// incomplete cost; they add 0, so the UI must warn.
+// price. missingCount: lines whose recipe, packaging or decoration was
+// deleted or has an incomplete cost; they add 0, so the UI must warn.
+//
+// The optional `customization` ({ items: [{ ingredientId, quantity }],
+// feeType: "percent" | "amount", fee }) themes the order: its decoration is
+// charged at cost and its design fee is her work, so it adds to the price but
+// not to the cost. A % fee applies to the products' price only. The returned
+// `customization` is what it adds to the proposed price.
 export function orderTotals(order, { recipes, ingredients, packaging }) {
   const byId = indexIngredients(ingredients);
   let proposed = 0;
@@ -60,6 +66,24 @@ export function orderTotals(order, { recipes, ingredients, packaging }) {
     cost += units * totals.unitCost;
     if (totals.missingCount) missingCount += 1;
   });
+  const custom = order.customization;
+  const fee = Number(custom?.fee) || 0;
+  const percent = custom?.feeType === "percent";
+  const proposedFee = percent ? (proposed * fee) / 100 : fee;
+  const suggestedFee = percent ? (suggested * fee) / 100 : fee;
+  let decoration = 0;
+  (custom?.items ?? []).forEach(({ ingredientId, quantity }) => {
+    const ingredient = byId.get(ingredientId);
+    const price = ingredient ? unitPrice(ingredient) : null;
+    if (price === null) {
+      missingCount += 1;
+      return;
+    }
+    decoration += (Number(quantity) || 0) * price;
+  });
+  proposed += proposedFee + decoration;
+  suggested += suggestedFee + decoration;
+  cost += decoration;
   (order.packagingItems ?? []).forEach(({ packagingId, quantity }) => {
     const item = packaging.find((entry) => entry.id === packagingId);
     const price = item ? unitPrice(item) : null;
@@ -77,6 +101,7 @@ export function orderTotals(order, { recipes, ingredients, packaging }) {
     suggested,
     cost,
     profit: (Number(order.price) || 0) - cost,
+    customization: proposedFee + decoration,
     missingCount,
   };
 }

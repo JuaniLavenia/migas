@@ -97,7 +97,7 @@ function oldestFirst(lots) {
 
 // The move that preparing `order` takes, or what stops it: `shortages`
 // (stock that is not enough, the move is not to be applied) and `problems`
-// (lines whose recipe or packaging was deleted).
+// (lines whose recipe, packaging or decoration ingredient was deleted).
 export function planPreparation(order, data, today, newId) {
   const ingredientIds = new Set(data.ingredients.map((item) => item.id));
   const ingredientNeeds = new Map();
@@ -127,6 +127,11 @@ export function planPreparation(order, data, today, newId) {
     if (leftover > 0) {
       created.push({ lotId: newId(), recipeId, quantity: leftover, madeAt: today });
     }
+  });
+  // The decoration of a customized order takes ingredients like a recipe.
+  addUp(order.customization?.items, "ingredientId").forEach((quantity, ingredientId) => {
+    if (ingredientIds.has(ingredientId)) add(ingredientNeeds, ingredientId, quantity);
+    else problems.push({ kind: "ingredient", id: ingredientId });
   });
   const packagingNeeds = new Map();
   addUp(order.packagingItems, "packagingId").forEach((quantity, packagingId) => {
@@ -253,7 +258,7 @@ export function undoMove(data, move, today, newId) {
 
 // What the active orders not prepared yet (Pendiente and Confirmado) need:
 // their units added up per recipe, minus all its finished goods, in full
-// batches. `groups` are by ingredient category (blank: "Otros"), in
+// batches, plus their decoration. `groups` are by ingredient category (blank: "Otros"), in
 // `categoryOrder` when given, then the packaging; `missing` is 0 when she has
 // enough.
 export function shoppingList(data, categoryOrder = []) {
@@ -275,6 +280,12 @@ export function shoppingList(data, categoryOrder = []) {
     const { count } = batchesFor(recipe, ordered - ready);
     batches.push({ recipeId, name: recipe.name, count });
     addBatchIngredients(ingredientNeeds, recipe, count, ingredientIds);
+  });
+  addUp(
+    waiting.flatMap((order) => order.customization?.items ?? []),
+    "ingredientId",
+  ).forEach((quantity, id) => {
+    if (ingredientIds.has(id)) add(ingredientNeeds, id, quantity);
   });
   const packagingNeeds = new Map();
   addUp(waiting.flatMap((order) => order.packagingItems ?? []), "packagingId").forEach(

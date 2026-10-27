@@ -26,11 +26,12 @@ const cookies = {
     { ingredientId: "manteca", quantity: 200 },
   ],
 };
+const colorante = { id: "colorante", name: "Colorante naranja", category: "Decoración", unit: "g", packSize: 10, packCost: 1000, stock: 5 };
 const box = { id: "box", name: "Box x8", packSize: 10, packCost: 9000, stock: 3 };
 
 const data = (fields = {}) => ({
   recipes: [cookies],
-  ingredients: [harina, manteca],
+  ingredients: [harina, manteca, colorante],
   packaging: [box],
   finishedGoods: [],
   ...fields,
@@ -150,6 +151,53 @@ describe("planPreparation", () => {
       { kind: "recipe", id: "borrada" },
       { kind: "packaging", id: "borrado" },
     ]);
+  });
+});
+
+describe("planPreparation with customization", () => {
+  const themed = (items) => order({ customization: { items, feeType: "amount", fee: 0 } });
+
+  it("takes the decoration from the ingredients' stock, like the recipes", () => {
+    const plan = planPreparation(
+      themed([
+        { ingredientId: "colorante", quantity: 2 },
+        { ingredientId: "harina", quantity: 10 },
+      ]),
+      data(),
+      TODAY,
+      ids(),
+    );
+    expect(plan.problems).toEqual([]);
+    expect(plan.shortages).toEqual([]);
+    expect(plan.move.ingredients).toEqual([
+      { ingredientId: "harina", quantity: 1010 },
+      { ingredientId: "manteca", quantity: 200 },
+      { ingredientId: "colorante", quantity: 2 },
+    ]);
+    const after = applyMove(data(), plan.move);
+    expect(stockOf(after.ingredients, "colorante")).toBe(3);
+    // Going back returns it.
+    const back = undoMove({ ...data(), ...after }, plan.move, TODAY, ids());
+    expect(stockOf(back.ingredients, "colorante")).toBe(5);
+  });
+
+  it("reports missing decoration and a deleted decoration ingredient", () => {
+    const short = planPreparation(
+      themed([{ ingredientId: "colorante", quantity: 8 }]),
+      data(),
+      TODAY,
+      ids(),
+    );
+    expect(short.shortages).toEqual([
+      expect.objectContaining({ kind: "ingredient", id: "colorante", need: 8, have: 5, missing: 3 }),
+    ]);
+    const gone = planPreparation(
+      themed([{ ingredientId: "borrado", quantity: 1 }]),
+      data(),
+      TODAY,
+      ids(),
+    );
+    expect(gone.problems).toEqual([{ kind: "ingredient", id: "borrado" }]);
   });
 });
 
@@ -316,6 +364,31 @@ describe("shoppingList", () => {
       {
         label: "Packaging",
         items: [{ kind: "packaging", id: "box", name: "Box x8", unit: "un", need: 4, have: 3, missing: 1 }],
+      },
+    ]);
+  });
+
+  it("adds the decoration of the active orders not prepared yet", () => {
+    const decorated = (fields, quantity) =>
+      order({
+        items: [],
+        packagingItems: [],
+        customization: {
+          items: [{ ingredientId: "colorante", quantity }],
+          feeType: "amount",
+          fee: 0,
+        },
+        ...fields,
+      });
+    const list = shoppingList(
+      data({
+        orders: [decorated({}, 7), decorated({ id: "entregado", status: "delivered" }, 50)],
+      }),
+    );
+    expect(list.groups).toEqual([
+      {
+        label: "Decoración",
+        items: [expect.objectContaining({ id: "colorante", need: 7, have: 5, missing: 2 })],
       },
     ]);
   });
