@@ -1,4 +1,9 @@
+import { v4 as uuidv4 } from "uuid";
 import { sanitizeBackup } from "./backup";
+import {
+  LEGACY_INGREDIENT_CATEGORIES,
+  resolveCategoryNames,
+} from "./ingredientCategories";
 import { RECIPE_STORAGE_KEY, migrateRecipeState } from "./recipeStorage";
 
 // Records whose name was erased in the editor get one, so they are not lost.
@@ -12,11 +17,14 @@ function named(list) {
 }
 
 // The data an earlier version of the app kept in this browser, ready for the
-// manual first upload: { data: { recipeCategories, ingredients, recipes },
-// summary: { recipes, ingredients, categories, photos, lastChange, skipped } }, or
-// null when there is nothing (or it cannot be read). Records go through the
-// backup validation, so only valid ones are uploaded; local photos (an
-// `imageId`) stay behind and are only counted.
+// manual first upload: { data: { recipeCategories, ingredientCategories,
+// ingredients, recipes }, summary: { recipes, ingredients, categories, photos,
+// lastChange, skipped } }, or null when there is nothing (or it cannot be
+// read). Records go through the backup validation, so only valid ones are
+// uploaded; local photos (an `imageId`) stay behind and are only counted.
+// Ingredients kept their category as a name: with ingredients, the upload
+// brings the categories the app had then (as the cloud migration did) plus
+// any other name in use, and each ingredient points to its category.
 export function readLocalData(storage = window.localStorage) {
   let stored;
   try {
@@ -36,13 +44,19 @@ export function readLocalData(storage = window.localStorage) {
   } catch {
     return null;
   }
-  const { ingredients, recipes, recipeCategories } = backup;
-  if (!ingredients.length && !recipes.length && !recipeCategories.length) {
+  const { recipes, recipeCategories } = backup;
+  if (!backup.ingredients.length && !recipes.length && !recipeCategories.length) {
     return null;
   }
+  const { categories: ingredientCategories, ingredients } = resolveCategoryNames(
+    backup.ingredients,
+    backup.ingredients.length
+      ? LEGACY_INGREDIENT_CATEGORIES.map((name) => ({ id: uuidv4(), name }))
+      : [],
+  );
   const photos = (state.recipes ?? []).filter((recipe) => recipe?.imageId).length;
   return {
-    data: { recipeCategories, ingredients, recipes },
+    data: { recipeCategories, ingredientCategories, ingredients, recipes },
     summary: {
       skipped: backup.skipped,
       recipes: recipes.length,

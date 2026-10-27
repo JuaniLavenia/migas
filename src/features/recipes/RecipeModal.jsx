@@ -5,7 +5,7 @@ import NumericInput from "../../shared/NumericInput";
 import { addNextItem, removeItemAt, updateItemAt } from "../../lib/recipeItems";
 import { indexIngredients } from "../../lib/recipeMath";
 import RecipeItemRow from "./RecipeItemRow";
-import CategorySelect from "./CategorySelect";
+import CategorySelect from "../../shared/CategorySelect";
 
 function RecipeModal({
   ingredients,

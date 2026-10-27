@@ -54,7 +54,49 @@ describe("readLocalData", () => {
     expect(local.data.recipes[0]).toMatchObject({ id: "a", categoryId: "budines" });
     expect(local.data.recipes[0]).not.toHaveProperty("imageId");
     expect(local.data.recipes[1].salePrice).toBe(900);
-    expect(local.data.ingredients).toEqual([ingredient]);
+    // The category names of then become the six categories the app had,
+    // plus any other name in use.
+    const categories = local.data.ingredientCategories;
+    expect(categories.map((category) => category.name)).toEqual([
+      "Secos",
+      "Lácteos",
+      "Frescos",
+      "Chocolates",
+      "Decoración",
+      "Otros",
+    ]);
+    const { category: _name, ...rest } = ingredient;
+    expect(local.data.ingredients).toEqual([{ ...rest, categoryId: categories[0].id }]);
+  });
+
+  it("adds the other category names its ingredients use", () => {
+    const local = readLocalData(
+      storageWith(
+        JSON.stringify({
+          state: {
+            ingredients: [
+              { ...ingredient, id: "chispas", category: "Toppings" },
+              { ...ingredient, id: "sal", category: "" },
+            ],
+          },
+          version: 2,
+        }),
+      ),
+    );
+    const categories = local.data.ingredientCategories;
+    expect(categories).toHaveLength(7);
+    expect(categories.at(-1).name).toBe("Toppings");
+    expect(local.data.ingredients.map((item) => item.categoryId)).toEqual([
+      categories.at(-1).id,
+      undefined,
+    ]);
+  });
+
+  it("brings no ingredient categories without ingredients", () => {
+    const local = readLocalData(
+      storageWith(JSON.stringify({ state: { recipes: [recipe("a", 1000)] }, version: 2 })),
+    );
+    expect(local.data.ingredientCategories).toEqual([]);
   });
 
   it("keeps a record whose name was erased, and counts broken ones", () => {

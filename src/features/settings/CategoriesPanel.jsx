@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Trash2 } from "lucide-react";
 import ConfirmDialog from "../../shared/ConfirmDialog";
 
-// Rename (on Enter or when leaving the field) and delete the recipe
-// categories. `recipeCounts` maps a category id to how many recipes use it.
+// Rename (on Enter or when leaving the field) and delete the recipe or
+// ingredient categories. `counts` maps a category id to how many records use
+// it; `consequence(count)` says what deleting it does to them.
 function CategoryRow({ category, onRename, onDelete }) {
   const [name, setName] = useState(category.name);
   const commit = () => {
@@ -34,21 +35,25 @@ function CategoryRow({ category, onRename, onDelete }) {
   );
 }
 
-function RecipeCategoriesPanel({ categories, recipeCounts, onRename, onDelete }) {
+function CategoriesPanel({
+  eyebrow,
+  title,
+  emptyHint,
+  categories,
+  counts,
+  consequence,
+  onRename,
+  onDelete,
+}) {
+  const titleId = useId();
   const [pending, setPending] = useState(null);
-  const count = pending ? recipeCounts[pending.id] ?? 0 : 0;
-  const consequence =
-    count === 0
-      ? "No la usa ninguna receta."
-      : count === 1
-        ? "1 receta queda sin categoría."
-        : `${count} recetas quedan sin categoría.`;
+  const count = pending ? counts[pending.id] ?? 0 : 0;
   return (
-    <section className="panel quick-panel" aria-labelledby="categories-title">
+    <section className="panel quick-panel" aria-labelledby={titleId}>
       <div className="panel-heading">
         <div>
-          <span className="eyebrow">Recetas</span>
-          <h2 id="categories-title">Categorías de recetas</h2>
+          <span className="eyebrow">{eyebrow}</span>
+          <h2 id={titleId}>{title}</h2>
         </div>
       </div>
       {categories.length ? (
@@ -63,15 +68,12 @@ function RecipeCategoriesPanel({ categories, recipeCounts, onRename, onDelete })
           ))}
         </ul>
       ) : (
-        <p className="field-hint">
-          Todavía no hay categorías. Creá la primera desde una receta, en el
-          campo Categoría.
-        </p>
+        <p className="field-hint">{emptyHint}</p>
       )}
       <ConfirmDialog
         open={pending !== null}
         title="Eliminar categoría"
-        description={`¿Eliminar "${pending?.name}"? ${consequence}`}
+        description={`¿Eliminar "${pending?.name}"? ${consequence(count)}`}
         onConfirm={() => {
           onDelete(pending.id);
           setPending(null);
@@ -82,4 +84,4 @@ function RecipeCategoriesPanel({ categories, recipeCounts, onRename, onDelete })
   );
 }
 
-export default RecipeCategoriesPanel;
+export default CategoriesPanel;

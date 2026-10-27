@@ -2,10 +2,17 @@ import { useState } from "react";
 
 const NEW_CATEGORY = "__new__";
 
-// Category of a recipe: none, one of `categories`, or a new one typed in
-// place. `onCreate(name)` returns the id of the created (or existing) category,
-// which is then selected through `onChange(id)`.
-function CategorySelect({ id, value, categories, onChange, onCreate }) {
+// Category of a recipe or an ingredient: none, one of `categories`, or a new
+// one typed in place. `onCreate(name)` returns the id of the created (or
+// existing) category, which is then selected through `onChange(id)`.
+function CategorySelect({
+  id,
+  value,
+  categories,
+  onChange,
+  onCreate,
+  placeholder = "Ej. Budines",
+}) {
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");
 
@@ -45,7 +52,7 @@ function CategorySelect({ id, value, categories, onChange, onCreate }) {
             aria-label="Nueva categoría"
             value={name}
             autoFocus
-            placeholder="Ej. Budines"
+            placeholder={placeholder}
             onChange={(event) => setName(event.target.value)}
             onKeyDown={(event) => {
               // Enter must not submit the surrounding form.

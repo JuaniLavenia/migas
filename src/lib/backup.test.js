@@ -65,13 +65,41 @@ describe("sanitizeBackup", () => {
     expect(result.skipped).toBe(1);
   });
 
-  it("coerces numeric strings and defaults unit and category", () => {
+  it("coerces numeric strings and defaults unit, without category", () => {
     const result = sanitizeBackup({
-      ingredients: [{ name: "Sal", packSize: "500", packCost: "0" }],
+      ingredients: [{ name: "Sal", category: "  ", packSize: "500", packCost: "0" }],
     });
     expect(result.ingredients).toEqual([
-      { name: "Sal", category: "", unit: "g", packSize: 500, packCost: 0 },
+      { name: "Sal", unit: "g", packSize: 500, packCost: 0 },
     ]);
+  });
+
+  it("keeps ingredient categories, an ingredient's categoryId or an old backup's category name", () => {
+    const result = sanitizeBackup({
+      ingredientCategories: [{ id: "secos", name: " Secos " }, { name: "" }, "x"],
+      ingredients: [
+        { ...validIngredient, id: "a", category: undefined, categoryId: "secos" },
+        { ...validIngredient, id: "b", category: " Toppings " },
+        { ...validIngredient, id: "c", category: "Secos", categoryId: "secos" },
+        { ...validIngredient, id: "d", category: 3, categoryId: 7 },
+      ],
+    });
+    expect(result.ingredientCategories).toEqual([{ id: "secos", name: "Secos" }]);
+    expect(result.skipped).toBe(2);
+    const [a, b, c, d] = result.ingredients;
+    expect(a).toMatchObject({ categoryId: "secos" });
+    expect(a).not.toHaveProperty("category");
+    expect(b).toMatchObject({ category: "Toppings" });
+    expect(b).not.toHaveProperty("categoryId");
+    // The id wins over the name: a current backup carries no name.
+    expect(c).toMatchObject({ categoryId: "secos" });
+    expect(c).not.toHaveProperty("category");
+    expect(d).not.toHaveProperty("category");
+    expect(d).not.toHaveProperty("categoryId");
+  });
+
+  it("accepts an old backup without ingredient categories", () => {
+    expect(sanitizeBackup({ ingredients: [validIngredient] }).ingredientCategories).toEqual([]);
   });
 
   it("drops unknown fields from records", () => {

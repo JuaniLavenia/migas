@@ -11,6 +11,7 @@ Miga guarda los datos en Supabase y se entra con Google. Cada fila pertenece a u
    - `20261025000000_orders.sql`: la tabla `orders` con los pedidos. Solo agrega una tabla nueva: los datos que ya están quedan igual.
    - `20261026000000_auto_stock.sql`: la tabla `finished_goods` con los elaborados y la columna `stock_move` de los pedidos, con lo que descontó cada uno. Solo agrega: los pedidos que ya están quedan sin nada descontado.
    - `20261027000000_order_customization.sql`: la columna `customization` de los pedidos, con los insumos de decoración y el recargo por diseño. Solo agrega: los pedidos que ya están quedan sin personalización.
+   - `20261028000000_ingredient_categories.sql`: la tabla `ingredient_categories` (las categorías de insumos, editables) y la columna `category_id` de los insumos. A cada negocio que ya tiene insumos le crea las seis categorías de antes (Secos, Lácteos, Frescos, Chocolates, Decoración y Otros) más cualquier otro nombre que usen sus insumos, y apunta cada insumo a la suya. La columna vieja `category` (el nombre como texto) queda como estaba: la versión anterior sigue funcionando, pero esta ya no la usa.
 
    Una migración nueva se corre **antes** de publicar la versión que la usa. Si no, la app no puede cargar los datos ("No pudimos cargar tus datos"). La versión anterior sigue funcionando con la base ya migrada.
 3. En **Project Settings → API Keys**, copiar la **Project URL** y la **publishable key** (`sb_publishable_...`). Esa clave es pública: lo que protege los datos son las reglas del paso 2.

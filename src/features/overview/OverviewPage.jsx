@@ -29,6 +29,7 @@ function UploadHint() {
       !state.ingredients.length &&
       !state.recipes.length &&
       !state.recipeCategories.length &&
+      !state.ingredientCategories.length &&
       !state.packaging.length &&
       !state.orders.length,
   );

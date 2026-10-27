@@ -31,7 +31,7 @@ VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 - Ver en el inicio cómo va el negocio en el mes: ventas (lo cobrado de los pedidos entregados), ganancia real y margen, cantidad de pedidos y saldo por cobrar, comparados con el mes anterior. También las entregas de los próximos 7 días, lo que falta comprar, los elaborados con más de 3 días y las recetas más vendidas y más rentables.
 - Cambiar el nombre del emprendimiento desde la barra lateral, tocándolo. Lo ven todos sus miembros.
 - Registrar, editar y eliminar insumos.
-- Definir categoría (Secos, Lácteos, Frescos, Chocolates, Decoración u Otros), unidad base, presentación de compra, su costo y cuánto tenés ("Tengo").
+- Definir categoría, unidad base, presentación de compra, su costo y cuánto tenés ("Tengo"). Las categorías de insumos son tuyas, como las de recetas: se crean desde el insumo ("+ Nueva categoría") y se renombran o eliminan en Configuración. Al eliminar una, sus insumos quedan sin categoría hasta que les elijas otra.
 - Llevar el listado de packaging (bolsas, cajas) con su presentación de compra, costo, costo por unidad y cuántas unidades tenés. El packaging va por pedido, no en la receta.
 - Cargar los pedidos: cliente y contacto, fecha y hora de entrega, si retira o hay envío, productos (receta × unidades), packaging, notas, precio acordado y lo cobrado.
 - Personalizar un pedido con temática (Halloween, Día de la madre…): insumos de decoración, que suman su costo y descuentan stock al prepararlo, y un recargo por diseño en % de los productos o como monto fijo. El precio propuesto ya los incluye.
@@ -41,7 +41,7 @@ VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 - Descontar el stock al preparar un pedido: usa primero los elaborados más viejos, cocina tandas completas para el resto y guarda lo que sobra como elaborado. Nunca queda en negativo: si no alcanza, avisa qué falta y deja actualizar el stock ahí mismo.
 - Devolver el stock si el pedido vuelve atrás, y dejar lo cocinado como elaborado si se cancela.
 - Ver los elaborados de cada receta con su antigüedad, cargarlos a mano, corregirlos o descartarlos.
-- Ver la lista de compras de los pedidos pendientes y confirmados, agrupada por góndola, con lo que necesitás, lo que tenés y lo que te falta.
+- Ver la lista de compras de los pedidos pendientes y confirmados, agrupada por categoría de insumo (en el orden de tus categorías; los insumos sin categoría van en "Otros"), con lo que necesitás, lo que tenés y lo que te falta.
 - Crear recetas con categoría, rendimiento, ganancia sobre el costo, precio de venta, gastos extra e ingredientes utilizados.
 - Ver la biblioteca de recetas agrupada por categoría, con secciones plegables y filtro. Las categorías se crean desde la receta y se renombran o eliminan en Configuración.
 - Calcular lo que cuesta la tanda y cada unidad, el precio sugerido, la ganancia por unidad y avisar si el precio de venta quedó por debajo del sugerido.

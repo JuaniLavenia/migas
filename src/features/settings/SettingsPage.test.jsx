@@ -201,3 +201,48 @@ describe("backup", () => {
     expect(useRecipeStore.getState().recipes).toBe(before);
   });
 });
+
+describe("backup of the ingredient categories", () => {
+  it("exports and restores them with each ingredient's category", async () => {
+    const first = renderApp({
+      route: "/configuracion",
+      state: {
+        ingredientCategories: [{ id: "frutas", name: "Frutas" }],
+        ingredients: [{ ...demoIngredients[0], categoryId: "frutas" }, demoIngredients[3]],
+        recipes: [],
+      },
+    });
+    const parsed = JSON.parse(await exportBackup(first.user));
+    expect(parsed.ingredientCategories).toEqual([{ id: "frutas", name: "Frutas" }]);
+    expect(parsed.ingredients[0].categoryId).toBe("frutas");
+
+    first.unmount();
+    const second = renderApp({
+      route: "/configuracion",
+      state: { ingredientCategories: [], ingredients: [], recipes: [] },
+    });
+    await importBackup(second.user, parsed);
+    expect(await screen.findByText("Importamos 2 insumos y 0 recetas")).toBeInTheDocument();
+    const state = useRecipeStore.getState();
+    expect(state.ingredientCategories).toEqual([{ id: "frutas", name: "Frutas" }]);
+    expect(state.ingredients.map((item) => item.categoryId)).toEqual(["frutas", "frescos"]);
+  });
+
+  it("turns an old backup's category names into categories", async () => {
+    const { user } = renderApp({
+      route: "/configuracion",
+      state: { ingredients: [], recipes: [] },
+    });
+    await importBackup(user, {
+      ingredients: [
+        { id: "harina", name: "Harina", category: "Secos", unit: "g", packSize: 1000, packCost: 1000 },
+        { id: "chispas", name: "Chispas", category: "Toppings", unit: "g", packSize: 100, packCost: 900 },
+      ],
+    });
+    await screen.findByText("Importamos 2 insumos y 0 recetas");
+    const state = useRecipeStore.getState();
+    const toppings = state.ingredientCategories.find((item) => item.name === "Toppings");
+    expect(state.ingredientCategories).toHaveLength(7);
+    expect(state.ingredients.map((item) => item.categoryId)).toEqual(["secos", toppings.id]);
+  });
+});

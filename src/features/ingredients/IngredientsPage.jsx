@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import useRecipeStore from "../../stores/useRecipeStore";
 import useToastStore from "../../stores/useToastStore";
 import { countRecipesUsingIngredient } from "../../lib/recipeMath";
@@ -30,7 +30,9 @@ function deleteDescription(target) {
 // page live in the URL), create/edit modal and the delete confirmation
 // (which warns when recipes use the ingredient).
 function IngredientsPage() {
-  const ingredients = useRecipeStore((state) => state.ingredients);
+  const storedIngredients = useRecipeStore((state) => state.ingredients);
+  const ingredientCategories = useRecipeStore((state) => state.ingredientCategories);
+  const addIngredientCategory = useRecipeStore((state) => state.addIngredientCategory);
   const recipes = useRecipeStore((state) => state.recipes);
   const addIngredient = useRecipeStore((state) => state.addIngredient);
   const updateIngredient = useRecipeStore((state) => state.updateIngredient);
@@ -46,10 +48,22 @@ function IngredientsPage() {
   const [editing, setEditing] = useState(null);
   const [pendingDelete, setPendingDelete] = useState(null);
 
+  // Each ingredient with the name of its category ("" without one, or with
+  // an unknown one), which the list shows, searches and sorts by.
+  const ingredients = useMemo(() => {
+    const names = new Map(
+      ingredientCategories.map((category) => [category.id, category.name]),
+    );
+    return storedIngredients.map((item) => ({
+      ...item,
+      categoryName: names.get(item.categoryId) ?? "",
+    }));
+  }, [storedIngredients, ingredientCategories]);
+
   // Search, then sort (name breaks ties; the custom order keeps the stored
   // order), then paginate.
   const filteredIngredients = ingredients.filter((item) =>
-    `${item.name} ${item.category}`
+    `${item.name} ${item.categoryName}`
       .toLowerCase()
       .includes(search.toLowerCase()),
   );
@@ -99,6 +113,7 @@ function IngredientsPage() {
   function save(form) {
     const item = {
       ...form,
+      categoryId: form.categoryId || undefined,
       packSize: Number(form.packSize),
       packCost: Number(form.packCost),
       stock: stockValue(form.stock),
@@ -149,6 +164,8 @@ function IngredientsPage() {
       {editing !== null && (
         <IngredientModal
           initial={editing}
+          categories={ingredientCategories}
+          onCreateCategory={addIngredientCategory}
           onClose={() => setEditing(null)}
           onSave={save}
         />

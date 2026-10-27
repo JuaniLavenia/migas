@@ -17,7 +17,7 @@ import { indexIngredients, recipePricing } from "../../lib/recipeMath";
 import { addNextItem, removeItemAt, updateItemAt } from "../../lib/recipeItems";
 import { formatRelativeDate } from "../../lib/dates";
 import { UNCATEGORIZED } from "../../lib/recipeGroups";
-import CategorySelect from "./CategorySelect";
+import CategorySelect from "../../shared/CategorySelect";
 import RecipeImageField from "./RecipeImageField";
 import RecipeItemRow from "./RecipeItemRow";
 import RecipeThumb from "./RecipeThumb";

@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { v4 as uuidv4 } from "uuid";
 import { moveItem } from "../lib/listing";
 import { todayKey } from "../lib/orders";
+import { resolveCategoryNames, sameName } from "../lib/ingredientCategories";
 import {
   applyMove,
   cancelMove,
@@ -69,8 +70,56 @@ function moveWithinGroup(recipes, categories, id, delta) {
   return next;
 }
 
-function sameName(a, b) {
-  return a.localeCompare(b, "es", { sensitivity: "base" }) === 0;
+// Recipe and ingredient categories work the same way. `withCategory` returns
+// [categories, id]: the id of the category with that name (an existing one
+// when the name repeats, ignoring case and accents, or a new one), or null
+// for a blank name.
+function withCategory(categories, name) {
+  const clean = String(name ?? "").trim();
+  if (!clean) return [categories, null];
+  const existing = categories.find((category) => sameName(category.name, clean));
+  if (existing) return [categories, existing.id];
+  const id = uuidv4();
+  return [[...categories, { id, name: clean }], id];
+}
+
+function renameCategory(categories, id, name) {
+  const clean = String(name ?? "").trim();
+  if (!clean) return categories;
+  return categories.map((category) =>
+    category.id === id ? { ...category, name: clean } : category,
+  );
+}
+
+// Its records stay, without category. Not an edit: they keep updatedAt.
+function withoutCategory(records, id) {
+  return records.map((record) => {
+    if (record.categoryId !== id) return record;
+    const { categoryId: _removed, ...rest } = record;
+    return rest;
+  });
+}
+
+// Merges imported categories by id. One whose name already exists (from
+// another device, with another id) is not duplicated: `renamed` maps its id
+// to the existing one, for its records to move there.
+function mergeCategories(current, incoming) {
+  const renamed = new Map();
+  const added = [];
+  incoming.forEach((item) => {
+    const id = item.id || uuidv4();
+    const sameId = current.some((category) => category.id === id);
+    const sameNamed = current.find((category) => sameName(category.name, item.name));
+    if (!sameId && sameNamed) renamed.set(id, sameNamed.id);
+    else added.push({ ...item, id });
+  });
+  return { categories: mergeById(current, added), renamed };
+}
+
+function moveToMerged(record, renamed) {
+  return renamed.has(record.categoryId)
+    ? { ...record, categoryId: renamed.get(record.categoryId) }
+    : record;
 }
 
 function moveById(list, id, delta) {
@@ -84,6 +133,7 @@ const useRecipeStore = create()((set, get) => ({
   ingredients: [],
   recipes: [],
   recipeCategories: [],
+  ingredientCategories: [],
   packaging: [],
   orders: [],
   finishedGoods: [],
@@ -248,70 +298,67 @@ const useRecipeStore = create()((set, get) => ({
         delta,
       ),
     })),
-  // Returns the id of the category with that name (an existing one when
-  // the name repeats, ignoring case and accents), or null for a blank name.
+  // Returns the id of the category with that name (see withCategory).
   addRecipeCategory: (name) => {
-    const clean = String(name ?? "").trim();
-    if (!clean) return null;
-    const existing = get().recipeCategories.find((category) =>
-      sameName(category.name, clean),
-    );
-    if (existing) return existing.id;
-    const id = uuidv4();
-    set((state) => ({
-      recipeCategories: [...state.recipeCategories, { id, name: clean }],
-    }));
+    const [recipeCategories, id] = withCategory(get().recipeCategories, name);
+    if (recipeCategories !== get().recipeCategories) set({ recipeCategories });
     return id;
   },
-  renameRecipeCategory: (id, name) => {
-    const clean = String(name ?? "").trim();
-    if (!clean) return;
+  renameRecipeCategory: (id, name) =>
     set((state) => ({
-      recipeCategories: state.recipeCategories.map((category) =>
-        category.id === id ? { ...category, name: clean } : category,
-      ),
-    }));
-  },
-  // Its recipes stay, without category. Not an edit: they keep updatedAt.
+      recipeCategories: renameCategory(state.recipeCategories, id, name),
+    })),
   deleteRecipeCategory: (id) =>
     set((state) => ({
       recipeCategories: state.recipeCategories.filter(
         (category) => category.id !== id,
       ),
-      recipes: state.recipes.map((recipe) => {
-        if (recipe.categoryId !== id) return recipe;
-        const { categoryId: _removed, ...rest } = recipe;
-        return rest;
-      }),
+      recipes: withoutCategory(state.recipes, id),
+    })),
+  addIngredientCategory: (name) => {
+    const [ingredientCategories, id] = withCategory(get().ingredientCategories, name);
+    if (ingredientCategories !== get().ingredientCategories) set({ ingredientCategories });
+    return id;
+  },
+  renameIngredientCategory: (id, name) =>
+    set((state) => ({
+      ingredientCategories: renameCategory(state.ingredientCategories, id, name),
+    })),
+  deleteIngredientCategory: (id) =>
+    set((state) => ({
+      ingredientCategories: state.ingredientCategories.filter(
+        (category) => category.id !== id,
+      ),
+      ingredients: withoutCategory(state.ingredients, id),
     })),
   getRecipe: (id) => get().recipes.find((recipe) => recipe.id === id),
-  // Merges by id. A category whose name already exists (from another device,
-  // with another id) is not duplicated: its recipes move to the existing one.
+  // Merges by id. Categories merge by name too (see mergeCategories), and the
+  // category names of an old backup's ingredients become categories.
   importData: ({
     ingredients = [],
     recipes = [],
     recipeCategories = [],
+    ingredientCategories = [],
     packaging = [],
     orders = [],
     finishedGoods = [],
   }) =>
     set((state) => {
-      const renamed = new Map();
-      const newCategories = [];
-      recipeCategories.forEach((item) => {
-        const id = item.id || uuidv4();
-        const sameId = state.recipeCategories.some((category) => category.id === id);
-        const sameNamed = state.recipeCategories.find((category) =>
-          sameName(category.name, item.name),
-        );
-        if (!sameId && sameNamed) renamed.set(id, sameNamed.id);
-        else newCategories.push({ ...item, id });
-      });
+      const recipeMerge = mergeCategories(state.recipeCategories, recipeCategories);
+      const ingredientMerge = mergeCategories(
+        state.ingredientCategories,
+        ingredientCategories,
+      );
+      const named = resolveCategoryNames(
+        ingredients.map((item) => moveToMerged(item, ingredientMerge.renamed)),
+        ingredientMerge.categories,
+      );
       return {
-        recipeCategories: mergeById(state.recipeCategories, newCategories),
+        recipeCategories: recipeMerge.categories,
+        ingredientCategories: named.categories,
         ingredients: mergeById(
           state.ingredients,
-          ingredients.map((item) => ({ ...item, id: item.id || uuidv4() })),
+          named.ingredients.map((item) => ({ ...item, id: item.id || uuidv4() })),
         ),
         packaging: mergeById(
           state.packaging,
@@ -328,11 +375,8 @@ const useRecipeStore = create()((set, get) => ({
         recipes: mergeById(
           state.recipes,
           recipes.map((recipe) => ({
-            ...recipe,
+            ...moveToMerged(recipe, recipeMerge.renamed),
             id: recipe.id || uuidv4(),
-            ...(renamed.has(recipe.categoryId)
-              ? { categoryId: renamed.get(recipe.categoryId) }
-              : {}),
           })),
         ),
       };

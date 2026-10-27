@@ -5,7 +5,7 @@ import useRecipeStore from "./useRecipeStore";
 const ingredient = {
   id: "leche",
   name: "Leche",
-  category: "Lácteos",
+  categoryId: "lacteos",
   unit: "ml",
   packSize: 1000,
   packCost: 900,

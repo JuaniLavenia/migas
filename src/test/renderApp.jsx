@@ -3,7 +3,11 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, useLocation } from "react-router-dom";
 import App from "../App";
 import useRecipeStore from "../stores/useRecipeStore";
-import { demoIngredients, demoRecipes } from "../stores/demoData";
+import {
+  demoIngredientCategories,
+  demoIngredients,
+  demoRecipes,
+} from "../stores/demoData";
 import { SessionContext } from "../app/session/SessionContext";
 import useRecipeSelectionStore from "../stores/useRecipeSelectionStore";
 import useSaveStatusStore from "../stores/useSaveStatusStore";
@@ -45,6 +49,7 @@ export function renderApp({ state, route = "/", session = null, localStorage } =
       ingredients: demoIngredients,
       recipes: demoRecipes,
       recipeCategories: [],
+      ingredientCategories: demoIngredientCategories,
       ...state,
     },
     true,

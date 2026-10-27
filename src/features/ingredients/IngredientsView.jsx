@@ -30,7 +30,7 @@ function IngredientRow({ item, onEdit, onDelete, reorderControls }) {
         </span>
         <span>
           <strong>{item.name}</strong>
-          <small>{item.category}</small>
+          <small>{item.categoryName || "Sin categoría"}</small>
         </span>
       </div>
       <span>

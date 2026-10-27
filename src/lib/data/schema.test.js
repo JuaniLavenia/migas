@@ -14,6 +14,7 @@ const migrations = [
   "20261025000000_orders.sql",
   "20261026000000_auto_stock.sql",
   "20261027000000_order_customization.sql",
+  "20261028000000_ingredient_categories.sql",
 ].map((file) =>
   readFileSync(new URL(`../../../supabase/migrations/${file}`, import.meta.url), "utf8"),
 );
@@ -63,7 +64,8 @@ const localData = {
   ],
 };
 
-beforeAll(async () => {
+// A fresh Postgres with Supabase's stubs and the first `count` migrations.
+async function startDb(count = migrations.length) {
   db = new PGlite();
   await db.exec(`
     create schema auth;
@@ -81,10 +83,12 @@ beforeAll(async () => {
     grant execute on function auth.uid() to anon, authenticated;
     insert into auth.users values ('${ANA}'), ('${BETO}');
   `);
-  for (const migration of migrations) await db.exec(migration);
-  // Starting Postgres (WASM) takes a few seconds, more with the whole suite
-  // running in parallel.
-}, 60000);
+  for (const migration of migrations.slice(0, count)) await db.exec(migration);
+}
+
+// Starting Postgres (WASM) takes a few seconds, more with the whole suite
+// running in parallel.
+beforeAll(() => startDb(), 60000);
 
 describe("Supabase schema", () => {
   it("creates one business per user on first sign-in, with them as owner", async () => {
@@ -443,5 +447,125 @@ describe("Supabase schema", () => {
       await rows("select name, position from public.recipes where id = 'cookies'"),
     ).toEqual([{ name: "Cookies XL", position: 5 }]);
     expect(await rows("select id from public.recipe_categories")).toEqual([]);
+  });
+});
+
+// The ingredient categories migration runs on data loaded before it, so this
+// suite starts its own Postgres (after the one above is done with) without it.
+describe("Ingredient categories migration", () => {
+  let anas;
+  let betos;
+
+  beforeAll(async () => {
+    await startDb(migrations.length - 1);
+    anas = await businessOf(ANA);
+    betos = await businessOf(BETO);
+    await as(ANA);
+    await rows("select public.upload_local_data($1, $2)", [
+      anas,
+      {
+        ingredients: [
+          { id: "harina", name: "Harina", category: "Secos", packSize: 1, packCost: 1 },
+          { id: "chispas", name: "Chispas", category: "Toppings", packSize: 1, packCost: 1 },
+          { id: "manteca", name: "Manteca", category: " lácteos ", packSize: 1, packCost: 1 },
+          { id: "granas", name: "Granas", category: "toppings", packSize: 1, packCost: 1 },
+          { id: "sal", name: "Sal", category: "", packSize: 1, packCost: 1 },
+          { id: "huevos", name: "Huevos", category: "Frescos", packSize: 1, packCost: 1 },
+        ],
+      },
+    ]);
+    await db.exec("reset role");
+    await db.exec(migrations.at(-1));
+  }, 60000);
+
+  async function categoriesOf(user) {
+    await as(user);
+    return rows("select id, name, position from public.ingredient_categories order by position");
+  }
+
+  it("gives a business with ingredients the six categories plus the other names they use", async () => {
+    const categories = await categoriesOf(ANA);
+    expect(categories.map(({ name, position }) => [name, position])).toEqual([
+      ["Secos", 0],
+      ["Lácteos", 1],
+      ["Frescos", 2],
+      ["Chocolates", 3],
+      ["Decoración", 4],
+      ["Otros", 5],
+      ["Toppings", 6],
+    ]);
+  });
+
+  it("points each ingredient to its category by name, keeping the old text", async () => {
+    const categories = await categoriesOf(ANA);
+    const idOf = (name) => categories.find((category) => category.name === name).id;
+    expect(
+      await rows("select id, category, category_id from public.ingredients order by position"),
+    ).toEqual([
+      { id: "harina", category: "Secos", category_id: idOf("Secos") },
+      { id: "chispas", category: "Toppings", category_id: idOf("Toppings") },
+      { id: "manteca", category: " lácteos ", category_id: idOf("Lácteos") },
+      { id: "granas", category: "toppings", category_id: idOf("Toppings") },
+      { id: "sal", category: "", category_id: null },
+      { id: "huevos", category: "Frescos", category_id: idOf("Frescos") },
+    ]);
+  });
+
+  it("leaves a business without ingredients without categories", async () => {
+    expect(await categoriesOf(BETO)).toEqual([]);
+  });
+
+  it("keeps ingredient categories private to the business members", async () => {
+    await as(BETO);
+    await expect(
+      db.query(
+        "insert into public.ingredient_categories (business_id, id, name) values ($1, 'x', 'X')",
+        [anas],
+      ),
+    ).rejects.toThrow();
+    await rows("update public.ingredient_categories set name = 'hackeado' where business_id = $1", [anas]);
+    await rows("delete from public.ingredient_categories where business_id = $1", [anas]);
+    await as(null);
+    expect(await rows("select id from public.ingredient_categories")).toEqual([]);
+    expect(await categoriesOf(ANA)).toHaveLength(7);
+    await rows(
+      "insert into public.ingredient_categories (business_id, id, name, position) values ($1, 'nueva', 'Nueva', 7)",
+      [anas],
+    );
+    await rows("update public.ingredient_categories set name = 'Frutas' where id = 'nueva'");
+    expect(await rows("select name from public.ingredient_categories where id = 'nueva'")).toEqual([
+      { name: "Frutas" },
+    ]);
+  });
+
+  it("uploads the ingredient categories with the first upload", async () => {
+    await as(BETO);
+    await rows("select public.upload_local_data($1, $2)", [
+      betos,
+      {
+        ingredientCategories: [{ id: "secos", name: "Secos" }],
+        ingredients: [
+          { id: "harina", name: "Harina", categoryId: "secos", packSize: 1, packCost: 1 },
+          { id: "sal", name: "Sal", packSize: 1, packCost: 1 },
+        ],
+      },
+    ]);
+    expect(await categoriesOf(BETO)).toEqual([{ id: "secos", name: "Secos", position: 0 }]);
+    expect(await rows("select id, category_id from public.ingredients order by position")).toEqual([
+      { id: "harina", category_id: "secos" },
+      { id: "sal", category_id: null },
+    ]);
+  });
+
+  it("never uploads into a business that only has ingredient categories", async () => {
+    await as(BETO);
+    await rows("delete from public.ingredients where business_id = $1", [betos]);
+    await expect(
+      db.query("select public.upload_local_data($1, $2)", [
+        betos,
+        { recipes: [{ id: "otra", name: "Otra" }] },
+      ]),
+    ).rejects.toThrow(/business_not_empty/);
+    expect(await rows("select id from public.recipes")).toEqual([]);
   });
 });

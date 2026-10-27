@@ -75,6 +75,7 @@ describe("rows", () => {
         id: "h",
         name: "Harina",
         category: "Secos",
+        category_id: "secos",
         unit: "g",
         pack_size: "1000",
         pack_cost: "1250.5",
@@ -84,7 +85,7 @@ describe("rows", () => {
     ).toEqual({
       id: "h",
       name: "Harina",
-      category: "Secos",
+      categoryId: "secos",
       unit: "g",
       packSize: 1000,
       packCost: 1250.5,
@@ -96,18 +97,19 @@ describe("rows", () => {
     const ingredient = {
       id: "h",
       name: "Harina",
-      category: "Secos",
+      categoryId: "secos",
       unit: "g",
       packSize: 1000,
       packCost: 1250,
       stock: 500,
     };
     const row = toRow("ingredients", ingredient, BUSINESS, 1);
+    // The legacy `category` text column is left as it is (not written).
     expect(row).toEqual({
       business_id: BUSINESS,
       id: "h",
       name: "Harina",
-      category: "Secos",
+      category_id: "secos",
       unit: "g",
       pack_size: 1000,
       pack_cost: 1250,
@@ -116,11 +118,29 @@ describe("rows", () => {
     });
     expect(fromRow("ingredients", row)).toEqual(ingredient);
     expect(
+      toRow("ingredientCategories", { id: "s", name: "Secos" }, BUSINESS, 2),
+    ).toEqual({ business_id: BUSINESS, id: "s", name: "Secos", position: 2 });
+    expect(
+      fromRow("ingredientCategories", { business_id: BUSINESS, id: "s", name: "Secos", position: 2 }),
+    ).toEqual({ id: "s", name: "Secos" });
+    expect(
       toRow("recipeCategories", { id: "c", name: "Cookies" }, BUSINESS, 0),
     ).toEqual({ business_id: BUSINESS, id: "c", name: "Cookies", position: 0 });
     expect(
       fromRow("recipeCategories", { business_id: BUSINESS, id: "c", name: "Cookies", position: 0 }),
     ).toEqual({ id: "c", name: "Cookies" });
+  });
+
+  it("writes an ingredient without category as null and reads it back as absent", () => {
+    const row = toRow(
+      "ingredients",
+      { id: "h", name: "Harina", unit: "g", packSize: 1, packCost: 1 },
+      BUSINESS,
+      0,
+    );
+    expect(row.category_id).toBeNull();
+    expect(fromRow("ingredients", row)).not.toHaveProperty("categoryId");
+    expect(fromRow("ingredients", row)).not.toHaveProperty("category");
   });
 
   it("stores a number the editor left invalid as 0", () => {

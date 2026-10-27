@@ -4,9 +4,9 @@ import { currentPath, renderApp } from "../../test/renderApp";
 
 // A batch of 21 cookies takes 1000 g of flour, 200 g of butter and 100 g of
 // chocolate.
-const harina = { id: "harina", name: "Harina", category: "Secos", unit: "g", packSize: 1000, packCost: 1000, stock: 2500 };
-const manteca = { id: "manteca", name: "Manteca", category: "Lácteos", unit: "g", packSize: 200, packCost: 2000, stock: 100 };
-const chocolate = { id: "chocolate", name: "Chocolate", category: "Chocolates", unit: "g", packSize: 100, packCost: 3000, stock: 0 };
+const harina = { id: "harina", name: "Harina", categoryId: "secos", unit: "g", packSize: 1000, packCost: 1000, stock: 2500 };
+const manteca = { id: "manteca", name: "Manteca", categoryId: "lacteos", unit: "g", packSize: 200, packCost: 2000, stock: 100 };
+const chocolate = { id: "chocolate", name: "Chocolate", categoryId: "chocolates", unit: "g", packSize: 100, packCost: 3000, stock: 0 };
 const cookies = {
   id: "cookies",
   name: "Cookies",
@@ -111,5 +111,48 @@ describe("Shopping list", () => {
       packaging: [{ ...box, stock: 9 }],
     });
     expect(screen.getByText("Tenés todo lo que necesitás.")).toBeInTheDocument();
+  });
+});
+
+describe("Shopping list by her ingredient categories", () => {
+  it("follows the order and names of her categories", () => {
+    renderShopping({
+      ingredientCategories: [
+        { id: "chocolates", name: "Chocolatería" },
+        { id: "secos", name: "Secos" },
+        { id: "lacteos", name: "Lácteos" },
+      ],
+    });
+    expect(
+      screen.getAllByRole("heading", { level: 2 }).map((node) => node.textContent),
+    ).toEqual(["Chocolatería", "Secos", "Lácteos", "Packaging"]);
+  });
+
+  it("groups the ingredients without category, or with a deleted one, under Otros", () => {
+    renderShopping({
+      ingredientCategories: [
+        { id: "otros", name: "Otros" },
+        { id: "secos", name: "Secos" },
+      ],
+      ingredients: [
+        harina,
+        { ...manteca, categoryId: "deleted" },
+        { ...chocolate, categoryId: undefined },
+      ],
+    });
+    expect(
+      screen.getAllByRole("heading", { level: 2 }).map((node) => node.textContent),
+    ).toEqual(["Otros", "Secos", "Packaging"]);
+    expect(row("Otros", "Manteca")).toHaveTextContent("Te falta300 g");
+    expect(row("Otros", "Chocolate")).toHaveTextContent("Te falta200 g");
+  });
+
+  it("puts Otros last when she has no category with that name", () => {
+    renderShopping({
+      ingredientCategories: [{ id: "secos", name: "Secos" }],
+    });
+    expect(
+      screen.getAllByRole("heading", { level: 2 }).map((node) => node.textContent),
+    ).toEqual(["Secos", "Otros", "Packaging"]);
   });
 });

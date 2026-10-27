@@ -1,24 +1,25 @@
 import { useId, useState } from "react";
 import ModalShell from "../../shared/ModalShell";
-import { INGREDIENT_CATEGORIES } from "./ingredientCategories";
+import CategorySelect from "../../shared/CategorySelect";
 
 const UNIT_NAMES = { g: "gramos", ml: "mililitros", un: "unidades" };
 
-function IngredientModal({ initial, onClose, onSave }) {
+// `categories` are her ingredient categories; `onCreateCategory(name)`
+// returns the id of the created (or existing) one.
+function IngredientModal({ initial, categories, onCreateCategory, onClose, onSave }) {
   const fieldId = useId();
   const [form, setForm] = useState({
     name: initial.name || "",
-    category: initial.category || "Otros",
+    // An unknown category (deleted meanwhile) shows as "Sin categoría".
+    categoryId: categories.some((category) => category.id === initial.categoryId)
+      ? initial.categoryId
+      : "",
     unit: initial.unit || "g",
     // ?? keeps a stored 0 visible (|| blanked a free ingredient's cost).
     packSize: initial.packSize ?? "",
     packCost: initial.packCost ?? "",
     stock: initial.stock ?? (initial.id ? 0 : ""),
   });
-  // A category from before the fixed list stays selectable until changed.
-  const categories = INGREDIENT_CATEGORIES.includes(form.category)
-    ? INGREDIENT_CATEGORIES
-    : [...INGREDIENT_CATEGORIES, form.category];
   const change = (field, value) =>
     setForm((current) => ({ ...current, [field]: value }));
   return (
@@ -45,17 +46,14 @@ function IngredientModal({ initial, onClose, onSave }) {
           </div>
           <div className="field-group">
             <label htmlFor={`${fieldId}-category`}>Categoría</label>
-            <select
+            <CategorySelect
               id={`${fieldId}-category`}
-              value={form.category}
-              onChange={(event) => change("category", event.target.value)}
-            >
-              {categories.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
+              value={form.categoryId}
+              categories={categories}
+              onChange={(categoryId) => change("categoryId", categoryId)}
+              onCreate={onCreateCategory}
+              placeholder="Ej. Frutos secos"
+            />
           </div>
           <div className="field-group">
             <label htmlFor={`${fieldId}-unit`}>Unidad base</label>
