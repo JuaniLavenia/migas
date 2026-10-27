@@ -25,6 +25,8 @@ const torta = {
   items: [{ ingredientId: "harina", quantity: 100 }],
 };
 const box = { id: "box", name: "Box x8", packSize: 10, packCost: 9000, stock: 5 };
+// 100 per gram.
+const colorante = { id: "colorante", name: "Colorante naranja", category: "Decoración", unit: "g", packSize: 10, packCost: 1000, stock: 50 };
 
 const pedido = (fields) => ({
   id: fields.id ?? fields.client,
@@ -42,7 +44,7 @@ const pedido = (fields) => ({
   ...fields,
 });
 
-const catalog = { ingredients: [harina], recipes: [cookies, torta], packaging: [box] };
+const catalog = { ingredients: [harina, colorante], recipes: [cookies, torta], packaging: [box] };
 
 function renderOrders(orders = [], route = "/pedidos") {
   return renderApp({ route, state: { ...catalog, orders } });
@@ -143,6 +145,8 @@ describe("Orders", { timeout: 15000 }, () => {
         status: "pending",
       }),
     ]);
+    expect(useRecipeStore.getState().orders[0].customization).toBeUndefined();
+    expect(form.queryByText("Personalización", { selector: "span" })).not.toBeInTheDocument();
     const saved = within(within(group("Esta semana")).getByRole("article", { name: "Pedido de Sofi" }));
     expect(saved.getByText(/16 Cookies · 1 Torta · 2 Box x8/)).toBeInTheDocument();
     expect(saved.getByText(/17:30/)).toBeInTheDocument();
@@ -152,6 +156,72 @@ describe("Orders", { timeout: 15000 }, () => {
     expect(screen.getByRole("status", { name: "Notificaciones" })).toHaveTextContent(
       "Pedido guardado",
     );
+  });
+
+  it("adds a themed customization: decoration at cost and a % design fee over the products", async () => {
+    const { user } = renderOrders([]);
+    await user.click(screen.getByRole("button", { name: /Nuevo pedido/ }));
+    const form = within(screen.getByRole("dialog"));
+    await user.type(form.getByLabelText("Cliente"), "Sofi");
+    await user.type(form.getByLabelText("Fecha de entrega"), "2026-10-24");
+    await user.click(form.getByRole("button", { name: /Agregar producto/ }));
+    await user.clear(form.getByLabelText("Unidades de producto 1"));
+    await user.type(form.getByLabelText("Unidades de producto 1"), "16");
+
+    await user.click(form.getByRole("button", { name: /Agregar insumo de decoración/ }));
+    await user.selectOptions(form.getByLabelText("Insumo de decoración 1"), "Colorante naranja");
+    const amount = form.getByLabelText("Cantidad de decoración 1");
+    expect(amount.parentElement).toHaveTextContent("g");
+    await user.clear(amount);
+    await user.type(amount, "2.5");
+    expect(form.getByLabelText("Tipo de recargo")).toHaveDisplayValue("%");
+    await user.type(form.getByLabelText("Recargo por diseño"), "50");
+
+    // Products 16 × 200 = 3200; fee 50% = 1600; decoration 2.5 g × 100 = 250.
+    const proposed = 3200 + 1600 + 250;
+    expect(form.getByLabelText("Precio acordado")).toHaveValue(proposed);
+    expect(form.getByText("Personalización", { selector: "span" }).parentElement).toHaveTextContent(
+      money(1850),
+    );
+    expect(form.getByText("Costo").parentElement).toHaveTextContent(money(1600 + 250));
+    await user.click(form.getByRole("button", { name: "Guardar pedido" }));
+
+    expect(useRecipeStore.getState().orders[0]).toMatchObject({
+      price: proposed,
+      customization: {
+        items: [{ ingredientId: "colorante", quantity: 2.5 }],
+        feeType: "percent",
+        fee: 50,
+      },
+    });
+    expect(within(card("Sofi")).getByText(/16 Cookies · Personalizado/)).toBeInTheDocument();
+  });
+
+  it("edits a fixed design fee and removes the customization", async () => {
+    const { user } = renderOrders([
+      pedido({
+        client: "Sofi",
+        customization: {
+          items: [{ ingredientId: "colorante", quantity: 3 }],
+          feeType: "amount",
+          fee: 1500,
+        },
+      }),
+    ]);
+    await user.click(within(card("Sofi")).getByRole("button", { name: "Editar" }));
+    const form = within(screen.getByRole("dialog"));
+    expect(form.getByLabelText("Insumo de decoración 1")).toHaveDisplayValue("Colorante naranja");
+    expect(form.getByLabelText("Cantidad de decoración 1")).toHaveValue(3);
+    expect(form.getByLabelText("Tipo de recargo")).toHaveDisplayValue("ARS");
+    expect(form.getByLabelText("Recargo por diseño")).toHaveValue(1500);
+    // 16 × 200 + 1500 + 3 × 100.
+    expect(form.getByText("Precio propuesto").parentElement).toHaveTextContent(money(5000));
+
+    await user.click(form.getByRole("button", { name: "Quitar insumo de decoración 1" }));
+    await user.clear(form.getByLabelText("Recargo por diseño"));
+    await user.click(form.getByRole("button", { name: "Guardar pedido" }));
+    expect(useRecipeStore.getState().orders[0].customization).toBeUndefined();
+    expect(within(card("Sofi")).queryByText(/Personalizado/)).not.toBeInTheDocument();
   });
 
   it("does not save an order whose client is only spaces", async () => {
