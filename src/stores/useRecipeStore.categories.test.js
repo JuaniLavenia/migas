@@ -130,3 +130,108 @@ describe("custom order inside a category", () => {
     expect(ids(store().recipes)).toEqual(["y", "b1", "x"]);
   });
 });
+
+describe("ingredient categories", () => {
+  const ingredient = (id, extra = {}) => ({
+    id,
+    name: id,
+    unit: "g",
+    packSize: 1,
+    packCost: 1,
+    ...extra,
+  });
+
+  beforeEach(() => {
+    useRecipeStore.setState({
+      ingredientCategories: [
+        { id: "secos", name: "Secos" },
+        { id: "lacteos", name: "Lácteos" },
+      ],
+      ingredients: [
+        ingredient("harina", { categoryId: "secos" }),
+        ingredient("manteca", { categoryId: "lacteos" }),
+        ingredient("azucar", { categoryId: "secos" }),
+      ],
+    });
+  });
+
+  it("adds a category and returns its id; a repeated name reuses it", () => {
+    const id = store().addIngredientCategory("  Frutas ");
+    expect(store().ingredientCategories.at(-1)).toEqual({ id, name: "Frutas" });
+    expect(store().addIngredientCategory("lacteos")).toBe("lacteos");
+    expect(store().addIngredientCategory("   ")).toBeNull();
+    expect(store().ingredientCategories).toHaveLength(3);
+  });
+
+  it("renames a category, ignoring blank names", () => {
+    store().renameIngredientCategory("secos", " Almacén ");
+    store().renameIngredientCategory("lacteos", "  ");
+    expect(store().ingredientCategories).toEqual([
+      { id: "secos", name: "Almacén" },
+      { id: "lacteos", name: "Lácteos" },
+    ]);
+  });
+
+  it("deletes a category and leaves its ingredients without category", () => {
+    const manteca = store().ingredients[1];
+    store().deleteIngredientCategory("secos");
+    expect(store().ingredientCategories).toEqual([{ id: "lacteos", name: "Lácteos" }]);
+    expect(store().ingredients.map((item) => item.categoryId)).toEqual([
+      undefined,
+      "lacteos",
+      undefined,
+    ]);
+    expect(store().ingredients[0]).not.toHaveProperty("categoryId");
+    // Untouched ingredients keep their identity, so nothing else is saved.
+    expect(store().ingredients[1]).toBe(manteca);
+  });
+
+  it("does not bring the ingredients back when the category is created again", () => {
+    store().deleteIngredientCategory("secos");
+    const id = store().addIngredientCategory("Secos");
+    expect(id).not.toBe("secos");
+    expect(store().ingredients.filter((item) => item.categoryId === id)).toEqual([]);
+  });
+
+  it("imports categories merged by name, moving the ingredients to the existing one", () => {
+    store().importData({
+      ingredientCategories: [
+        { id: "otro-secos", name: "secos" },
+        { id: "frutas", name: "Frutas" },
+      ],
+      ingredients: [
+        ingredient("pasas", { categoryId: "otro-secos" }),
+        ingredient("nueces", { categoryId: "frutas" }),
+      ],
+    });
+    expect(store().ingredientCategories).toEqual([
+      { id: "secos", name: "Secos" },
+      { id: "lacteos", name: "Lácteos" },
+      { id: "frutas", name: "Frutas" },
+    ]);
+    expect(store().ingredients.slice(3).map((item) => [item.id, item.categoryId])).toEqual([
+      ["pasas", "secos"],
+      ["nueces", "frutas"],
+    ]);
+  });
+
+  it("imports an old backup's category names into categories", () => {
+    store().importData({
+      ingredients: [
+        ingredient("pasas", { category: "lácteos" }),
+        ingredient("chispas", { category: "Toppings" }),
+        ingredient("granas", { category: "toppings" }),
+        ingredient("sal"),
+      ],
+    });
+    const toppings = store().ingredientCategories.find((item) => item.name === "Toppings");
+    expect(store().ingredientCategories).toHaveLength(3);
+    expect(store().ingredients.slice(3).map((item) => [item.id, item.categoryId])).toEqual([
+      ["pasas", "lacteos"],
+      ["chispas", toppings.id],
+      ["granas", toppings.id],
+      ["sal", undefined],
+    ]);
+    expect(store().ingredients.some((item) => "category" in item)).toBe(false);
+  });
+});

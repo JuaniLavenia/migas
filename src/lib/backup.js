@@ -40,7 +40,7 @@ function sanitizeIngredient(source) {
   return withId(
     {
       name: source.name,
-      category: typeof source.category === "string" ? source.category : "",
+      ...ingredientCategoryOf(source),
       unit: nonEmptyString(source.unit) ? source.unit : "g",
       packSize,
       packCost,
@@ -48,6 +48,15 @@ function sanitizeIngredient(source) {
     },
     source,
   );
+}
+
+// Optional: the id of its category, or, in a backup from before the categories
+// were editable, the category's name (`category`), which the import turns
+// into a category (see resolveCategoryNames). Neither: no category.
+function ingredientCategoryOf(source) {
+  if (nonEmptyString(source.categoryId)) return { categoryId: source.categoryId };
+  if (nonEmptyString(source.category)) return { category: source.category.trim() };
+  return {};
 }
 
 // Optional: a backup without a valid stock (an older one) leaves it out, so
@@ -258,8 +267,8 @@ function sanitizeList(list, sanitize) {
   return { kept, skipped };
 }
 
-// Returns { ingredients, recipes, recipeCategories, packaging, orders,
-// finishedGoods, skipped }.
+// Returns { ingredients, recipes, recipeCategories, ingredientCategories,
+// packaging, orders, finishedGoods, skipped }.
 // Accepts recipes with `updatedAt` (current) or the legacy `updated` label.
 // Throws when the data is not a backup at all (not an object, or without
 // ingredients/recipes/packaging/orders/finishedGoods arrays).
@@ -279,6 +288,7 @@ export function sanitizeBackup(data, now = Date.now()) {
     sanitizeRecipe(recipe, now),
   );
   const categories = sanitizeList(data.recipeCategories, sanitizeCategory);
+  const ingredientCategories = sanitizeList(data.ingredientCategories, sanitizeCategory);
   const packaging = sanitizeList(data.packaging, sanitizePackaging);
   const orders = sanitizeList(data.orders, (order) => sanitizeOrder(order, now));
   const finishedGoods = sanitizeList(data.finishedGoods, sanitizeFinishedGood);
@@ -286,6 +296,7 @@ export function sanitizeBackup(data, now = Date.now()) {
     ingredients: ingredients.kept,
     recipes: recipes.kept,
     recipeCategories: categories.kept,
+    ingredientCategories: ingredientCategories.kept,
     packaging: packaging.kept,
     orders: orders.kept,
     finishedGoods: finishedGoods.kept,
@@ -293,6 +304,7 @@ export function sanitizeBackup(data, now = Date.now()) {
       ingredients.skipped +
       recipes.skipped +
       categories.skipped +
+      ingredientCategories.skipped +
       packaging.skipped +
       orders.skipped +
       finishedGoods.skipped,
