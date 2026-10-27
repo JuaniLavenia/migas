@@ -1,14 +1,15 @@
 // Mapping between the app's records and the Supabase rows (see
 // supabase/migrations). Collections are named as in the store: "recipes",
-// "ingredients", "recipeCategories", "packaging", "orders", "finishedGoods".
-// Optional fields (of recipes, an order's stockMove and customization) are
-// null in the database and absent in the app. Postgres numerics come back as
-// strings.
+// "ingredients", "recipeCategories", "ingredientCategories", "packaging",
+// "orders", "finishedGoods". Optional fields (of recipes, an ingredient's
+// categoryId, an order's stockMove and customization) are null in the
+// database and absent in the app. Postgres numerics come back as strings.
 
 export const TABLES = {
   recipes: "recipes",
   ingredients: "ingredients",
   recipeCategories: "recipe_categories",
+  ingredientCategories: "ingredient_categories",
   packaging: "packaging",
   orders: "orders",
   finishedGoods: "finished_goods",
@@ -68,10 +69,12 @@ const mappers = {
       };
     },
   },
+  // The legacy `category` text column (names, before the categories were
+  // editable) is neither written nor read.
   ingredients: {
     toRow: (ingredient) => ({
       name: ingredient.name ?? "",
-      category: ingredient.category ?? "",
+      category_id: optionalText(ingredient.categoryId),
       unit: ingredient.unit ?? "g",
       pack_size: number(ingredient.packSize),
       pack_cost: number(ingredient.packCost),
@@ -80,7 +83,7 @@ const mappers = {
     fromRow: (row) => ({
       id: row.id,
       name: row.name,
-      category: row.category,
+      ...(row.category_id ? { categoryId: row.category_id } : {}),
       unit: row.unit,
       packSize: number(row.pack_size),
       packCost: number(row.pack_cost),
@@ -88,6 +91,10 @@ const mappers = {
     }),
   },
   recipeCategories: {
+    toRow: (category) => ({ name: category.name ?? "" }),
+    fromRow: (row) => ({ id: row.id, name: row.name }),
+  },
+  ingredientCategories: {
     toRow: (category) => ({ name: category.name ?? "" }),
     fromRow: (row) => ({ id: row.id, name: row.name }),
   },
