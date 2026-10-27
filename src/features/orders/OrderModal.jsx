@@ -182,7 +182,10 @@ function OrderModal({ initial, catalog, onClose, onSave }) {
   }
 
   return (
-    <ModalShell title={editing ? "Editar pedido" : "Nuevo pedido"} onClose={onClose}>
+    <ModalShell
+      title={editing ? "Editar pedido" : initial.repeatOf ? "Repetir pedido" : "Nuevo pedido"}
+      onClose={onClose}
+    >
       <form onSubmit={submit}>
         <div className="form-grid">
           <div className="field-group">

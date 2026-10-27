@@ -2,7 +2,7 @@ import { useState } from "react";
 import useRecipeStore from "../../stores/useRecipeStore";
 import useToastStore from "../../stores/useToastStore";
 import ConfirmDialog from "../../shared/ConfirmDialog";
-import { groupOrders, isClosed, todayKey } from "../../lib/orders";
+import { groupOrders, isClosed, repeatDraft, todayKey } from "../../lib/orders";
 import { stockTransition } from "../../lib/stockMoves";
 import { stockValue } from "../../lib/stock";
 import OrdersView from "./OrdersView";
@@ -49,7 +49,8 @@ function OrdersPage() {
   const showToast = useToastStore((state) => state.showToast);
   const [filter, setFilter] = useState("open");
   const [search, setSearch] = useState("");
-  // null: closed; {}: new order; an order: editing it.
+  // null: closed; {}: new order; an order: editing it; a repeatDraft: a new
+  // order with another's contents.
   const [editing, setEditing] = useState(null);
   const [pendingDelete, setPendingDelete] = useState(null);
   // A status change the stock did not allow: { id, status, shortages,
@@ -119,6 +120,7 @@ function OrdersPage() {
         onSearchChange={setSearch}
         onAdd={() => setEditing({})}
         onEdit={setEditing}
+        onRepeat={(order) => setEditing(repeatDraft(order))}
         onDelete={setPendingDelete}
         onStatusChange={changeStatus}
       />
