@@ -197,6 +197,7 @@ describe("rows", () => {
       status: "confirmed",
       created_at: 1767225600000,
       stock_move: null,
+      customization: null,
       position: 4,
     });
     expect(fromRow("orders", row)).toEqual(order);
@@ -213,6 +214,18 @@ describe("rows", () => {
     const row = toRow("orders", order, BUSINESS, 0);
     expect(row.stock_move).toEqual(stockMove);
     expect(fromRow("orders", row).stockMove).toEqual(stockMove);
+  });
+
+  it("keeps an order's customization", () => {
+    const customization = {
+      items: [{ ingredientId: "colorante", quantity: 2 }],
+      feeType: "amount",
+      fee: 1500,
+    };
+    const order = { id: "o", client: "Sofi", dueDate: "2026-10-25", customization };
+    const row = toRow("orders", order, BUSINESS, 0);
+    expect(row.customization).toEqual(customization);
+    expect(fromRow("orders", row).customization).toEqual(customization);
   });
 
   it("maps a batch of finished goods", () => {

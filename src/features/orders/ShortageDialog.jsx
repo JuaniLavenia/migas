@@ -12,7 +12,8 @@ function missingLabel(entry) {
 // Shown when a status change cannot deduct the stock. With `shortages`, she
 // can correct what she has right there (she may have forgotten to load a
 // purchase) and try again; `onRetry` receives { kind, id, stock } updates.
-// With `problems` (deleted recipes or packaging) the order must be edited.
+// With `problems` (deleted recipes, packaging or decoration) the order must
+// be edited.
 function ShortageDialog({ shortages, problems, onRetry, onClose }) {
   const fieldId = useId();
   const [stocks, setStocks] = useState(() =>
@@ -22,8 +23,8 @@ function ShortageDialog({ shortages, problems, onRetry, onClose }) {
     return (
       <ModalShell title="No se puede preparar" onClose={onClose}>
         <p className="modal-text">
-          Este pedido tiene productos o packaging que ya no existen. Editalo antes
-          de prepararlo.
+          Este pedido tiene productos, packaging o insumos de decoración que ya
+          no existen. Editalo antes de prepararlo.
         </p>
         <div className="modal-actions">
           <button type="button" className="primary-button" onClick={onClose}>

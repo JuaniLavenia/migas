@@ -9,6 +9,9 @@ import {
 
 const ingredients = [
   { id: "harina", name: "Harina", unit: "g", packSize: 1000, packCost: 1000 },
+  // 100 per gram.
+  { id: "colorante", name: "Colorante naranja", unit: "g", packSize: 10, packCost: 1000 },
+  { id: "sinPrecio", name: "Toppers", unit: "un", packSize: 0, packCost: 500 },
 ];
 // 21 cookies cost 2100 (100 per unit); suggested at +100%: 200 per unit.
 const cookies = {
@@ -80,12 +83,84 @@ describe("orderTotals", () => {
     expect(totals.missingCount).toBe(3);
   });
 
+  it("adds the decoration at cost and a % design fee over the products, not the packaging", () => {
+    const totals = orderTotals(
+      order({
+        items: [{ recipeId: "cookies", quantity: 16 }],
+        packagingItems: [{ packagingId: "box", quantity: 1 }],
+        customization: {
+          items: [{ ingredientId: "colorante", quantity: 2 }],
+          feeType: "percent",
+          fee: 50,
+        },
+        price: 6000,
+      }),
+      catalog,
+    );
+    // Products 16 × 200 = 3200; fee 50% of 3200 = 1600; decoration 2 g × 100
+    // = 200; box 900 at cost.
+    expect(totals.proposed).toBeCloseTo(3200 + 1600 + 200 + 900);
+    expect(totals.suggested).toBeCloseTo(3200 + 1600 + 200 + 900);
+    // The fee is her work: it adds to the price, not to the cost.
+    expect(totals.cost).toBeCloseTo(1600 + 200 + 900);
+    expect(totals.profit).toBeCloseTo(6000 - 2700);
+    expect(totals.customization).toBeCloseTo(1800);
+    expect(totals.missingCount).toBe(0);
+  });
+
+  it("applies the % fee to each price: sale price for proposed, suggested for suggested", () => {
+    const totals = orderTotals(
+      order({
+        items: [{ recipeId: "premium", quantity: 8 }],
+        customization: { items: [], feeType: "percent", fee: 10 },
+      }),
+      catalog,
+    );
+    expect(totals.proposed).toBeCloseTo(2000 + 200);
+    expect(totals.suggested).toBeCloseTo(1600 + 160);
+    expect(totals.customization).toBeCloseTo(200);
+  });
+
+  it("adds a fixed design fee as is", () => {
+    const totals = orderTotals(
+      order({
+        items: [{ recipeId: "cookies", quantity: 1 }],
+        customization: { items: [], feeType: "amount", fee: 1500 },
+      }),
+      catalog,
+    );
+    expect(totals.proposed).toBeCloseTo(200 + 1500);
+    expect(totals.suggested).toBeCloseTo(200 + 1500);
+    expect(totals.cost).toBeCloseTo(100);
+    expect(totals.customization).toBeCloseTo(1500);
+  });
+
+  it("counts deleted decoration or decoration without a price as missing, at 0", () => {
+    const totals = orderTotals(
+      order({
+        customization: {
+          items: [
+            { ingredientId: "borrado", quantity: 1 },
+            { ingredientId: "sinPrecio", quantity: 4 },
+          ],
+          feeType: "amount",
+          fee: 0,
+        },
+      }),
+      catalog,
+    );
+    expect(totals.proposed).toBe(0);
+    expect(totals.cost).toBe(0);
+    expect(totals.missingCount).toBe(2);
+  });
+
   it("is zero for an empty order", () => {
     expect(orderTotals(order({}), catalog)).toMatchObject({
       proposed: 0,
       suggested: 0,
       cost: 0,
       profit: 0,
+      customization: 0,
       missingCount: 0,
     });
   });

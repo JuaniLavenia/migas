@@ -331,6 +331,34 @@ describe("sanitizeBackup", () => {
     expect(result.orders).toHaveLength(3);
   });
 
+  it("keeps each order's customization, dropping a broken one", () => {
+    const base = { id: "o", client: "Sofi", dueDate: "2026-10-25", price: 0, status: "pending" };
+    const customization = {
+      items: [{ ingredientId: "colorante", quantity: 2.5 }],
+      feeType: "percent",
+      fee: 30,
+    };
+    const result = sanitizeBackup({
+      orders: [
+        { ...base, customization },
+        { ...base, id: "p", customization: { items: [], feeType: "amount", fee: "1500" } },
+        { ...base, id: "q", customization: { items: [{ ingredientId: "", quantity: 1 }] } },
+        { ...base, id: "r", customization: { items: [], feeType: "otro", fee: 10 } },
+        { ...base, id: "s", customization: { items: [], feeType: "amount", fee: -5 } },
+      ],
+    });
+    expect(result.orders.map((order) => order.customization)).toEqual([
+      customization,
+      { items: [], feeType: "amount", fee: 1500 },
+      undefined,
+      { items: [], feeType: "percent", fee: 10 },
+      undefined,
+    ]);
+    expect(result.orders[2]).not.toHaveProperty("customization");
+    expect(result.orders[4]).not.toHaveProperty("customization");
+    expect(result.orders).toHaveLength(5);
+  });
+
   it("keeps what an order deducted when its recipe has a line without quantity", () => {
     const data = {
       recipes: [{ id: "r", yield: 21, items: [{ ingredientId: "h", quantity: 300 }, { ingredientId: "s", quantity: 0 }] }],

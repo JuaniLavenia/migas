@@ -4,8 +4,8 @@ import PageHeader from "../../shared/PageHeader";
 import { currency } from "../../lib/format";
 import { ORDER_STATUSES, dueLabel, paymentStatus } from "../../lib/orders";
 
-// "16 Cookies · 1 Torta · 2 Box x8". Lines whose recipe or packaging was
-// deleted keep their quantity, so nothing silently disappears.
+// "16 Cookies · 1 Torta · 2 Box x8 · Personalizado". Lines whose recipe or
+// packaging was deleted keep their quantity, so nothing silently disappears.
 function contentsLabel(order, { recipes, packaging }) {
   const products = (order.items ?? []).map(({ recipeId, quantity }) => {
     const recipe = recipes.find((entry) => entry.id === recipeId);
@@ -15,7 +15,8 @@ function contentsLabel(order, { recipes, packaging }) {
     const item = packaging.find((entry) => entry.id === packagingId);
     return item ? `${quantity} ${item.name}` : `${quantity} (packaging eliminado)`;
   });
-  return [...products, ...extras].join(" · ") || "Sin productos";
+  const custom = order.customization ? ["Personalizado"] : [];
+  return [...products, ...extras, ...custom].join(" · ") || "Sin productos";
 }
 
 function paymentLabel(order) {

@@ -25,10 +25,20 @@ function nextLine(lines, options, key) {
   return [...lines, { [key]: option.id, quantity: "1" }];
 }
 
-// One editable list of lines: products (recipe × units) or packaging
-// (item × quantity). A line whose recipe or item was deleted keeps it, shown
-// as deleted, until she changes or removes it.
-function OrderLines({ title, lines, options, lineKey, labels, onChange }) {
+// One editable list of lines: products (recipe × units), packaging
+// (item × quantity) or decoration (ingredient × amount in its unit, decimals
+// allowed). A line whose recipe or item was deleted keeps it, shown as
+// deleted, until she changes or removes it.
+function OrderLines({
+  title,
+  lines,
+  options,
+  lineKey,
+  labels,
+  onChange,
+  unitOf = () => "un",
+  step = "1",
+}) {
   const update = (index, field, value) =>
     onChange(lines.map((line, at) => (at === index ? { ...line, [field]: value } : line)));
   return (
@@ -37,7 +47,8 @@ function OrderLines({ title, lines, options, lineKey, labels, onChange }) {
       <div className="modal-ingredients">
         {lines.map((line, index) => {
           const number = index + 1;
-          const known = options.some((option) => option.id === line[lineKey]);
+          const option = options.find((entry) => entry.id === line[lineKey]);
+          const known = Boolean(option);
           return (
             <div className="modal-ingredient-row" key={index}>
               <select
@@ -50,21 +61,21 @@ function OrderLines({ title, lines, options, lineKey, labels, onChange }) {
                     {labels.deleted}
                   </option>
                 )}
-                {options.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.name}
+                {options.map((entry) => (
+                  <option key={entry.id} value={entry.id}>
+                    {entry.name}
                   </option>
                 ))}
               </select>
               <input
                 aria-label={`${labels.quantity} ${number}`}
                 type="number"
-                min="1"
-                step="1"
+                min={step === "1" ? "1" : "0"}
+                step={step}
                 value={line.quantity}
                 onChange={(event) => update(index, "quantity", event.target.value)}
               />
-              <span>un</span>
+              <span>{unitOf(option)}</span>
               <button
                 type="button"
                 className="icon-button"
@@ -90,11 +101,15 @@ function OrderLines({ title, lines, options, lineKey, labels, onChange }) {
   );
 }
 
+// A deleted ingredient (option undefined) shows no unit.
+const ingredientUnit = (ingredient) => (ingredient ? ingredient.unit || "g" : "");
+
 // Create or edit an order. A new order's agreed price follows the proposed
 // price until she types her own; an existing order keeps the price agreed.
 function OrderModal({ initial, catalog, onClose, onSave }) {
   const fieldId = useId();
   const editing = Boolean(initial.id);
+  const custom = initial.customization;
   const [form, setForm] = useState({
     client: initial.client ?? "",
     contact: initial.contact ?? "",
@@ -107,6 +122,12 @@ function OrderModal({ initial, catalog, onClose, onSave }) {
       ...line,
       quantity: String(line.quantity),
     })),
+    decorationItems: (custom?.items ?? []).map((line) => ({
+      ...line,
+      quantity: String(line.quantity),
+    })),
+    feeType: custom?.feeType ?? "percent",
+    fee: custom?.fee ? String(custom.fee) : "",
     // null: follow the proposed price.
     price: editing ? String(initial.price ?? 0) : null,
     paid: editing ? String(initial.paid ?? 0) : "",
@@ -117,15 +138,25 @@ function OrderModal({ initial, catalog, onClose, onSave }) {
   const change = (field, value) => setForm((current) => ({ ...current, [field]: value }));
   const recipes = [...catalog.recipes].sort(byName);
   const packaging = [...catalog.packaging].sort(byName);
+  const ingredients = [...catalog.ingredients].sort(byName);
 
+  // Without decoration nor fee the order is not customized.
+  const decorationItems = toLines(form.decorationItems, "ingredientId");
+  const fee = Math.max(toNumber(form.fee), 0);
+  const customization =
+    decorationItems.length || fee > 0
+      ? { items: decorationItems, feeType: form.feeType, fee }
+      : undefined;
   const lines = {
     items: toLines(form.items, "recipeId"),
     packagingItems: toLines(form.packagingItems, "packagingId"),
   };
-  const proposedPrice = Math.round(orderTotals({ ...lines, price: 0 }, catalog).proposed);
+  const proposedPrice = Math.round(
+    orderTotals({ ...lines, customization, price: 0 }, catalog).proposed,
+  );
   const followsProposed = form.price === null || form.price.trim() === "";
   const price = followsProposed ? proposedPrice : toNumber(form.price);
-  const totals = orderTotals({ ...lines, price }, catalog);
+  const totals = orderTotals({ ...lines, customization, price }, catalog);
 
   function submit(event) {
     event.preventDefault();
@@ -142,6 +173,8 @@ function OrderModal({ initial, catalog, onClose, onSave }) {
       delivery: form.delivery,
       notes: form.notes.trim(),
       ...lines,
+      // Editing clears a removed customization; a new order leaves it out.
+      ...(customization || editing ? { customization } : {}),
       price,
       paid: Math.max(toNumber(form.paid), 0),
       ...(editing ? { status: form.status } : {}),
@@ -263,6 +296,50 @@ function OrderModal({ initial, catalog, onClose, onSave }) {
           }}
           onChange={(packagingItems) => change("packagingItems", packagingItems)}
         />
+        <OrderLines
+          title="Personalización"
+          lines={form.decorationItems}
+          options={ingredients}
+          lineKey="ingredientId"
+          labels={{
+            item: "Insumo de decoración",
+            quantity: "Cantidad de decoración",
+            remove: "Quitar insumo de decoración",
+            add: "Agregar insumo de decoración",
+            deleted: "Insumo eliminado",
+          }}
+          unitOf={ingredientUnit}
+          step="any"
+          onChange={(decorationItems) => change("decorationItems", decorationItems)}
+        />
+        <div className="form-grid">
+          <div className="field-group full">
+            <label htmlFor={`${fieldId}-fee`}>Recargo por diseño</label>
+            <div className="input-with-suffix">
+              <input
+                id={`${fieldId}-fee`}
+                type="number"
+                min="0"
+                step="any"
+                value={form.fee}
+                onChange={(event) => change("fee", event.target.value)}
+                placeholder="0"
+                aria-describedby={`${fieldId}-fee-hint`}
+              />
+              <select
+                aria-label="Tipo de recargo"
+                value={form.feeType}
+                onChange={(event) => change("feeType", event.target.value)}
+              >
+                <option value="percent">%</option>
+                <option value="amount">ARS</option>
+              </select>
+            </div>
+            <p className="field-hint" id={`${fieldId}-fee-hint`}>
+              Tu trabajo en la temática. El % se calcula sobre los productos.
+            </p>
+          </div>
+        </div>
         <div className="form-grid order-money">
           <div className="field-group full">
             <label htmlFor={`${fieldId}-notes`}>Notas</label>
@@ -321,6 +398,12 @@ function OrderModal({ initial, catalog, onClose, onSave }) {
             <span>Sugerido</span>
             <strong>{currency.format(totals.suggested)}</strong>
           </div>
+          {customization && (
+            <div>
+              <span>Personalización</span>
+              <strong>{currency.format(totals.customization)}</strong>
+            </div>
+          )}
           <div>
             <span>Costo</span>
             <strong>{currency.format(totals.cost)}</strong>
@@ -332,8 +415,8 @@ function OrderModal({ initial, catalog, onClose, onSave }) {
         </div>
         {totals.missingCount > 0 && (
           <p className="price-warning order-warning">
-            Hay productos o packaging sin costo completo: el costo y la ganancia
-            no los cuentan.
+            Hay productos, packaging o insumos de decoración sin costo completo:
+            el costo y la ganancia no los cuentan.
           </p>
         )}
         <div className="modal-actions">

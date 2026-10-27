@@ -33,6 +33,7 @@ VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 - Definir categoría (Secos, Lácteos, Frescos, Chocolates, Decoración u Otros), unidad base, presentación de compra, su costo y cuánto tenés ("Tengo").
 - Llevar el listado de packaging (bolsas, cajas) con su presentación de compra, costo, costo por unidad y cuántas unidades tenés. El packaging va por pedido, no en la receta.
 - Cargar los pedidos: cliente y contacto, fecha y hora de entrega, si retira o hay envío, productos (receta × unidades), packaging, notas, precio acordado y lo cobrado.
+- Personalizar un pedido con temática (Halloween, Día de la madre…): insumos de decoración, que suman su costo y descuentan stock al prepararlo, y un recargo por diseño en % de los productos o como monto fijo. El precio propuesto ya los incluye.
 - Seguir cada pedido por estado (Pendiente, Confirmado, En preparación, Listo, Entregado o Cancelado) y por pago (Sin pagar, Señado o Pagado, según lo cobrado).
 - Ver el precio propuesto desde el precio de venta, el sugerido de referencia y la ganancia real del precio acordado.
 - Ver los pedidos agrupados por fecha de entrega (Atrasados, Hoy, Mañana, Esta semana, Más adelante), filtrarlos por estado, buscarlos por cliente y cambiarles el estado desde la lista.

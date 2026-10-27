@@ -166,7 +166,7 @@ describe("Order stock", { timeout: 15000 }, () => {
     const dialog = screen.getByRole("dialog");
     expect(dialog).toHaveAccessibleName("No se puede preparar");
     expect(dialog).toHaveTextContent(
-      "Este pedido tiene productos o packaging que ya no existen. Editalo antes de prepararlo.",
+      "Este pedido tiene productos, packaging o insumos de decoración que ya no existen. Editalo antes de prepararlo.",
     );
     expect(within(dialog).queryByRole("button", { name: "Actualizar y reintentar" })).toBeNull();
     expect(useRecipeStore.getState().orders[0].status).toBe("confirmed");
