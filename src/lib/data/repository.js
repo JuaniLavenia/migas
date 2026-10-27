@@ -8,6 +8,8 @@ import { COLLECTIONS, TABLES, fromRow } from "./rows";
 //   created on their first sign-in.
 // - load(businessId): Promise<{ recipeCategories, ingredients, recipes }> —
 //   app records, each collection in its custom order.
+// - loadBusinessName(businessId): Promise<string>
+// - renameBusiness(businessId, name): Promise<void>
 // - save(businessId, collection, rows): Promise<void> — upserts rows already
 //   mapped with toRow (rows.js).
 // - remove(businessId, collection, ids): Promise<void>
@@ -54,6 +56,15 @@ export function createSupabaseRepository(client) {
         }),
       );
       return Object.fromEntries(entries);
+    },
+    async loadBusinessName(businessId) {
+      const row = check(
+        await client.from("businesses").select("name").eq("id", businessId).single(),
+      );
+      return row.name;
+    },
+    async renameBusiness(businessId, name) {
+      check(await client.from("businesses").update({ name }).eq("id", businessId));
     },
     async save(businessId, collection, rows) {
       if (!rows.length) return;

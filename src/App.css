@@ -83,6 +83,31 @@
   align-items: center;
   justify-content: space-between;
 }
+.workspace-button,
+.workspace-input {
+  width: calc(100% - 22px);
+  background: transparent;
+  font: inherit;
+  font-size: 11px;
+  text-align: left;
+}
+.workspace-button {
+  gap: 8px;
+  cursor: pointer;
+}
+.workspace-button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.workspace-input {
+  display: block;
+  margin: 0 11px 20px;
+  padding: 11px 10px;
+  border: 1px solid var(--sidebar-ink);
+  border-radius: 8px;
+  color: var(--sidebar-ink);
+}
 .nav-list {
   display: grid;
   gap: 5px;

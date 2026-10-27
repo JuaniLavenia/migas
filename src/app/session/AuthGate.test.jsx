@@ -243,6 +243,42 @@ describe("AuthGate", () => {
     expect(auth.signOut).toHaveBeenCalledTimes(1);
   });
 
+  it("loads the business name and renames it, keeping the old one when saving fails", async () => {
+    function NameProbe() {
+      const { businessName, renameBusiness } = useSession();
+      return (
+        <div>
+          <p>Negocio: {businessName}</p>
+          <button type="button" onClick={() => renameBusiness("Dulce Miga")}>
+            Renombrar
+          </button>
+        </div>
+      );
+    }
+    repository = createMemoryRepository({ businessName: "Migas de Ana" });
+    const user = userEvent.setup();
+    render(
+      <AuthGate auth={createFakeAuth(ANA)} repository={repository} syncOptions={{ delay: 0 }}>
+        <NameProbe />
+      </AuthGate>,
+    );
+    expect(await screen.findByText("Negocio: Migas de Ana")).toBeInTheDocument();
+
+    repository.failNext();
+    await user.click(screen.getByRole("button", { name: "Renombrar" }));
+    expect(await screen.findByText("Negocio: Migas de Ana")).toBeInTheDocument();
+    await waitFor(() =>
+      expect(useToastStore.getState().toast?.message).toBe(
+        "No pudimos cambiar el nombre. Revisá la conexión y probá de nuevo.",
+      ),
+    );
+    expect(await repository.loadBusinessName()).toBe("Migas de Ana");
+
+    await user.click(screen.getByRole("button", { name: "Renombrar" }));
+    expect(await screen.findByText("Negocio: Dulce Miga")).toBeInTheDocument();
+    expect(await repository.loadBusinessName()).toBe("Dulce Miga");
+  });
+
   it("says Supabase is not configured when there is no auth", () => {
     render(
       <AuthGate auth={null} repository={null}>
