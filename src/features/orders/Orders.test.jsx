@@ -335,6 +335,66 @@ describe("Orders", { timeout: 15000 }, () => {
     expect(within(card("Sofi")).getByText("Pagado")).toBeInTheDocument();
   });
 
+  it("repeats an order as a new one: no date, today's proposed price, nothing paid", async () => {
+    const original = pedido({
+      client: "Sofi",
+      contact: "@sofi.ok",
+      dueTime: "17:30",
+      delivery: "delivery",
+      notes: "Sin nueces",
+      price: 4000,
+      paid: 4000,
+      status: "delivered",
+      stockMove: { lots: [] },
+      customization: { items: [{ ingredientId: "colorante", quantity: 3 }], feeType: "amount", fee: 1500 },
+    });
+    const { user } = renderOrders([original]);
+    await user.selectOptions(screen.getByLabelText("Mostrar"), "Todos");
+    await user.click(within(card("Sofi")).getByRole("button", { name: "Repetir" }));
+    const form = within(screen.getByRole("dialog"));
+    expect(screen.getByRole("dialog")).toHaveAccessibleName("Repetir pedido");
+    expect(form.getByLabelText("Cliente")).toHaveValue("Sofi");
+    expect(form.getByLabelText("Contacto")).toHaveValue("@sofi.ok");
+    expect(form.getByLabelText("Fecha de entrega")).toHaveValue("");
+    expect(form.getByLabelText("Hora")).toHaveValue("17:30");
+    expect(form.getByLabelText("Unidades de producto 1")).toHaveValue(16);
+    expect(form.getByLabelText("Insumo de decoración 1")).toHaveDisplayValue("Colorante naranja");
+    expect(form.getByLabelText("Recargo por diseño")).toHaveValue(1500);
+    expect(form.getByLabelText("Cobrado")).toHaveValue(null);
+    expect(form.queryByLabelText("Estado")).not.toBeInTheDocument();
+    // 16 × 200 (suggested) + 3 × 100 (decoration at cost) + 1500 (fee), not the 4000 agreed.
+    const proposed = 16 * 200 + 300 + 1500;
+    expect(form.getByLabelText("Precio acordado")).toHaveValue(proposed);
+
+    await user.clear(form.getByLabelText("Cliente"));
+    await user.type(form.getByLabelText("Cliente"), "Ana");
+    await user.type(form.getByLabelText("Fecha de entrega"), "2026-10-24");
+    await user.click(form.getByRole("button", { name: "Guardar pedido" }));
+
+    const [kept, repeated] = useRecipeStore.getState().orders;
+    expect(kept).toEqual(original);
+    expect(repeated).toEqual({
+      id: expect.any(String),
+      createdAt: expect.any(Number),
+      client: "Ana",
+      contact: "@sofi.ok",
+      dueDate: "2026-10-24",
+      dueTime: "17:30",
+      delivery: "delivery",
+      notes: "Sin nueces",
+      items: [{ recipeId: "cookies", quantity: 16 }],
+      packagingItems: [],
+      customization: { items: [{ ingredientId: "colorante", quantity: 3 }], feeType: "amount", fee: 1500 },
+      price: proposed,
+      paid: 0,
+      status: "pending",
+    });
+    expect(repeated.id).not.toBe(original.id);
+    expect(screen.getByRole("status", { name: "Notificaciones" })).toHaveTextContent(
+      "Pedido guardado",
+    );
+  });
+
   it("warns when a product of the order was deleted", () => {
     renderOrders([pedido({ client: "Sofi", items: [{ recipeId: "borrada", quantity: 3 }] })]);
     expect(within(card("Sofi")).getByText(/3 \(receta eliminada\)/)).toBeInTheDocument();

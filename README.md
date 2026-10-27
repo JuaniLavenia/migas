@@ -34,6 +34,7 @@ VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 - Definir categoría, unidad base, presentación de compra, su costo y cuánto tenés ("Tengo"). Las categorías de insumos son tuyas, como las de recetas: se crean desde el insumo ("+ Nueva categoría") y se renombran o eliminan en Configuración. Al eliminar una, sus insumos quedan sin categoría hasta que les elijas otra.
 - Llevar el listado de packaging (bolsas, cajas) con su presentación de compra, costo, costo por unidad y cuántas unidades tenés. El packaging va por pedido, no en la receta.
 - Cargar los pedidos: cliente y contacto, fecha y hora de entrega, si retira o hay envío, productos (receta × unidades), packaging, notas, precio acordado y lo cobrado.
+- Repetir un pedido: abre uno nuevo con los mismos productos, packaging, personalización y datos del cliente para cambiar lo que haga falta. La fecha queda vacía, lo cobrado en cero y el precio propuesto se calcula con los costos de hoy.
 - Personalizar un pedido con temática (Halloween, Día de la madre…): insumos de decoración, que suman su costo y descuentan stock al prepararlo, y un recargo por diseño en % de los productos o como monto fijo. El precio propuesto ya los incluye.
 - Seguir cada pedido por estado (Pendiente, Confirmado, En preparación, Listo, Entregado o Cancelado) y por pago (Sin pagar, Señado o Pagado, según lo cobrado).
 - Ver el precio propuesto desde el precio de venta, el sugerido de referencia y la ganancia real del precio acordado.
@@ -43,6 +44,7 @@ VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 - Ver los elaborados de cada receta con su antigüedad, cargarlos a mano, corregirlos o descartarlos.
 - Ver la lista de compras de los pedidos pendientes y confirmados, agrupada por categoría de insumo (en el orden de tus categorías; los insumos sin categoría van en "Otros"), con lo que necesitás, lo que tenés y lo que te falta.
 - Crear recetas con categoría, rendimiento, ganancia sobre el costo, precio de venta, gastos extra e ingredientes utilizados.
+- Duplicar una receta: la copia ("<nombre> (copia)") queda justo después de la original y se abre para editarla.
 - Ver la biblioteca de recetas agrupada por categoría, con secciones plegables y filtro. Las categorías se crean desde la receta y se renombran o eliminan en Configuración.
 - Calcular lo que cuesta la tanda y cada unidad, el precio sugerido, la ganancia por unidad y avisar si el precio de venta quedó por debajo del sugerido.
 - Entrar con Google y ver los mismos datos en todos los dispositivos (Supabase, con reglas de acceso por negocio y preparado para varios miembros).

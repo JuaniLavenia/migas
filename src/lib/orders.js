@@ -120,6 +120,22 @@ export function dueLabel(order) {
   return order.dueTime ? `${date} · ${order.dueTime}` : date;
 }
 
+// A new order with the contents of `order`, to repeat it: no date to
+// deliver, nothing paid, and the price follows today's costs. `repeatOf`
+// only tells the form it is a repetition; it is not saved.
+export function repeatDraft(order) {
+  const {
+    id,
+    createdAt: _createdAt,
+    status: _status,
+    stockMove: _stockMove,
+    price: _price,
+    paid: _paid,
+    ...contents
+  } = order;
+  return { ...contents, dueDate: "", repeatOf: id };
+}
+
 // Today's local calendar date.
 export function todayKey(now = new Date()) {
   const pad = (value) => String(value).padStart(2, "0");

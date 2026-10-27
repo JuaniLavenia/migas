@@ -255,6 +255,23 @@ const useRecipeStore = create()((set, get) => ({
     set((state) => ({ recipes: [...state.recipes, nextRecipe] }));
     return nextRecipe.id;
   },
+  // A copy named "<name> (copia)", right after the original. Returns its id.
+  duplicateRecipe: (id) => {
+    const original = get().recipes.find((recipe) => recipe.id === id);
+    if (!original) return undefined;
+    const copy = {
+      ...original,
+      id: uuidv4(),
+      name: `${original.name} (copia)`,
+      updatedAt: Date.now(),
+    };
+    set((state) => {
+      const recipes = [...state.recipes];
+      recipes.splice(recipes.indexOf(original) + 1, 0, copy);
+      return { recipes };
+    });
+    return copy.id;
+  },
   // A change to undefined removes that field (e.g. an unset sale price).
   updateRecipe: (id, changes) =>
     set((state) => ({

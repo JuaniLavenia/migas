@@ -1,5 +1,5 @@
 import { useId } from "react";
-import { Edit3, Plus, Search, Trash2 } from "lucide-react";
+import { Edit3, Plus, Repeat2, Search, Trash2 } from "lucide-react";
 import PageHeader from "../../shared/PageHeader";
 import { currency } from "../../lib/format";
 import { ORDER_STATUSES, dueLabel, paymentStatus } from "../../lib/orders";
@@ -33,7 +33,7 @@ function countLabel(matchCount, filteredCount, searching) {
     : `${filteredCount} ${noun}`;
 }
 
-function OrderCard({ order, catalog, onEdit, onDelete, onStatusChange }) {
+function OrderCard({ order, catalog, onEdit, onRepeat, onDelete, onStatusChange }) {
   const payment = paymentStatus(order);
   return (
     <article className="order-card panel" aria-label={`Pedido de ${order.client}`}>
@@ -50,6 +50,14 @@ function OrderCard({ order, catalog, onEdit, onDelete, onStatusChange }) {
             onClick={() => onEdit(order)}
           >
             <Edit3 size={16} />
+          </button>
+          <button
+            className="icon-button"
+            title="Repetir"
+            aria-label="Repetir"
+            onClick={() => onRepeat(order)}
+          >
+            <Repeat2 size={16} />
           </button>
           <button
             className="icon-button danger"
@@ -106,6 +114,7 @@ function OrdersView({
   onSearchChange,
   onAdd,
   onEdit,
+  onRepeat,
   onDelete,
   onStatusChange,
 }) {
@@ -170,6 +179,7 @@ function OrdersView({
                 order={order}
                 catalog={catalog}
                 onEdit={onEdit}
+                onRepeat={onRepeat}
                 onDelete={onDelete}
                 onStatusChange={onStatusChange}
               />

@@ -193,3 +193,42 @@ describe("Recipes library custom order", () => {
     ).not.toBeInTheDocument();
   });
 });
+
+describe("Duplicating a recipe", () => {
+  it("adds a copy right after it and opens the copy, the original untouched", async () => {
+    const { recipes } = seedRecipes(3);
+    const original = {
+      ...recipes[0],
+      categoryId: "tortas",
+      salePrice: 30000,
+      imageUrl: "https://example.com/torta.jpg",
+      items: [{ ingredientId: "harina", quantity: 500 }],
+    };
+    const { user } = renderApp({
+      route: "/recetas/receta-1",
+      state: {
+        recipes: [original, recipes[1], recipes[2]],
+        recipeCategories: [{ id: "tortas", name: "Tortas" }],
+      },
+    });
+    await user.click(screen.getByRole("button", { name: "Duplicar receta" }));
+
+    const stored = useRecipeStore.getState().recipes;
+    expect(stored.map((recipe) => recipe.name)).toEqual([
+      "Receta 1",
+      "Receta 1 (copia)",
+      "Receta 2",
+      "Receta 3",
+    ]);
+    expect(stored[0]).toEqual(original);
+    const { id, updatedAt, ...copy } = stored[1];
+    expect(copy).toEqual({ ...original, id: undefined, updatedAt: undefined, name: "Receta 1 (copia)" });
+    expect(id).not.toBe(original.id);
+    expect(updatedAt).toBeGreaterThan(original.updatedAt);
+    expect(currentPath()).toBe(`/recetas/${id}`);
+    expect(screen.getByLabelText("Nombre de la receta")).toHaveValue("Receta 1 (copia)");
+    expect(screen.getByRole("status", { name: "Notificaciones" })).toHaveTextContent(
+      "Receta duplicada",
+    );
+  });
+});
