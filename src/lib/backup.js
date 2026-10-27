@@ -185,16 +185,15 @@ function sanitizeStockMove(source) {
 }
 
 // A themed order's decoration and design fee (lib/orders.js). A broken record
-// is dropped, not the order: it then just has no customization.
+// is dropped, not the order: it then just has no customization. One without
+// decoration nor fee is no customization either.
 function sanitizeCustomization(source) {
   if (!isObject(source)) return null;
   const items = stockLines(source.items, ["ingredientId"]);
   if (!items) return null;
-  return {
-    items,
-    feeType: source.feeType === "amount" ? "amount" : "percent",
-    fee: numberAtLeast(source.fee, 0, 0),
-  };
+  const fee = numberAtLeast(source.fee, 0, 0);
+  if (!items.length && fee === 0) return null;
+  return { items, feeType: source.feeType === "amount" ? "amount" : "percent", fee };
 }
 
 function sanitizeFinishedGood(source) {

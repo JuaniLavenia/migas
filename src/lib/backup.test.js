@@ -343,15 +343,15 @@ describe("sanitizeBackup", () => {
         { ...base, customization },
         { ...base, id: "p", customization: { items: [], feeType: "amount", fee: "1500" } },
         { ...base, id: "q", customization: { items: [{ ingredientId: "", quantity: 1 }] } },
-        { ...base, id: "r", customization: { items: [], feeType: "otro", fee: -5 } },
-        { ...base, id: "s" },
+        { ...base, id: "r", customization: { items: [], feeType: "otro", fee: 10 } },
+        { ...base, id: "s", customization: { items: [], feeType: "amount", fee: -5 } },
       ],
     });
     expect(result.orders.map((order) => order.customization)).toEqual([
       customization,
       { items: [], feeType: "amount", fee: 1500 },
       undefined,
-      { items: [], feeType: "percent", fee: 0 },
+      { items: [], feeType: "percent", fee: 10 },
       undefined,
     ]);
     expect(result.orders[2]).not.toHaveProperty("customization");

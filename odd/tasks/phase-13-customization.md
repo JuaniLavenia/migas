@@ -15,10 +15,11 @@ Branch: `feat/phase-13-customization` from main@eb7dc19. Delivery: single-pr (th
 
 | ID | Specs | Route | Status | Commit |
 |---|---|---|---|---|
-| T13.1 | S2–S4 (pricing and stock math, pure) | inline | pending | |
-| T13.2 | S5 (migration, row mapping, backup) | inline | pending | |
-| T13.3 | S1–S4 (order modal section, card label) | inline | pending | |
-| T13.4 | docs | inline | pending | |
+| T13.1 | S2–S4 (pricing and stock math, pure) | inline | done (8 RED→GREEN) | b9d8222 |
+| T13.2 | S5 (migration, row mapping, backup) | inline | done (3 RED→GREEN) | ef48c28 |
+| T13.3 | S1–S4 (order modal section, card label) | inline | done (2 RED→GREEN; shortage text test updated) | 5736b85 |
+| T13.4 | docs | inline | done | a4acdfe |
+| T13.5 | verifier advisory: drop an empty customization from backups | inline | done | (this commit) |
 
 Route evidence: one sequential feature (T13.3 depends on T13.1/T13.2): no writer trigger. Risk: item 1 (migration adding a column to `orders`, persisted format change): one independent verifier at the feature's end.
 
@@ -26,3 +27,6 @@ Route evidence: one sequential feature (T13.3 depends on T13.1/T13.2): no writer
 
 - L1 (2026-10-26, assistant proposal the user accepted): "Una sección **"Personalización"** dentro del pedido que tenga: - **Insumos de decoración** con su cantidad. Suman al costo y descuentan stock, igual que el packaging. - **Un recargo por diseño**, en % o como monto fijo, para cobrar el trabajo de la temática y no solo el material. Así el precio propuesto ya viene con todo incluido."
 - L2 (2026-10-26, user): "mm ok, si cambia según cada pedido, ahora hizo este para halloween, hace poco hizo para el dia de la madre, y asi.. hacé lo de personalización."
+- L3 Progress: T13.1–T13.4 done. `pnpm vitest run --maxWorkers=2`: 471 tests / 45 files green; build OK. The default full parallel run times out random unrelated UI tests at 5 s on this machine (different ones each run); not compared against main. No `lint` script exists.
+- L4 Independent verifier (item 1): S1–S5 PASS, no blockers. Advisories: an empty customization from a hand-edited backup showed "Personalizado" (fixed in T13.5); editing decoration of an already prepared order does not re-deduct stock, and an undo after its batches were used ends like a cancel (both existing rules for products/ingredients). RDD off (global): no native review.
+- L5 Deploy order: run `20261027000000_order_customization.sql` in Supabase before publishing; `toRow` always sends `customization`, so saves fail without the column.
