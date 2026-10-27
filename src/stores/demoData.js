@@ -1,11 +1,20 @@
 // Sample data: the tests' starting state (src/test/renderApp.jsx). The app
 // itself starts empty and loads the business data from the cloud.
 
+export const demoIngredientCategories = [
+  { id: "secos", name: "Secos" },
+  { id: "lacteos", name: "Lácteos" },
+  { id: "frescos", name: "Frescos" },
+  { id: "chocolates", name: "Chocolates" },
+  { id: "decoracion", name: "Decoración" },
+  { id: "otros", name: "Otros" },
+];
+
 export const demoIngredients = [
   {
     id: "harina",
     name: "Harina 0000",
-    category: "Secos",
+    categoryId: "secos",
     unit: "g",
     packSize: 1000,
     packCost: 1250,
@@ -13,7 +22,7 @@ export const demoIngredients = [
   {
     id: "manteca",
     name: "Manteca",
-    category: "Lácteos",
+    categoryId: "lacteos",
     unit: "g",
     packSize: 200,
     packCost: 2100,
@@ -21,7 +30,7 @@ export const demoIngredients = [
   {
     id: "azucar",
     name: "Azúcar",
-    category: "Secos",
+    categoryId: "secos",
     unit: "g",
     packSize: 1000,
     packCost: 980,
@@ -29,7 +38,7 @@ export const demoIngredients = [
   {
     id: "huevos",
     name: "Huevos",
-    category: "Frescos",
+    categoryId: "frescos",
     unit: "un",
     packSize: 12,
     packCost: 2400,
@@ -37,7 +46,7 @@ export const demoIngredients = [
   {
     id: "chocolate",
     name: "Chocolate cobertura",
-    category: "Chocolates",
+    categoryId: "chocolates",
     unit: "g",
     packSize: 500,
     packCost: 4600,

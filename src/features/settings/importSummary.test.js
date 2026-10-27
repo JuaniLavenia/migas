@@ -66,3 +66,17 @@ describe("importSummary", () => {
     ).toBe("Importamos 1 tanda elaborada");
   });
 });
+
+describe("importSummary with ingredient categories", () => {
+  it("counts recipe and ingredient categories together", () => {
+    expect(
+      importSummary({
+        ingredients: [],
+        recipes: [],
+        recipeCategories: [{ id: "a", name: "A" }],
+        ingredientCategories: [{ id: "b", name: "B" }, { id: "c", name: "C" }],
+        skipped: 0,
+      }),
+    ).toBe("Importamos 3 categorías");
+  });
+});

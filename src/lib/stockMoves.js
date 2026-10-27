@@ -258,10 +258,15 @@ export function undoMove(data, move, today, newId) {
 
 // What the active orders not prepared yet (Pendiente and Confirmado) need:
 // their units added up per recipe, minus all its finished goods, in full
-// batches, plus their decoration. `groups` are by ingredient category (blank: "Otros"), in
-// `categoryOrder` when given, then the packaging; `missing` is 0 when she has
-// enough.
-export function shoppingList(data, categoryOrder = []) {
+// batches, plus their decoration. `groups` are by ingredient category, in the
+// order of `data.ingredientCategories` (an ingredient without category, or
+// with a deleted one, goes to "Otros": last, or with her category of that
+// name), then the packaging; `missing` is 0 when she has enough.
+export function shoppingList(data) {
+  const categoryOrder = (data.ingredientCategories ?? []).map((category) => category.name);
+  const categoryName = new Map(
+    (data.ingredientCategories ?? []).map((category) => [category.id, category.name]),
+  );
   const waiting = (data.orders ?? []).filter(
     (order) =>
       !order.stockMove && (order.status === "pending" || order.status === "confirmed"),
@@ -299,7 +304,7 @@ export function shoppingList(data, categoryOrder = []) {
   shortageList("ingredient", ingredientNeeds, data.ingredients, ingredientUnit).forEach(
     (entry) => {
       const ingredient = data.ingredients.find((item) => item.id === entry.id);
-      const label = ingredient.category || "Otros";
+      const label = categoryName.get(ingredient.categoryId) ?? "Otros";
       if (!categories.has(label)) categories.set(label, []);
       categories.get(label).push(entry);
     },

@@ -9,6 +9,7 @@ export function importSummary({
   ingredients,
   recipes,
   recipeCategories = [],
+  ingredientCategories = [],
   packaging = [],
   orders = [],
   finishedGoods = [],
@@ -26,8 +27,9 @@ export function importSummary({
   ];
   if (!ingredients.length && !recipes.length) {
     if (extras.length) return `Importamos ${joinParts(extras)}${suffix}`;
-    return recipeCategories.length
-      ? `Importamos ${plural(recipeCategories.length, "categoría", "categorías")}${suffix}`
+    const categories = recipeCategories.length + ingredientCategories.length;
+    return categories
+      ? `Importamos ${plural(categories, "categoría", "categorías")}${suffix}`
       : `No encontramos registros válidos${suffix}`;
   }
   return `Importamos ${joinParts([

@@ -15,8 +15,8 @@ const ids = () => {
 };
 
 // A batch of 21 cookies takes 1000 g of flour and 200 g of butter.
-const harina = { id: "harina", name: "Harina", category: "Secos", unit: "g", packSize: 1000, packCost: 1000, stock: 2500 };
-const manteca = { id: "manteca", name: "Manteca", category: "Lácteos", unit: "g", packSize: 200, packCost: 2000, stock: 500 };
+const harina = { id: "harina", name: "Harina", categoryId: "secos", unit: "g", packSize: 1000, packCost: 1000, stock: 2500 };
+const manteca = { id: "manteca", name: "Manteca", categoryId: "lacteos", unit: "g", packSize: 200, packCost: 2000, stock: 500 };
 const cookies = {
   id: "cookies",
   name: "Cookies",
@@ -26,12 +26,17 @@ const cookies = {
     { ingredientId: "manteca", quantity: 200 },
   ],
 };
-const colorante = { id: "colorante", name: "Colorante naranja", category: "Decoración", unit: "g", packSize: 10, packCost: 1000, stock: 5 };
+const colorante = { id: "colorante", name: "Colorante naranja", categoryId: "decoracion", unit: "g", packSize: 10, packCost: 1000, stock: 5 };
 const box = { id: "box", name: "Box x8", packSize: 10, packCost: 9000, stock: 3 };
 
 const data = (fields = {}) => ({
   recipes: [cookies],
   ingredients: [harina, manteca, colorante],
+  ingredientCategories: [
+    { id: "secos", name: "Secos" },
+    { id: "lacteos", name: "Lácteos" },
+    { id: "decoracion", name: "Decoración" },
+  ],
   packaging: [box],
   finishedGoods: [],
   ...fields,
@@ -202,7 +207,7 @@ describe("planPreparation with customization", () => {
 });
 
 describe("planPreparation edge quantities", () => {
-  const sal = { id: "sal", name: "Sal", category: "Secos", unit: "g", packSize: 1000, packCost: 500, stock: 0.3 };
+  const sal = { id: "sal", name: "Sal", categoryId: "secos", unit: "g", packSize: 1000, packCost: 500, stock: 0.3 };
   const withLines = (items) => ({ ...cookies, items });
 
   it("leaves recipe lines without quantity out of the move", () => {

@@ -5,20 +5,50 @@ import { sanitizeBackup } from "../../lib/backup";
 import { downloadFile } from "../../shared/downloadFile";
 import { importSummary } from "./importSummary";
 import SettingsView from "./SettingsView";
-import RecipeCategoriesPanel from "./RecipeCategoriesPanel";
+import CategoriesPanel from "./CategoriesPanel";
 import LocalUploadPanel from "./LocalUploadPanel";
 import { useSession } from "../../app/session/SessionContext";
 import { readLocalData } from "../../lib/localData";
 
+function countByCategory(records) {
+  const counts = {};
+  records.forEach((record) => {
+    if (record.categoryId)
+      counts[record.categoryId] = (counts[record.categoryId] ?? 0) + 1;
+  });
+  return counts;
+}
+
+function recipeConsequence(count) {
+  if (count === 0) return "No la usa ninguna receta.";
+  return count === 1
+    ? "1 receta queda sin categoría."
+    : `${count} recetas quedan sin categoría.`;
+}
+
+function ingredientConsequence(count) {
+  if (count === 0) return "No la usa ningún insumo.";
+  return count === 1
+    ? "1 insumo queda sin categoría."
+    : `${count} insumos quedan sin categoría.`;
+}
+
 // Container of the settings view: backup export/import against the store
-// (cloudSync saves what an import changes), the recipe categories and, while
-// the business in the cloud is empty, the manual upload of what this browser
-// kept before the cloud.
+// (cloudSync saves what an import changes), the recipe and ingredient
+// categories and, while the business in the cloud is empty, the manual upload
+// of what this browser kept before the cloud.
 function SettingsPage() {
   const session = useSession();
   const ingredients = useRecipeStore((state) => state.ingredients);
   const recipes = useRecipeStore((state) => state.recipes);
   const recipeCategories = useRecipeStore((state) => state.recipeCategories);
+  const ingredientCategories = useRecipeStore((state) => state.ingredientCategories);
+  const renameIngredientCategory = useRecipeStore(
+    (state) => state.renameIngredientCategory,
+  );
+  const deleteIngredientCategory = useRecipeStore(
+    (state) => state.deleteIngredientCategory,
+  );
   const packaging = useRecipeStore((state) => state.packaging);
   const orders = useRecipeStore((state) => state.orders);
   const finishedGoods = useRecipeStore((state) => state.finishedGoods);
@@ -29,14 +59,8 @@ function SettingsPage() {
   const deleteRecipeCategory = useRecipeStore(
     (state) => state.deleteRecipeCategory,
   );
-  const recipeCounts = useMemo(() => {
-    const counts = {};
-    recipes.forEach((recipe) => {
-      if (recipe.categoryId)
-        counts[recipe.categoryId] = (counts[recipe.categoryId] ?? 0) + 1;
-    });
-    return counts;
-  }, [recipes]);
+  const recipeCounts = useMemo(() => countByCategory(recipes), [recipes]);
+  const ingredientCounts = useMemo(() => countByCategory(ingredients), [ingredients]);
   const showToast = useToastStore((state) => state.showToast);
   const [busy, setBusy] = useState(false);
   const localData = useMemo(() => (session ? readLocalData() : null), [session]);
@@ -44,6 +68,7 @@ function SettingsPage() {
     !ingredients.length &&
     !recipes.length &&
     !recipeCategories.length &&
+    !ingredientCategories.length &&
     !packaging.length &&
     !orders.length;
 
@@ -71,7 +96,15 @@ function SettingsPage() {
       downloadFile(
         `miga-backup-${new Date().toISOString().slice(0, 10)}.json`,
         JSON.stringify(
-          { ingredients, recipeCategories, recipes, packaging, orders, finishedGoods },
+          {
+            ingredientCategories,
+            ingredients,
+            recipeCategories,
+            recipes,
+            packaging,
+            orders,
+            finishedGoods,
+          },
           null,
           2,
         ),
@@ -95,6 +128,7 @@ function SettingsPage() {
       backup.ingredients.length ||
       backup.recipes.length ||
       backup.recipeCategories.length ||
+      backup.ingredientCategories.length ||
       backup.packaging.length ||
       backup.orders.length ||
       backup.finishedGoods.length
@@ -113,11 +147,25 @@ function SettingsPage() {
           onUpload={handleUpload}
         />
       )}
-      <RecipeCategoriesPanel
+      <CategoriesPanel
+        eyebrow="Recetas"
+        title="Categorías de recetas"
+        emptyHint="Todavía no hay categorías. Creá la primera desde una receta, en el campo Categoría."
         categories={recipeCategories}
-        recipeCounts={recipeCounts}
+        counts={recipeCounts}
+        consequence={recipeConsequence}
         onRename={renameRecipeCategory}
         onDelete={deleteRecipeCategory}
+      />
+      <CategoriesPanel
+        eyebrow="Insumos"
+        title="Categorías de insumos"
+        emptyHint="Todavía no hay categorías. Creá la primera desde un insumo, en el campo Categoría."
+        categories={ingredientCategories}
+        counts={ingredientCounts}
+        consequence={ingredientConsequence}
+        onRename={renameIngredientCategory}
+        onDelete={deleteIngredientCategory}
       />
     </SettingsView>
   );

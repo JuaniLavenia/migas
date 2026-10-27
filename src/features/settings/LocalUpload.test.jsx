@@ -6,7 +6,7 @@ import { createMemoryRepository } from "../../lib/data/memoryRepository";
 import { RECIPE_STORAGE_KEY } from "../../lib/recipeStorage";
 import { demoIngredients, demoRecipes } from "../../stores/demoData";
 
-const empty = { ingredients: [], recipes: [], recipeCategories: [] };
+const empty = { ingredients: [], recipes: [], recipeCategories: [], ingredientCategories: [] };
 
 // What the phone kept before the cloud: 2 recipes (one with a local photo),
 // 5 ingredients, 1 category; last change two hours ago.

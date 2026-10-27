@@ -8,7 +8,8 @@ export const INGREDIENTS_PER_PAGE = 10;
 export const ingredientSortOptions = [
   { value: CUSTOM_SORT, label: "Personalizado", directional: false },
   { value: "nombre", label: "Nombre", getValue: (item) => item.name },
-  { value: "categoria", label: "Categoría", getValue: (item) => item.category },
+  // By the name of its category (IngredientsPage adds it).
+  { value: "categoria", label: "Categoría", getValue: (item) => item.categoryName },
   {
     value: "precioPack",
     label: "Costo de compra",

@@ -63,7 +63,7 @@ describe("Form accessibility", () => {
       screen.getByRole("textbox", { name: "Nombre del insumo" }),
     ).toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: "Categoría" })).toHaveValue(
-      "Otros",
+      "",
     );
     expect(screen.getByRole("combobox", { name: "Unidad base" })).toHaveValue(
       "g",

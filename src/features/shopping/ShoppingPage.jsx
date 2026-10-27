@@ -2,7 +2,6 @@ import { useState } from "react";
 import useRecipeStore from "../../stores/useRecipeStore";
 import { shoppingList } from "../../lib/stockMoves";
 import { joinParts } from "../../lib/format";
-import { INGREDIENT_CATEGORIES } from "../ingredients/ingredientCategories";
 import PageHeader from "../../shared/PageHeader";
 
 function batchLabel({ count, name }) {
@@ -17,11 +16,16 @@ function ShoppingPage() {
   const packaging = useRecipeStore((state) => state.packaging);
   const finishedGoods = useRecipeStore((state) => state.finishedGoods);
   const orders = useRecipeStore((state) => state.orders);
+  const ingredientCategories = useRecipeStore((state) => state.ingredientCategories);
   const [onlyMissing, setOnlyMissing] = useState(false);
-  const list = shoppingList(
-    { recipes, ingredients, packaging, finishedGoods, orders },
-    INGREDIENT_CATEGORIES,
-  );
+  const list = shoppingList({
+    recipes,
+    ingredients,
+    ingredientCategories,
+    packaging,
+    finishedGoods,
+    orders,
+  });
   const allThere = list.groups.every((group) =>
     group.items.every((item) => item.missing === 0),
   );
