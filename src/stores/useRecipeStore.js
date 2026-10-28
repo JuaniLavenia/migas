@@ -173,12 +173,13 @@ const useRecipeStore = create()((set, get) => ({
     set((state) => ({
       packaging: moveById(state.packaging, id, delta),
     })),
-  // New orders start as Pendiente. Returns the new id.
+  // New orders start as Pendiente, or Entregado when she records one she
+  // already delivered: that one moves no stock. Returns the new id.
   addOrder: (order) => {
     const nextOrder = {
       ...order,
       id: uuidv4(),
-      status: "pending",
+      status: order.status === "delivered" ? "delivered" : "pending",
       createdAt: Date.now(),
     };
     set((state) => ({ orders: [...state.orders, nextOrder] }));
