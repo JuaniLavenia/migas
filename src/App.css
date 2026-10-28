@@ -1972,7 +1972,8 @@ textarea:focus-visible {
   margin-bottom: 6px;
   padding: 0;
 }
-.field-group .radio-option {
+.field-group .radio-option,
+.field-group .check-option {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -1981,7 +1982,8 @@ textarea:focus-visible {
   font-size: 13px;
   font-weight: 400;
 }
-.field-group .radio-option input {
+.field-group .radio-option input,
+.field-group .check-option input {
   width: auto;
   accent-color: var(--primary);
 }

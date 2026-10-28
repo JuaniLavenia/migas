@@ -90,8 +90,9 @@ function OrdersPage() {
   function save({ status, ...order }) {
     setEditing(null);
     if (!editing?.id) {
-      addOrder(order);
-      showToast("Pedido guardado");
+      const delivered = status === "delivered";
+      addOrder(delivered ? { ...order, status } : order);
+      showToast(delivered ? "Pedido guardado como entregado" : "Pedido guardado");
       return;
     }
     updateOrder(editing.id, order);

@@ -395,6 +395,53 @@ describe("Orders", { timeout: 15000 }, () => {
     );
   });
 
+  it("records a past order as delivered without touching the stock, even when it is short", async () => {
+    const { user } = renderOrders();
+    await user.click(screen.getByRole("button", { name: "Nuevo pedido" }));
+    const form = within(screen.getByRole("dialog"));
+    await user.type(form.getByLabelText("Cliente"), "Sofi");
+    await user.type(form.getByLabelText("Fecha de entrega"), "2026-09-12");
+    await user.click(form.getByRole("button", { name: /Agregar producto/ }));
+    await user.selectOptions(form.getByLabelText("Producto 1"), "Cookies");
+    // 200 cookies need 20000 g of harina (there are 10000); 6 boxes (there are 5).
+    await user.clear(form.getByLabelText("Unidades de producto 1"));
+    await user.type(form.getByLabelText("Unidades de producto 1"), "200");
+    await user.click(form.getByRole("button", { name: /Agregar packaging/ }));
+    await user.selectOptions(form.getByLabelText("Packaging 1"), "Box x8");
+    await user.clear(form.getByLabelText("Cantidad de packaging 1"));
+    await user.type(form.getByLabelText("Cantidad de packaging 1"), "6");
+    const delivered = form.getByRole("checkbox", { name: "Ya entregado" });
+    expect(delivered).not.toBeChecked();
+    expect(delivered).toHaveAccessibleDescription(
+      "Para registrar un pedido que ya hiciste: queda como Entregado y no descuenta stock.",
+    );
+    await user.click(delivered);
+    await user.click(form.getByRole("button", { name: "Guardar pedido" }));
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    const state = useRecipeStore.getState();
+    expect(state.orders).toEqual([
+      expect.objectContaining({ client: "Sofi", dueDate: "2026-09-12", status: "delivered" }),
+    ]);
+    expect(state.orders[0]).not.toHaveProperty("stockMove");
+    expect(state.ingredients.find((item) => item.id === "harina").stock).toBe(10000);
+    expect(state.packaging.find((item) => item.id === "box").stock).toBe(5);
+    expect(state.finishedGoods ?? []).toEqual([]);
+    expect(screen.getByRole("status", { name: "Notificaciones" })).toHaveTextContent(
+      "Pedido guardado como entregado",
+    );
+    await user.selectOptions(screen.getByLabelText("Mostrar"), "Todos");
+    expect(screen.getByLabelText("Estado del pedido de Sofi")).toHaveDisplayValue("Entregado");
+  });
+
+  it("offers recording as delivered only on a new order", async () => {
+    const { user } = renderOrders([pedido({ client: "Sofi" })]);
+    await user.click(within(card("Sofi")).getByRole("button", { name: "Editar" }));
+    expect(
+      within(screen.getByRole("dialog")).queryByRole("checkbox", { name: "Ya entregado" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("warns when a product of the order was deleted", () => {
     renderOrders([pedido({ client: "Sofi", items: [{ recipeId: "borrada", quantity: 3 }] })]);
     expect(within(card("Sofi")).getByText(/3 \(receta eliminada\)/)).toBeInTheDocument();

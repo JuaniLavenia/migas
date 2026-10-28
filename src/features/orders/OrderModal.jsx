@@ -132,6 +132,8 @@ function OrderModal({ initial, catalog, onClose, onSave }) {
     price: editing ? String(initial.price ?? 0) : null,
     paid: editing ? String(initial.paid ?? 0) : "",
     status: initial.status ?? "pending",
+    // A new order she already delivered: recorded for the history.
+    alreadyDelivered: false,
   });
   // A name of only spaces passes "required"; it is checked on submit.
   const [clientError, setClientError] = useState(false);
@@ -178,6 +180,7 @@ function OrderModal({ initial, catalog, onClose, onSave }) {
       price,
       paid: Math.max(toNumber(form.paid), 0),
       ...(editing ? { status: form.status } : {}),
+      ...(!editing && form.alreadyDelivered ? { status: "delivered" } : {}),
     });
   }
 
@@ -268,6 +271,22 @@ function OrderModal({ initial, catalog, onClose, onSave }) {
                   </option>
                 ))}
               </select>
+            </div>
+          )}
+          {!editing && (
+            <div className="field-group full">
+              <label className="check-option">
+                <input
+                  type="checkbox"
+                  checked={form.alreadyDelivered}
+                  onChange={(event) => change("alreadyDelivered", event.target.checked)}
+                  aria-describedby={`${fieldId}-delivered-hint`}
+                />
+                Ya entregado
+              </label>
+              <p className="field-hint" id={`${fieldId}-delivered-hint`}>
+                Para registrar un pedido que ya hiciste: queda como Entregado y no descuenta stock.
+              </p>
             </div>
           )}
         </div>
