@@ -35,10 +35,10 @@ VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 - Llevar el listado de packaging (bolsas, cajas) con su presentación de compra, costo, costo por unidad y cuántas unidades tenés. El packaging va por pedido, no en la receta.
 - Cargar los pedidos: cliente y contacto, fecha y hora de entrega, si retira o hay envío, productos (receta × unidades), packaging, notas, precio acordado y lo cobrado.
 - Registrar un pedido que ya entregaste, para el historial y las ganancias: al crearlo, marcá "Ya entregado" y queda como Entregado sin descontar stock.
-- Repetir un pedido: abre uno nuevo con los mismos productos, packaging, personalización y datos del cliente para cambiar lo que haga falta. La fecha queda vacía, lo cobrado en cero y el precio propuesto se calcula con los costos de hoy.
-- Personalizar un pedido con temática (Halloween, Día de la madre…): insumos de decoración, que suman su costo y descuentan stock al prepararlo, y un recargo por diseño en % de los productos o como monto fijo. El precio propuesto ya los incluye.
+- Repetir un pedido: abre uno nuevo con los mismos productos, packaging, personalización y datos del cliente para cambiar lo que haga falta. La fecha queda vacía, lo cobrado en cero y «Tu precio» se calcula con los costos de hoy.
+- Personalizar un pedido con temática (Halloween, Día de la madre…): insumos de decoración, que suman su costo y descuentan stock al prepararlo, y un recargo por diseño en % de los productos o como monto fijo. «Tu precio» ya los incluye.
 - Seguir cada pedido por estado (Pendiente, Confirmado, En preparación, Listo, Entregado o Cancelado) y por pago (Sin pagar, Señado o Pagado, según lo cobrado).
-- Ver el precio propuesto desde el precio de venta, el sugerido de referencia y la ganancia real del precio acordado.
+- Ver «Tu precio» (desde el precio de venta de las recetas), el precio «Según costos» solo cuando es distinto, y la ganancia real del precio acordado.
 - Ver los pedidos agrupados por fecha de entrega (Atrasados, Hoy, Mañana, Esta semana, Más adelante), filtrarlos por estado, buscarlos por cliente y cambiarles el estado desde la lista.
 - Descontar el stock al preparar un pedido: usa primero los elaborados más viejos, cocina tandas completas para el resto y guarda lo que sobra como elaborado. Nunca queda en negativo: si no alcanza, avisa qué falta y deja actualizar el stock ahí mismo.
 - Devolver el stock si el pedido vuelve atrás, y dejar lo cocinado como elaborado si se cancela.
