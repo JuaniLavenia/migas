@@ -117,10 +117,11 @@ describe("Orders", { timeout: 15000 }, () => {
     const proposed = 16 * 200 + 30000 + 1800;
     const cost = 17 * 100 + 1800;
     expect(form.getByLabelText("Precio acordado")).toHaveValue(proposed);
-    expect(form.getByText("Precio propuesto").parentElement).toHaveTextContent(money(proposed));
-    expect(form.getByText("Sugerido").parentElement).toHaveTextContent(
+    expect(form.getByText("Tu precio").parentElement).toHaveTextContent(money(proposed));
+    expect(form.getByText("Según costos").parentElement).toHaveTextContent(
       money(17 * 200 + 1800),
     );
+    expect(form.getByText(/usa el precio de venta de tus recetas/)).toBeInTheDocument();
     expect(form.getByText("Costo").parentElement).toHaveTextContent(money(cost));
     expect(form.getByText("Ganancia real").parentElement).toHaveTextContent(
       money(proposed - cost),
@@ -184,6 +185,10 @@ describe("Orders", { timeout: 15000 }, () => {
       money(1850),
     );
     expect(form.getByText("Costo").parentElement).toHaveTextContent(money(1600 + 250));
+    // No sale price on these recipes: the cost-based price is the same, so it is hidden.
+    expect(form.getByText("Tu precio").parentElement).toHaveTextContent(money(proposed));
+    expect(form.queryByText("Según costos")).not.toBeInTheDocument();
+    expect(form.queryByText(/usa el precio de venta de tus recetas/)).not.toBeInTheDocument();
     await user.click(form.getByRole("button", { name: "Guardar pedido" }));
 
     expect(useRecipeStore.getState().orders[0]).toMatchObject({
@@ -215,7 +220,7 @@ describe("Orders", { timeout: 15000 }, () => {
     expect(form.getByLabelText("Tipo de recargo")).toHaveDisplayValue("ARS");
     expect(form.getByLabelText("Recargo por diseño")).toHaveValue(1500);
     // 16 × 200 + 1500 + 3 × 100.
-    expect(form.getByText("Precio propuesto").parentElement).toHaveTextContent(money(5000));
+    expect(form.getByText("Tu precio").parentElement).toHaveTextContent(money(5000));
 
     await user.click(form.getByRole("button", { name: "Quitar insumo de decoración 1" }));
     await user.clear(form.getByLabelText("Recargo por diseño"));

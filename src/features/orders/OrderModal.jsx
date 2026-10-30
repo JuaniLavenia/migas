@@ -159,6 +159,10 @@ function OrderModal({ initial, catalog, onClose, onSave }) {
   const followsProposed = form.price === null || form.price.trim() === "";
   const price = followsProposed ? proposedPrice : toNumber(form.price);
   const totals = orderTotals({ ...lines, customization, price }, catalog);
+  // The cost-based price only adds information when a recipe sale price
+  // moves "Tu precio" away from it.
+  const showsCostPrice =
+    Math.round(totals.suggested) !== Math.round(totals.proposed);
 
   function submit(event) {
     event.preventDefault();
@@ -388,7 +392,7 @@ function OrderModal({ initial, catalog, onClose, onSave }) {
               <span>ARS</span>
             </div>
             <p className="field-hint" id={`${fieldId}-price-hint`}>
-              Vacío usa el precio propuesto.
+              Vacío usa «Tu precio».
             </p>
           </div>
           <div className="field-group">
@@ -413,13 +417,15 @@ function OrderModal({ initial, catalog, onClose, onSave }) {
         </div>
         <div className="order-summary">
           <div>
-            <span>Precio propuesto</span>
+            <span>Tu precio</span>
             <strong>{currency.format(totals.proposed)}</strong>
           </div>
-          <div>
-            <span>Sugerido</span>
-            <strong>{currency.format(totals.suggested)}</strong>
-          </div>
+          {showsCostPrice && (
+            <div>
+              <span>Según costos</span>
+              <strong>{currency.format(totals.suggested)}</strong>
+            </div>
+          )}
           {customization && (
             <div>
               <span>Personalización</span>
@@ -435,6 +441,12 @@ function OrderModal({ initial, catalog, onClose, onSave }) {
             <strong>{currency.format(totals.profit)}</strong>
           </div>
         </div>
+        {showsCostPrice && (
+          <p className="field-hint">
+            «Tu precio» usa el precio de venta de tus recetas; «Según costos» es
+            el costo de los insumos más el margen de cada receta.
+          </p>
+        )}
         {totals.missingCount > 0 && (
           <p className="price-warning order-warning">
             Hay productos, packaging o insumos de decoración sin costo completo:
